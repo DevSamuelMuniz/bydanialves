@@ -11,3 +11,6 @@ verify_jwt = false
 
 [functions.admin-get-users]
 verify_jwt = false
+
+[functions.sync-plan-stripe]
+verify_jwt = false

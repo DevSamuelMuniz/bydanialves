@@ -7,12 +7,7 @@ const corsHeaders = {
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type, x-supabase-client-platform, x-supabase-client-platform-version, x-supabase-client-runtime, x-supabase-client-runtime-version",
 };
 
-// Map Stripe price IDs to DB plan IDs
-const PRICE_PLAN_MAP: Record<string, string> = {
-  "price_1T4BUGCYbhQ9R1GXkj34MsYP": "ef1be08b-36ce-4f36-8a5a-ec573bddc2e9",
-  "price_1T4BUZCYbhQ9R1GXJ0O1ynoB": "545c2bea-6561-41bb-8be5-4d3a7dd185a4",
-  "price_1T4BUlCYbhQ9R1GXeadYhSJy": "5c23ef55-ba6f-4820-bf17-b29e1879f79c",
-};
+// No hardcoded map — we look up plans by stripe_price_id dynamically
 
 const logStep = (step: string, details?: any) => {
   const detailsStr = details ? ` - ${JSON.stringify(details)}` : '';
@@ -99,7 +94,16 @@ serve(async (req) => {
         : new Date().toISOString();
 
       const priceId = sub.items.data[0]?.price?.id;
-      planId = priceId ? (PRICE_PLAN_MAP[priceId] || null) : null;
+      // Look up plan by stripe_price_id in DB
+      if (priceId) {
+        const { data: planData } = await dbClient
+          .from("plans")
+          .select("id")
+          .eq("stripe_price_id", priceId)
+          .maybeSingle();
+        planId = planData?.id || null;
+      }
+      logStep("Active subscription found", { priceId, planId, subscriptionEnd });
       logStep("Active subscription found", { priceId, planId, subscriptionEnd });
 
       if (planId) {
