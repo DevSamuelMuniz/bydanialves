@@ -132,6 +132,7 @@ export default function AdminPlans() {
       <div className="flex items-center justify-between flex-wrap gap-2">
         <h1 className="font-serif text-2xl">Planos & Assinaturas</h1>
         <div className="flex gap-2">
+          <Button variant="outline" onClick={openLinkDialog}><UserPlus className="mr-2 h-4 w-4" />Vincular Cliente</Button>
           <Button onClick={openAdd}><Plus className="mr-2 h-4 w-4" />Novo Plano</Button>
         </div>
       </div>
