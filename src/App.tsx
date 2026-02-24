@@ -15,6 +15,7 @@ import ClientDashboard from "./pages/client/ClientDashboard";
 import NewBooking from "./pages/client/NewBooking";
 import ClientHistory from "./pages/client/ClientHistory";
 import ClientProfile from "./pages/client/ClientProfile";
+import ClientPlans from "./pages/client/ClientPlans";
 import AdminDashboard from "./pages/admin/AdminDashboard";
 import AdminClients from "./pages/admin/AdminClients";
 import AdminAgenda from "./pages/admin/AdminAgenda";
@@ -51,6 +52,7 @@ const App = () => (
               <Route index element={<ClientDashboard />} />
               <Route path="booking" element={<NewBooking />} />
               <Route path="history" element={<ClientHistory />} />
+              <Route path="plans" element={<ClientPlans />} />
               <Route path="profile" element={<ClientProfile />} />
             </Route>
 

@@ -9,9 +9,10 @@ import { Switch } from "@/components/ui/switch";
 import { Badge } from "@/components/ui/badge";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useToast } from "@/hooks/use-toast";
-import { Plus, Edit2, Trash2, Crown, Users } from "lucide-react";
+import { Plus, Edit2, Trash2, Crown, Users, UserPlus } from "lucide-react";
 
 export default function AdminPlans() {
   const { toast } = useToast();
@@ -21,6 +22,12 @@ export default function AdminPlans() {
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editing, setEditing] = useState<any | null>(null);
   const [form, setForm] = useState({ name: "", description: "", includes: "", restriction: "", price: "", active: true });
+
+  // Link client state
+  const [linkDialogOpen, setLinkDialogOpen] = useState(false);
+  const [clients, setClients] = useState<any[]>([]);
+  const [selectedClientId, setSelectedClientId] = useState("");
+  const [selectedPlanId, setSelectedPlanId] = useState("");
 
   const fetchData = async () => {
     setLoading(true);
@@ -88,13 +95,48 @@ export default function AdminPlans() {
   const subsCountByPlan = (planId: string) =>
     subscriptions.filter((s) => s.plan_id === planId && s.status === "active").length;
 
+  const openLinkDialog = async () => {
+    const { data } = await supabase.from("profiles").select("user_id, full_name").order("full_name");
+    setClients(data || []);
+    setSelectedClientId("");
+    setSelectedPlanId("");
+    setLinkDialogOpen(true);
+  };
+
+  const handleLinkClient = async () => {
+    if (!selectedClientId || !selectedPlanId) return;
+    // Check if client already has active subscription
+    const { data: existing } = await supabase.from("subscriptions").select("id").eq("client_id", selectedClientId).eq("status", "active").maybeSingle();
+    if (existing) {
+      toast({ title: "Erro", description: "Este cliente já possui uma assinatura ativa.", variant: "destructive" });
+      return;
+    }
+    const expiresAt = new Date();
+    expiresAt.setDate(expiresAt.getDate() + 30);
+    const { error } = await supabase.from("subscriptions").insert({
+      client_id: selectedClientId,
+      plan_id: selectedPlanId,
+      status: "active",
+      expires_at: expiresAt.toISOString(),
+    });
+    if (error) { toast({ title: "Erro", description: error.message, variant: "destructive" }); return; }
+    toast({ title: "Plano vinculado ao cliente!" });
+    setLinkDialogOpen(false);
+    fetchData();
+  };
+
   if (loading) return <div className="space-y-3"><Skeleton className="h-10 w-full" /><Skeleton className="h-32 w-full" /></div>;
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-between">
+      <div className="flex items-center justify-between flex-wrap gap-2">
         <h1 className="font-serif text-2xl">Planos & Assinaturas</h1>
-        <Button onClick={openAdd}><Plus className="mr-2 h-4 w-4" />Novo Plano</Button>
+        <div className="flex gap-2">
+          <Button variant="outline" onClick={openLinkDialog}>
+            <UserPlus className="mr-2 h-4 w-4" />Vincular Cliente
+          </Button>
+          <Button onClick={openAdd}><Plus className="mr-2 h-4 w-4" />Novo Plano</Button>
+        </div>
       </div>
 
       {/* Plans */}
@@ -199,6 +241,42 @@ export default function AdminPlans() {
             </div>
             <Button type="submit" className="w-full">{editing ? "Salvar" : "Criar Plano"}</Button>
           </form>
+        </DialogContent>
+      </Dialog>
+
+      {/* Link Client Dialog */}
+      <Dialog open={linkDialogOpen} onOpenChange={setLinkDialogOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle className="font-serif">Vincular Cliente a Plano</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4">
+            <div className="space-y-2">
+              <Label>Cliente</Label>
+              <Select value={selectedClientId} onValueChange={setSelectedClientId}>
+                <SelectTrigger><SelectValue placeholder="Selecione um cliente" /></SelectTrigger>
+                <SelectContent>
+                  {clients.map((c) => (
+                    <SelectItem key={c.user_id} value={c.user_id}>{c.full_name || "Sem nome"}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="space-y-2">
+              <Label>Plano</Label>
+              <Select value={selectedPlanId} onValueChange={setSelectedPlanId}>
+                <SelectTrigger><SelectValue placeholder="Selecione um plano" /></SelectTrigger>
+                <SelectContent>
+                  {plans.filter((p) => p.active).map((p) => (
+                    <SelectItem key={p.id} value={p.id}>{p.name} — R$ {Number(p.price).toFixed(2)}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+            <Button className="w-full" onClick={handleLinkClient} disabled={!selectedClientId || !selectedPlanId}>
+              Vincular
+            </Button>
+          </div>
         </DialogContent>
       </Dialog>
     </div>
