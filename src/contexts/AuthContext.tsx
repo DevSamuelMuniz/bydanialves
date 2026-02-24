@@ -32,9 +32,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     const { data } = await supabase
       .from("user_roles")
       .select("role")
-      .eq("user_id", userId)
-      .single();
-    if (data) setUserRole(data.role as UserRole);
+      .eq("user_id", userId);
+    if (data && data.length > 0) {
+      // Prioritize admin role
+      const isAdmin = data.some((r) => r.role === "admin");
+      setUserRole(isAdmin ? "admin" : (data[0].role as UserRole));
+    }
   };
 
   useEffect(() => {
