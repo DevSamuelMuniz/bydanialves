@@ -7,6 +7,8 @@ import { Label } from "@/components/ui/label";
 import { useToast } from "@/hooks/use-toast";
 import { ShieldCheck, Eye, EyeOff } from "lucide-react";
 import authBg from "@/assets/auth-bg.jpg";
+import logo from "@/assets/logo-dani-alves.jpg";
+import { AuthImageOverlay } from "@/components/AuthImageOverlay";
 
 export default function AdminAuth() {
   const [email, setEmail] = useState("");
@@ -79,10 +81,7 @@ export default function AdminAuth() {
   if (showForgot) {
     return (
       <div className="min-h-screen flex">
-        <div className="hidden lg:block lg:w-1/2 relative">
-          <img src={authBg} alt="Salão de beleza" className="absolute inset-0 w-full h-full object-cover" />
-          <div className="absolute inset-0 bg-black/30" />
-        </div>
+        <AuthImageOverlay imageSrc={authBg} />
         <div className="w-full lg:w-1/2 flex items-center justify-center bg-background px-6 py-12">
           <div className="w-full max-w-md space-y-6">
             <div className="text-center">
@@ -112,16 +111,11 @@ export default function AdminAuth() {
 
   return (
     <div className="min-h-screen flex">
-      <div className="hidden lg:block lg:w-1/2 relative">
-        <img src={authBg} alt="Salão de beleza" className="absolute inset-0 w-full h-full object-cover" />
-        <div className="absolute inset-0 bg-black/30" />
-      </div>
+      <AuthImageOverlay imageSrc={authBg} />
       <div className="w-full lg:w-1/2 flex items-center justify-center bg-background px-6 py-12">
         <div className="w-full max-w-md space-y-6">
           <div className="text-center">
-            <div className="mx-auto h-14 w-14 rounded-2xl gradient-gold flex items-center justify-center shadow-gold mb-4">
-              <ShieldCheck className="h-7 w-7 text-primary-foreground" />
-            </div>
+            <img src={logo} alt="Dani Alves" className="mx-auto h-16 w-16 rounded-full object-cover border-2 border-primary/20 shadow-lg mb-4" />
             <h1 className="font-serif text-2xl font-bold tracking-tight">Painel Administrativo</h1>
             <p className="text-muted-foreground mt-1">Acesso restrito a administradores</p>
           </div>
