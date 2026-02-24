@@ -103,7 +103,7 @@ export default function Auth() {
             <form onSubmit={handleForgotPassword} className="space-y-4">
               <div className="space-y-2">
                 <Label htmlFor="email">E-mail</Label>
-                <Input id="email" type="email" value={email} onChange={(e) => setEmail(e.target.value)} required className="h-11" />
+                <Input id="email" type="email" value={email} onChange={(e) => setEmail(e.target.value)} required className="h-11" placeholder="Digite seu e-mail" />
               </div>
               <Button type="submit" className="w-full h-11" disabled={loading}>
                 {loading ? "Enviando..." : "Enviar link de recuperação"}
@@ -140,11 +140,11 @@ export default function Auth() {
               <form onSubmit={handleLogin} className="space-y-4 mt-4">
                 <div className="space-y-2">
                   <Label htmlFor="login-email">E-mail</Label>
-                  <Input id="login-email" type="email" value={email} onChange={(e) => setEmail(e.target.value)} required className="h-11" />
+                  <Input id="login-email" type="email" value={email} onChange={(e) => setEmail(e.target.value)} required className="h-11" placeholder="Digite seu e-mail" />
                 </div>
                 <div className="space-y-2">
                   <Label htmlFor="login-password">Senha</Label>
-                  <PasswordInput id="login-password" value={password} onChange={(e) => setPassword(e.target.value)} required />
+                  <PasswordInput id="login-password" value={password} onChange={(e) => setPassword(e.target.value)} required placeholder="Digite sua senha" />
                 </div>
                 <Button type="submit" className="w-full h-11" disabled={loading}>
                   {loading ? "Entrando..." : "Entrar"}
@@ -158,15 +158,15 @@ export default function Auth() {
               <form onSubmit={handleSignUp} className="space-y-4 mt-4">
                 <div className="space-y-2">
                   <Label htmlFor="name">Nome completo</Label>
-                  <Input id="name" value={fullName} onChange={(e) => setFullName(e.target.value)} required className="h-11" />
+                  <Input id="name" value={fullName} onChange={(e) => setFullName(e.target.value)} required className="h-11" placeholder="Digite seu nome completo" />
                 </div>
                 <div className="space-y-2">
                   <Label htmlFor="signup-email">E-mail</Label>
-                  <Input id="signup-email" type="email" value={email} onChange={(e) => setEmail(e.target.value)} required className="h-11" />
+                  <Input id="signup-email" type="email" value={email} onChange={(e) => setEmail(e.target.value)} required className="h-11" placeholder="Digite seu e-mail" />
                 </div>
                 <div className="space-y-2">
                   <Label htmlFor="signup-password">Senha</Label>
-                  <PasswordInput id="signup-password" value={password} onChange={(e) => setPassword(e.target.value)} required minLength={6} />
+                  <PasswordInput id="signup-password" value={password} onChange={(e) => setPassword(e.target.value)} required minLength={6} placeholder="Crie uma senha" />
                 </div>
                 <Button type="submit" className="w-full h-11" disabled={loading}>
                   {loading ? "Cadastrando..." : "Criar conta"}
