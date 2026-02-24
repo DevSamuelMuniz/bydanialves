@@ -173,6 +173,7 @@ export type Database = {
           duration_minutes: number
           id: string
           image_url: string | null
+          is_system: boolean
           name: string
           price: number
           updated_at: string
@@ -184,6 +185,7 @@ export type Database = {
           duration_minutes?: number
           id?: string
           image_url?: string | null
+          is_system?: boolean
           name: string
           price: number
           updated_at?: string
@@ -195,6 +197,7 @@ export type Database = {
           duration_minutes?: number
           id?: string
           image_url?: string | null
+          is_system?: boolean
           name?: string
           price?: number
           updated_at?: string
