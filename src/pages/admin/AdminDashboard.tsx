@@ -31,7 +31,7 @@ export default function AdminDashboard() {
     const weekStart = format(subDays(new Date(), 6), "yyyy-MM-dd");
 
     Promise.all([
-      supabase.from("appointments").select("*, services(name), profiles!appointments_client_id_fkey(full_name)").eq("appointment_date", today).order("appointment_time"),
+      supabase.from("appointments").select("*, services(name), profiles!appointments_client_profile_fkey(full_name)").eq("appointment_date", today).order("appointment_time"),
       supabase.from("financial_records").select("amount, created_at").eq("type", "income").gte("created_at", monthStart),
       supabase.from("profiles").select("id", { count: "exact", head: true }),
       supabase.from("appointments").select("id", { count: "exact", head: true }).eq("status", "pending"),

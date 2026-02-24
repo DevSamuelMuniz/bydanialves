@@ -51,7 +51,7 @@ export default function AdminAgenda() {
     setLoading(true);
     let query = supabase
       .from("appointments")
-      .select("*, services(name, price), profiles!appointments_client_id_fkey(full_name)", { count: "exact" });
+      .select("*, services(name, price), profiles!appointments_client_profile_fkey(full_name)", { count: "exact" });
 
     if (dateFrom) query = query.gte("appointment_date", format(dateFrom, "yyyy-MM-dd"));
     if (dateTo) query = query.lte("appointment_date", format(dateTo, "yyyy-MM-dd"));

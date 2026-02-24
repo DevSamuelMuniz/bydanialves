@@ -33,7 +33,7 @@ export default function AdminPlans() {
     setLoading(true);
     const [plansRes, subsRes] = await Promise.all([
       supabase.from("plans").select("*").order("price"),
-      supabase.from("subscriptions").select("*, plans(name), profiles!subscriptions_client_id_fkey(full_name)").order("created_at", { ascending: false }),
+      supabase.from("subscriptions").select("*, plans(name), profiles!subscriptions_client_profile_fkey(full_name)").order("created_at", { ascending: false }),
     ]);
     setPlans(plansRes.data || []);
     setSubscriptions((subsRes.data as any[]) || []);
