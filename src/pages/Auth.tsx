@@ -8,6 +8,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useToast } from "@/hooks/use-toast";
 import { Scissors } from "lucide-react";
+import { Link } from "react-router-dom";
 
 export default function Auth() {
   const [email, setEmail] = useState("");
@@ -21,13 +22,33 @@ export default function Auth() {
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
-    const { error } = await supabase.auth.signInWithPassword({ email, password });
+    const { data, error } = await supabase.auth.signInWithPassword({ email, password });
     if (error) {
       toast({ title: "Erro ao entrar", description: error.message, variant: "destructive" });
-    } else {
-      // Role-based redirect handled in App
-      navigate("/client");
+      setLoading(false);
+      return;
     }
+
+    // Check if user is admin — if so, redirect to admin login
+    const { data: roleData } = await supabase
+      .from("user_roles")
+      .select("role")
+      .eq("user_id", data.user.id)
+      .eq("role", "admin")
+      .single();
+
+    if (roleData) {
+      await supabase.auth.signOut();
+      toast({
+        title: "Área do cliente",
+        description: "Para acesso administrativo, use o login de admin.",
+        variant: "destructive",
+      });
+      setLoading(false);
+      return;
+    }
+
+    navigate("/client");
     setLoading(false);
   };
 
@@ -144,6 +165,11 @@ export default function Auth() {
               </form>
             </TabsContent>
           </Tabs>
+          <div className="mt-6 text-center">
+            <Link to="/admin/login" className="text-sm text-muted-foreground hover:text-primary transition-colors">
+              Acesso administrativo →
+            </Link>
+          </div>
         </CardContent>
       </Card>
     </div>
