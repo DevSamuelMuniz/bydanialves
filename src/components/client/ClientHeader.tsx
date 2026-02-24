@@ -62,27 +62,14 @@ export function ClientHeader({ onSearch }: ClientHeaderProps) {
         </div>
       </div>
 
-      {/* Settings icon */}
-      <button
-        onClick={() => navigate("/client/profile")}
-        className="p-2 rounded-lg text-muted-foreground hover:text-foreground hover:bg-secondary/60 transition-colors"
-        title="Configurações"
-      >
-        <Settings className="h-5 w-5" />
-      </button>
-
-      {/* Profile avatar */}
+      {/* Settings icon - dropdown */}
       <DropdownMenu>
         <DropdownMenuTrigger asChild>
-          <button className="flex items-center gap-2 rounded-lg p-1 hover:bg-secondary/60 transition-colors">
-            <Avatar className="h-8 w-8">
-              <AvatarFallback className="bg-primary text-primary-foreground text-xs font-serif">
-                {initials}
-              </AvatarFallback>
-            </Avatar>
-            <span className="text-sm font-medium text-foreground hidden md:block max-w-[120px] truncate">
-              {profileName || "Cliente"}
-            </span>
+          <button
+            className="p-2 rounded-lg text-muted-foreground hover:text-foreground hover:bg-secondary/60 transition-colors"
+            title="Configurações"
+          >
+            <Settings className="h-5 w-5" />
           </button>
         </DropdownMenuTrigger>
         <DropdownMenuContent align="end" className="w-48">
@@ -94,6 +81,21 @@ export function ClientHeader({ onSearch }: ClientHeaderProps) {
           </DropdownMenuItem>
         </DropdownMenuContent>
       </DropdownMenu>
+
+      {/* Profile avatar - goes to profile directly */}
+      <button
+        onClick={() => navigate("/client/profile")}
+        className="flex items-center gap-2 rounded-lg p-1 hover:bg-secondary/60 transition-colors"
+      >
+        <Avatar className="h-8 w-8">
+          <AvatarFallback className="bg-primary text-primary-foreground text-xs font-serif">
+            {initials}
+          </AvatarFallback>
+        </Avatar>
+        <span className="text-sm font-medium text-foreground hidden md:block max-w-[120px] truncate">
+          {profileName || "Cliente"}
+        </span>
+      </button>
     </header>
   );
 }
