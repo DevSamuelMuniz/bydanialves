@@ -22,6 +22,7 @@ import AdminServices from "./pages/admin/AdminServices";
 import AdminFinance from "./pages/admin/AdminFinance";
 import AdminReports from "./pages/admin/AdminReports";
 import AdminUsers from "./pages/admin/AdminUsers";
+import AdminPlans from "./pages/admin/AdminPlans";
 
 const queryClient = new QueryClient();
 
@@ -59,6 +60,7 @@ const App = () => (
               <Route path="clients" element={<AdminClients />} />
               <Route path="agenda" element={<AdminAgenda />} />
               <Route path="services" element={<AdminServices />} />
+              <Route path="plans" element={<AdminPlans />} />
               <Route path="finance" element={<AdminFinance />} />
               <Route path="reports" element={<AdminReports />} />
               <Route path="users" element={<AdminUsers />} />
