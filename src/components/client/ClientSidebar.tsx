@@ -11,13 +11,14 @@ import {
   SidebarMenuItem,
   SidebarFooter,
 } from "@/components/ui/sidebar";
-import { LayoutDashboard, CalendarPlus, History, User, LogOut } from "lucide-react";
+import { LayoutDashboard, CalendarPlus, History, User, LogOut, Crown } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
 const items = [
   { title: "Dashboard", url: "/client", icon: LayoutDashboard },
   { title: "Novo Agendamento", url: "/client/booking", icon: CalendarPlus },
   { title: "Histórico", url: "/client/history", icon: History },
+  { title: "Meu Plano", url: "/client/plans", icon: Crown },
   { title: "Perfil", url: "/client/profile", icon: User },
 ];
 
