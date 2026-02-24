@@ -1,14 +1,13 @@
 import { useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, Link } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useToast } from "@/hooks/use-toast";
-import { Sparkles } from "lucide-react";
-import { Link } from "react-router-dom";
+import { Sparkles, Eye, EyeOff } from "lucide-react";
+import authBg from "@/assets/auth-bg.jpg";
 
 export default function Auth() {
   const [email, setEmail] = useState("");
@@ -16,6 +15,7 @@ export default function Auth() {
   const [fullName, setFullName] = useState("");
   const [loading, setLoading] = useState(false);
   const [showForgot, setShowForgot] = useState(false);
+  const [showPassword, setShowPassword] = useState(false);
   const navigate = useNavigate();
   const { toast } = useToast();
 
@@ -84,21 +84,45 @@ export default function Auth() {
     setLoading(false);
   };
 
+  const PasswordInput = ({ id, value, onChange, ...props }: React.ComponentProps<"input"> & { value: string; onChange: (e: React.ChangeEvent<HTMLInputElement>) => void }) => (
+    <div className="relative">
+      <Input
+        id={id}
+        type={showPassword ? "text" : "password"}
+        value={value}
+        onChange={onChange}
+        className="h-11 pr-10"
+        {...props}
+      />
+      <button
+        type="button"
+        onClick={() => setShowPassword(!showPassword)}
+        className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors"
+      >
+        {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+      </button>
+    </div>
+  );
+
   if (showForgot) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-background px-4 relative overflow-hidden">
-        <div className="absolute inset-0 gradient-gold-subtle" />
-        <div className="absolute top-1/4 -left-32 w-64 h-64 rounded-full bg-primary/5 blur-3xl" />
-        <div className="absolute bottom-1/4 -right-32 w-64 h-64 rounded-full bg-primary/5 blur-3xl" />
-        <Card className="w-full max-w-md border-primary/15 shadow-elevated relative animate-scale-in">
-          <CardHeader className="text-center pb-2">
-            <div className="mx-auto h-14 w-14 rounded-2xl gradient-gold flex items-center justify-center shadow-gold mb-3">
-              <Sparkles className="h-7 w-7 text-primary-foreground" />
+      <div className="min-h-screen flex">
+        {/* Left image */}
+        <div className="hidden lg:block lg:w-1/2 relative">
+          <img src={authBg} alt="Salão de beleza" className="absolute inset-0 w-full h-full object-cover" />
+          <div className="absolute inset-0 bg-black/30" />
+        </div>
+
+        {/* Right form */}
+        <div className="w-full lg:w-1/2 flex items-center justify-center bg-background px-6 py-12">
+          <div className="w-full max-w-md space-y-6">
+            <div className="text-center">
+              <div className="mx-auto h-14 w-14 rounded-2xl gradient-gold flex items-center justify-center shadow-gold mb-4">
+                <Sparkles className="h-7 w-7 text-primary-foreground" />
+              </div>
+              <h1 className="font-serif text-2xl font-bold tracking-tight">Recuperar Senha</h1>
+              <p className="text-muted-foreground mt-1">Informe seu e-mail para redefinir</p>
             </div>
-            <CardTitle className="font-serif text-2xl tracking-tight">Recuperar Senha</CardTitle>
-            <CardDescription>Informe seu e-mail para redefinir</CardDescription>
-          </CardHeader>
-          <CardContent>
             <form onSubmit={handleForgotPassword} className="space-y-4">
               <div className="space-y-2">
                 <Label htmlFor="email">E-mail</Label>
@@ -111,28 +135,31 @@ export default function Auth() {
                 Voltar ao login
               </Button>
             </form>
-          </CardContent>
-        </Card>
+          </div>
+        </div>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-background px-4 relative overflow-hidden">
-      {/* Background decoration */}
-      <div className="absolute inset-0 gradient-gold-subtle" />
-      <div className="absolute top-1/4 -left-32 w-64 h-64 rounded-full bg-primary/5 blur-3xl" />
-      <div className="absolute bottom-1/4 -right-32 w-64 h-64 rounded-full bg-primary/5 blur-3xl" />
+    <div className="min-h-screen flex">
+      {/* Left image */}
+      <div className="hidden lg:block lg:w-1/2 relative">
+        <img src={authBg} alt="Salão de beleza" className="absolute inset-0 w-full h-full object-cover" />
+        <div className="absolute inset-0 bg-black/30" />
+      </div>
 
-      <Card className="w-full max-w-md border-primary/15 shadow-elevated relative animate-scale-in">
-        <CardHeader className="text-center pb-2">
-          <div className="mx-auto h-14 w-14 rounded-2xl gradient-gold flex items-center justify-center shadow-gold mb-3">
-            <Sparkles className="h-7 w-7 text-primary-foreground" />
+      {/* Right form */}
+      <div className="w-full lg:w-1/2 flex items-center justify-center bg-background px-6 py-12">
+        <div className="w-full max-w-md space-y-6">
+          <div className="text-center">
+            <div className="mx-auto h-14 w-14 rounded-2xl gradient-gold flex items-center justify-center shadow-gold mb-4">
+              <Sparkles className="h-7 w-7 text-primary-foreground" />
+            </div>
+            <h1 className="font-serif text-2xl font-bold tracking-tight">Salão de Beleza</h1>
+            <p className="text-muted-foreground mt-1">Agende seus serviços com elegância</p>
           </div>
-          <CardTitle className="font-serif text-2xl tracking-tight">Salão de Beleza</CardTitle>
-          <CardDescription className="text-base">Agende seus serviços com elegância</CardDescription>
-        </CardHeader>
-        <CardContent>
+
           <Tabs defaultValue="login" className="w-full">
             <TabsList className="grid w-full grid-cols-2 h-11 rounded-lg">
               <TabsTrigger value="login" className="rounded-md">Entrar</TabsTrigger>
@@ -146,7 +173,7 @@ export default function Auth() {
                 </div>
                 <div className="space-y-2">
                   <Label htmlFor="login-password">Senha</Label>
-                  <Input id="login-password" type="password" value={password} onChange={(e) => setPassword(e.target.value)} required className="h-11" />
+                  <PasswordInput id="login-password" value={password} onChange={(e) => setPassword(e.target.value)} required />
                 </div>
                 <Button type="submit" className="w-full h-11" disabled={loading}>
                   {loading ? "Entrando..." : "Entrar"}
@@ -168,7 +195,7 @@ export default function Auth() {
                 </div>
                 <div className="space-y-2">
                   <Label htmlFor="signup-password">Senha</Label>
-                  <Input id="signup-password" type="password" value={password} onChange={(e) => setPassword(e.target.value)} required minLength={6} className="h-11" />
+                  <PasswordInput id="signup-password" value={password} onChange={(e) => setPassword(e.target.value)} required minLength={6} />
                 </div>
                 <Button type="submit" className="w-full h-11" disabled={loading}>
                   {loading ? "Cadastrando..." : "Criar conta"}
@@ -176,13 +203,13 @@ export default function Auth() {
               </form>
             </TabsContent>
           </Tabs>
-          <div className="mt-6 text-center">
+          <div className="text-center">
             <Link to="/admin/login" className="text-sm text-muted-foreground hover:text-primary transition-colors duration-200">
               Acesso administrativo →
             </Link>
           </div>
-        </CardContent>
-      </Card>
+        </div>
+      </div>
     </div>
   );
 }
