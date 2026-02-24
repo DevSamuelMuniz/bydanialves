@@ -65,15 +65,30 @@ export default function AdminPlans() {
       active: form.active,
     };
 
+    let planId: string;
+
     if (editing) {
       const { error } = await supabase.from("plans").update(payload).eq("id", editing.id);
       if (error) { toast({ title: "Erro", description: error.message, variant: "destructive" }); return; }
-      toast({ title: "Plano atualizado!" });
+      planId = editing.id;
     } else {
-      const { error } = await supabase.from("plans").insert(payload);
-      if (error) { toast({ title: "Erro", description: error.message, variant: "destructive" }); return; }
-      toast({ title: "Plano criado!" });
+      const { data, error } = await supabase.from("plans").insert(payload).select("id").single();
+      if (error || !data) { toast({ title: "Erro", description: error?.message || "Erro ao criar plano", variant: "destructive" }); return; }
+      planId = data.id;
     }
+
+    // Sync with Stripe
+    toast({ title: "Sincronizando com Stripe..." });
+    const { data: syncData, error: syncError } = await supabase.functions.invoke("sync-plan-stripe", {
+      body: { planId, name: form.name, price: Number(form.price) },
+    });
+
+    if (syncError || syncData?.error) {
+      toast({ title: "Aviso", description: `Plano salvo, mas erro ao sincronizar com Stripe: ${syncData?.error || syncError?.message}`, variant: "destructive" });
+    } else {
+      toast({ title: editing ? "Plano atualizado e sincronizado!" : "Plano criado e sincronizado!" });
+    }
+
     setDialogOpen(false);
     fetchData();
   };
