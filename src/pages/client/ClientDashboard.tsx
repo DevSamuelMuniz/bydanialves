@@ -4,7 +4,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { CalendarPlus, Clock, Crown, Filter } from "lucide-react";
+import { CalendarPlus, Clock, Crown, Filter, Sparkles } from "lucide-react";
 import { Link } from "react-router-dom";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Badge } from "@/components/ui/badge";
@@ -18,10 +18,10 @@ const statusLabels: Record<string, string> = {
 };
 
 const statusColors: Record<string, string> = {
-  pending: "bg-yellow-100 text-yellow-800",
-  confirmed: "bg-blue-100 text-blue-800",
-  completed: "bg-green-100 text-green-800",
-  cancelled: "bg-red-100 text-red-800",
+  pending: "bg-warning/15 text-warning-foreground border-warning/30",
+  confirmed: "bg-primary/10 text-primary border-primary/30",
+  completed: "bg-success/15 text-success border-success/30",
+  cancelled: "bg-destructive/10 text-destructive border-destructive/30",
 };
 
 function parseEscovasFromIncludes(includes: string): number {
@@ -37,6 +37,7 @@ export default function ClientDashboard() {
   const [escovasUsadas, setEscovasUsadas] = useState(0);
   const [loading, setLoading] = useState(true);
   const [statusFilter, setStatusFilter] = useState("all");
+
   useEffect(() => {
     if (!user) return;
     const fetchData = async () => {
@@ -65,10 +66,7 @@ export default function ClientDashboard() {
       setAppointments(apptRes.data || []);
       setSubscription(subRes.data);
 
-      // Count escovas used
-      const escovas = (escovasRes.data || []).filter((a: any) =>
-        a.services?.is_system === true
-      );
+      const escovas = (escovasRes.data || []).filter((a: any) => a.services?.is_system === true);
       setEscovasUsadas(escovas.length);
       setLoading(false);
     };
@@ -77,10 +75,10 @@ export default function ClientDashboard() {
 
   if (loading) {
     return (
-      <div className="space-y-6">
-        <Skeleton className="h-10 w-64" />
-        <Skeleton className="h-32 w-full" />
-        <Skeleton className="h-32 w-full" />
+      <div className="space-y-6 max-w-2xl">
+        <Skeleton className="h-12 w-64 rounded-lg" />
+        <Skeleton className="h-36 w-full rounded-lg" />
+        <Skeleton className="h-36 w-full rounded-lg" />
       </div>
     );
   }
@@ -89,42 +87,49 @@ export default function ClientDashboard() {
   const progressPercent = totalEscovas > 0 ? Math.min((escovasUsadas / totalEscovas) * 100, 100) : 0;
 
   return (
-    <div className="space-y-6 max-w-2xl">
-      <div>
-        <h1 className="font-serif text-2xl md:text-3xl">
-          Olá, {profile?.full_name || "Cliente"} ✨
+    <div className="space-y-8 max-w-2xl">
+      {/* Welcome */}
+      <div className="animate-slide-up">
+        <h1 className="font-serif text-2xl md:text-3xl tracking-tight">
+          Olá, <span className="gradient-gold-text">{profile?.full_name || "Cliente"}</span> ✨
         </h1>
-        <p className="text-muted-foreground mt-1">Bem-vinda ao seu espaço de beleza</p>
+        <p className="text-muted-foreground mt-1.5">Bem-vinda ao seu espaço de beleza</p>
       </div>
 
       {/* Plan card */}
       {subscription ? (
-        <Card className="border-primary/30 bg-primary/5">
+        <Card className="border-primary/20 gradient-gold-subtle overflow-hidden animate-slide-up" style={{ animationDelay: "0.1s" }}>
           <CardHeader className="pb-2">
             <CardTitle className="font-serif text-lg flex items-center gap-2">
-              <Crown className="h-5 w-5 text-primary" /> {subscription.plans?.name}
+              <div className="h-8 w-8 rounded-lg gradient-gold flex items-center justify-center">
+                <Crown className="h-4 w-4 text-primary-foreground" />
+              </div>
+              {subscription.plans?.name}
             </CardTitle>
           </CardHeader>
-          <CardContent className="space-y-3">
-            <p className="text-sm">{subscription.plans?.includes}</p>
+          <CardContent className="space-y-4">
+            <p className="text-sm text-muted-foreground">{subscription.plans?.includes}</p>
             {totalEscovas > 0 && (
-              <div className="space-y-1">
+              <div className="space-y-2">
                 <div className="flex justify-between text-sm">
                   <span>Escovas usadas este mês</span>
-                  <span className="font-medium">{escovasUsadas}/{totalEscovas}</span>
+                  <span className="font-semibold">{escovasUsadas}/{totalEscovas}</span>
                 </div>
-                <Progress value={progressPercent} className="h-2" />
+                <Progress value={progressPercent} className="h-2.5 rounded-full" />
               </div>
             )}
-            <p className="text-xl font-serif font-bold text-primary">
-              R$ {Number(subscription.plans?.price).toFixed(2)}<span className="text-sm font-normal text-muted-foreground">/mês</span>
+            <p className="text-2xl font-serif font-bold gradient-gold-text">
+              R$ {Number(subscription.plans?.price).toFixed(2)}
+              <span className="text-sm font-normal text-muted-foreground ml-1">/mês</span>
             </p>
           </CardContent>
         </Card>
       ) : (
-        <Card className="border-dashed border-primary/20">
-          <CardContent className="py-6 text-center space-y-3">
-            <Crown className="h-8 w-8 mx-auto text-muted-foreground" />
+        <Card className="border-dashed border-primary/20 animate-slide-up" style={{ animationDelay: "0.1s" }}>
+          <CardContent className="py-8 text-center space-y-4">
+            <div className="h-12 w-12 rounded-2xl bg-muted flex items-center justify-center mx-auto">
+              <Crown className="h-6 w-6 text-muted-foreground" />
+            </div>
             <p className="text-muted-foreground">Você ainda não tem um plano ativo</p>
             <Link to="/client/plans">
               <Button variant="outline">Conhecer planos</Button>
@@ -133,20 +138,23 @@ export default function ClientDashboard() {
         </Card>
       )}
 
-      <Link to="/client/booking">
-        <Button size="lg" className="w-full md:w-auto">
-          <CalendarPlus className="mr-2 h-5 w-5" />
-          Novo Agendamento
-        </Button>
-      </Link>
+      <div className="animate-slide-up" style={{ animationDelay: "0.2s" }}>
+        <Link to="/client/booking">
+          <Button size="lg" className="w-full md:w-auto">
+            <CalendarPlus className="mr-2 h-5 w-5" />
+            Novo Agendamento
+          </Button>
+        </Link>
+      </div>
 
-      <div>
-        <div className="flex items-center justify-between mb-3">
-          <h2 className="font-serif text-lg">Próximos Agendamentos</h2>
+      {/* Appointments */}
+      <div className="animate-slide-up" style={{ animationDelay: "0.3s" }}>
+        <div className="flex items-center justify-between mb-4">
+          <h2 className="font-serif text-xl tracking-tight">Agendamentos</h2>
           <div className="flex items-center gap-2">
             <Filter className="h-4 w-4 text-muted-foreground" />
             <Select value={statusFilter} onValueChange={setStatusFilter}>
-              <SelectTrigger className="w-40 h-8 text-sm">
+              <SelectTrigger className="w-40 h-9 text-sm rounded-lg">
                 <SelectValue placeholder="Status" />
               </SelectTrigger>
               <SelectContent>
@@ -164,24 +172,25 @@ export default function ClientDashboard() {
             ? appointments
             : appointments.filter((a) => a.status === statusFilter);
           return filtered.length === 0 ? (
-            <Card className="border-dashed border-primary/20">
-              <CardContent className="py-8 text-center text-muted-foreground">
+            <Card className="border-dashed border-primary/15">
+              <CardContent className="py-10 text-center text-muted-foreground">
+                <Sparkles className="h-8 w-8 mx-auto mb-3 text-muted-foreground/50" />
                 Nenhum agendamento encontrado.
               </CardContent>
             </Card>
           ) : (
             <div className="space-y-3">
-              {filtered.map((appt) => (
-                <Card key={appt.id} className="border-border">
-                  <CardContent className="py-4 flex items-center justify-between">
-                    <div>
+              {filtered.map((appt, i) => (
+                <Card key={appt.id} className="border-border/60 hover:border-primary/20 transition-all duration-300">
+                  <CardContent className="py-4 px-5 flex items-center justify-between">
+                    <div className="space-y-1">
                       <p className="font-medium">{(appt as any).services?.name}</p>
-                      <p className="text-sm text-muted-foreground flex items-center gap-1">
-                        <Clock className="h-3 w-3" />
+                      <p className="text-sm text-muted-foreground flex items-center gap-1.5">
+                        <Clock className="h-3.5 w-3.5" />
                         {new Date(appt.appointment_date).toLocaleDateString("pt-BR")} às {appt.appointment_time?.slice(0, 5)}
                       </p>
                     </div>
-                    <Badge variant="secondary" className={statusColors[appt.status]}>
+                    <Badge variant="outline" className={`${statusColors[appt.status]} border rounded-full px-3 py-1 text-xs font-medium`}>
                       {statusLabels[appt.status]}
                     </Badge>
                   </CardContent>
