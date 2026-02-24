@@ -3,7 +3,8 @@ import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { CalendarPlus, Clock, Crown } from "lucide-react";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { CalendarPlus, Clock, Crown, Filter } from "lucide-react";
 import { Link } from "react-router-dom";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Badge } from "@/components/ui/badge";
@@ -35,7 +36,7 @@ export default function ClientDashboard() {
   const [subscription, setSubscription] = useState<any | null>(null);
   const [escovasUsadas, setEscovasUsadas] = useState(0);
   const [loading, setLoading] = useState(true);
-
+  const [statusFilter, setStatusFilter] = useState("all");
   useEffect(() => {
     if (!user) return;
     const fetchData = async () => {
@@ -141,33 +142,55 @@ export default function ClientDashboard() {
       </Link>
 
       <div>
-        <h2 className="font-serif text-lg mb-3">Próximos Agendamentos</h2>
-        {appointments.length === 0 ? (
-          <Card className="border-dashed border-primary/20">
-            <CardContent className="py-8 text-center text-muted-foreground">
-              Nenhum agendamento futuro. Que tal marcar um horário?
-            </CardContent>
-          </Card>
-        ) : (
-          <div className="space-y-3">
-            {appointments.map((appt) => (
-              <Card key={appt.id} className="border-border">
-                <CardContent className="py-4 flex items-center justify-between">
-                  <div>
-                    <p className="font-medium">{(appt as any).services?.name}</p>
-                    <p className="text-sm text-muted-foreground flex items-center gap-1">
-                      <Clock className="h-3 w-3" />
-                      {new Date(appt.appointment_date).toLocaleDateString("pt-BR")} às {appt.appointment_time?.slice(0, 5)}
-                    </p>
-                  </div>
-                  <Badge variant="secondary" className={statusColors[appt.status]}>
-                    {statusLabels[appt.status]}
-                  </Badge>
-                </CardContent>
-              </Card>
-            ))}
+        <div className="flex items-center justify-between mb-3">
+          <h2 className="font-serif text-lg">Próximos Agendamentos</h2>
+          <div className="flex items-center gap-2">
+            <Filter className="h-4 w-4 text-muted-foreground" />
+            <Select value={statusFilter} onValueChange={setStatusFilter}>
+              <SelectTrigger className="w-40 h-8 text-sm">
+                <SelectValue placeholder="Status" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">Todos</SelectItem>
+                <SelectItem value="pending">Pendente</SelectItem>
+                <SelectItem value="confirmed">Confirmado</SelectItem>
+                <SelectItem value="completed">Concluído</SelectItem>
+                <SelectItem value="cancelled">Cancelado</SelectItem>
+              </SelectContent>
+            </Select>
           </div>
-        )}
+        </div>
+        {(() => {
+          const filtered = statusFilter === "all"
+            ? appointments
+            : appointments.filter((a) => a.status === statusFilter);
+          return filtered.length === 0 ? (
+            <Card className="border-dashed border-primary/20">
+              <CardContent className="py-8 text-center text-muted-foreground">
+                Nenhum agendamento encontrado.
+              </CardContent>
+            </Card>
+          ) : (
+            <div className="space-y-3">
+              {filtered.map((appt) => (
+                <Card key={appt.id} className="border-border">
+                  <CardContent className="py-4 flex items-center justify-between">
+                    <div>
+                      <p className="font-medium">{(appt as any).services?.name}</p>
+                      <p className="text-sm text-muted-foreground flex items-center gap-1">
+                        <Clock className="h-3 w-3" />
+                        {new Date(appt.appointment_date).toLocaleDateString("pt-BR")} às {appt.appointment_time?.slice(0, 5)}
+                      </p>
+                    </div>
+                    <Badge variant="secondary" className={statusColors[appt.status]}>
+                      {statusLabels[appt.status]}
+                    </Badge>
+                  </CardContent>
+                </Card>
+              ))}
+            </div>
+          );
+        })()}
       </div>
     </div>
   );
