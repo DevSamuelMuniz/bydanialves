@@ -1,103 +1,75 @@
 
-# Plano: Features Avançadas para Admin - Controle Total
+# Plano: Planos integrados ao Admin e Cliente
 
 ## Resumo
 
-Vou expandir significativamente o painel administrativo para dar visibilidade e controle total sobre clientes, agendamentos e finanças. As melhorias incluem detalhes completos de clientes, gestao de usuarios, filtros avancados na agenda e financeiro, e um log de atividades.
+O AdminPlans ja existe com CRUD completo. Agora vou integrar os planos ao lado do cliente, criando uma pagina dedicada para visualizar e assinar planos, e exibindo o plano ativo do cliente no dashboard e no fluxo de agendamento.
 
 ---
 
-## 1. Gestao de Clientes Expandida (AdminClients)
+## 1. Admin - Melhorias no AdminPlans (ja existente)
 
-**Atualmente:** Lista simples com nome e telefone.
+O AdminPlans ja possui:
+- Criar, editar, excluir planos
+- Ativar/desativar planos (toggle)
+- Visualizar assinaturas ativas e cancelar
 
-**Melhorias:**
-- Exibir email do cliente (buscar da tabela `auth.users` via edge function)
-- Mostrar quantidade de agendamentos e ultimo agendamento de cada cliente
-- Ao clicar no cliente, abrir um dialog/painel com:
-  - Historico completo de agendamentos (com status e servico)
-  - Total gasto pelo cliente
-  - Opcao de editar nome/telefone do perfil
-  - Opcao de bloquear/desbloquear cliente (novo campo `blocked` na tabela profiles)
-- Filtros: buscar por nome, telefone ou email
+**Ajuste necessario:** Adicionar a opcao de o admin atribuir manualmente um plano a um cliente (vincular assinatura pelo admin).
 
-## 2. Agenda com Filtros e Acoes (AdminAgenda)
+## 2. Cliente - Nova pagina "Meu Plano" (`/client/plans`)
 
-**Atualmente:** Lista dos ultimos 50 agendamentos com troca de status.
+Nova pagina onde o cliente pode:
+- Ver os planos disponiveis com precos, beneficios e restricoes
+- Ver seu plano atual (se tiver assinatura ativa)
+- Assinar um plano (cria registro na tabela `subscriptions`)
+- Cancelar sua assinatura ativa
 
-**Melhorias:**
-- Filtro por data (date picker para selecionar periodo)
-- Filtro por status (pendente, confirmado, concluido, cancelado)
-- Filtro por servico
-- Mostrar valor do servico em cada card
-- Botao para cancelar agendamento com confirmacao
-- Exibir notas/observacoes do agendamento
-- Campo para admin adicionar notas ao agendamento
-- Paginacao para ver mais que 50 registros
+## 3. Cliente - Dashboard integrado ao plano
 
-## 3. Financeiro Expandido (AdminFinance)
+No `ClientDashboard`, exibir:
+- Card destacado com o plano ativo do cliente (nome, preco, o que inclui)
+- Quantidade de escovas usadas no mes vs total do plano
+- Se nao tem plano, exibir CTA para conhecer os planos
 
-**Atualmente:** Lista de registros com totais simples.
+## 4. Cliente - Sidebar atualizada
 
-**Melhorias:**
-- Filtro por periodo (data inicio/fim)
-- Filtro por tipo (entrada/saida)
-- Permitir registrar tanto entradas quanto saidas (atualmente so saidas)
-- Editar e excluir registros financeiros existentes
-- Exibir cliente/servico associado quando o registro vier de um agendamento
+Adicionar item "Meu Plano" no menu lateral do cliente com icone `Crown`.
 
-## 4. Dashboard Melhorado (AdminDashboard)
+## 5. Rota no App.tsx
 
-**Atualmente:** 3 KPIs + agenda do dia.
-
-**Melhorias:**
-- KPI de agendamentos pendentes (aguardando confirmacao)
-- KPI de agendamentos da semana
-- Grafico rapido de receita dos ultimos 7 dias (mini bar chart)
-- Lista dos ultimos 5 clientes cadastrados
-
-## 5. Gestao de Usuarios/Roles (Nova pagina)
-
-**Nova rota:** `/admin/users`
-
-- Listar todos os usuarios com suas roles
-- Promover cliente para admin ou remover role admin
-- Ver status da conta (ativo, email verificado)
+Adicionar rota `/client/plans` apontando para a nova pagina.
 
 ---
 
 ## Detalhes Tecnicos
 
-### Banco de Dados
-
-1. **Novo campo `blocked` na tabela `profiles`:**
-```sql
-ALTER TABLE public.profiles ADD COLUMN blocked boolean NOT NULL DEFAULT false;
-```
-
-2. **Edge function `admin-get-users`** para buscar emails da tabela `auth.users` (nao acessivel via client SDK):
-   - Recebe lista de user_ids
-   - Retorna emails usando `supabase-admin` (service role key)
-   - Protegida: valida que o caller e admin
-
 ### Novos Arquivos
-- `src/pages/admin/AdminUsers.tsx` - pagina de gestao de roles
-- `supabase/functions/admin-get-users/index.ts` - edge function para dados de auth
+- `src/pages/client/ClientPlans.tsx` - pagina de visualizacao e assinatura de planos
 
 ### Arquivos Modificados
-- `src/pages/admin/AdminClients.tsx` - expansao com detalhes, historico, bloqueio
-- `src/pages/admin/AdminAgenda.tsx` - filtros, notas, paginacao
-- `src/pages/admin/AdminFinance.tsx` - filtros, edicao, entradas/saidas
-- `src/pages/admin/AdminDashboard.tsx` - novos KPIs e graficos
-- `src/components/admin/AdminSidebar.tsx` - novo item "Usuarios"
-- `src/App.tsx` - nova rota `/admin/users`
+- `src/pages/client/ClientDashboard.tsx` - card do plano ativo + escovas usadas no mes
+- `src/components/client/ClientSidebar.tsx` - novo item "Meu Plano"
+- `src/App.tsx` - nova rota `/client/plans`
+- `src/pages/admin/AdminPlans.tsx` - adicionar funcao de vincular plano a cliente pelo admin
+
+### Logica de escovas usadas no mes
+- Contar agendamentos do mes atual do cliente onde o servico e "Escova" (ou similar) e status != "cancelled"
+- Comparar com o numero de escovas do plano (extraido do campo `includes`, ex: "04 escovas por mes" -> 4)
+
+### Fluxo de assinatura pelo cliente
+1. Cliente acessa `/client/plans`
+2. Ve os planos ativos com cards estilizados
+3. Clica em "Assinar" -> insere na tabela `subscriptions` com `client_id = auth.uid()`, `plan_id`, `status = "active"`, `started_at = now()`, `expires_at = now() + 30 dias`
+4. Se ja tem assinatura ativa, nao pode assinar outro (botao desabilitado)
+
+### Fluxo de atribuicao pelo admin
+1. No AdminPlans, botao "Vincular Cliente"
+2. Dialog com select de clientes (busca da tabela profiles)
+3. Admin escolhe cliente e plano, cria a subscription
 
 ### Sequencia de Implementacao
-1. Migracao do banco (campo `blocked`)
-2. Edge function `admin-get-users`
-3. AdminClients expandido
-4. AdminAgenda com filtros
-5. AdminFinance expandido
-6. AdminDashboard melhorado
-7. AdminUsers (nova pagina)
-8. Sidebar e rotas atualizadas
+1. `ClientPlans.tsx` (nova pagina)
+2. `ClientSidebar.tsx` (novo item no menu)
+3. `App.tsx` (nova rota)
+4. `ClientDashboard.tsx` (card do plano ativo)
+5. `AdminPlans.tsx` (vincular cliente a plano)
