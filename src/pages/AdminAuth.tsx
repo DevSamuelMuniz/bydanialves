@@ -6,6 +6,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useToast } from "@/hooks/use-toast";
 import { ShieldCheck, Eye, EyeOff } from "lucide-react";
+import { PasswordInput } from "@/components/PasswordInput";
 import authBg from "@/assets/auth-bg.jpg";
 import logo from "@/assets/logo-dani-alves.jpg";
 import { AuthImageOverlay } from "@/components/AuthImageOverlay";
@@ -15,7 +16,6 @@ export default function AdminAuth() {
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
   const [showForgot, setShowForgot] = useState(false);
-  const [showPassword, setShowPassword] = useState(false);
   const navigate = useNavigate();
   const { toast } = useToast();
 
@@ -58,25 +58,6 @@ export default function AdminAuth() {
     setLoading(false);
   };
 
-  const PasswordInput = ({ id, value, onChange, ...props }: React.ComponentProps<"input"> & { value: string; onChange: (e: React.ChangeEvent<HTMLInputElement>) => void }) => (
-    <div className="relative">
-      <Input
-        id={id}
-        type={showPassword ? "text" : "password"}
-        value={value}
-        onChange={onChange}
-        className="h-11 pr-10"
-        {...props}
-      />
-      <button
-        type="button"
-        onClick={() => setShowPassword(!showPassword)}
-        className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors"
-      >
-        {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
-      </button>
-    </div>
-  );
 
   if (showForgot) {
     return (
