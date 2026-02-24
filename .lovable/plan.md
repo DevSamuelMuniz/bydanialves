@@ -1,75 +1,56 @@
 
-# Plano: Planos integrados ao Admin e Cliente
+# Plano: Escova gratuita para assinantes com escovas disponiveis
 
 ## Resumo
 
-O AdminPlans ja existe com CRUD completo. Agora vou integrar os planos ao lado do cliente, criando uma pagina dedicada para visualizar e assinar planos, e exibindo o plano ativo do cliente no dashboard e no fluxo de agendamento.
+Quando o cliente tiver um plano ativo com escovas disponiveis no mes, ao agendar um servico do tipo "escova", o valor exibido sera R$ 0,00 (cortesia do plano). Se ja tiver usado todas as escovas do plano, o preco normal sera cobrado. Servicos que nao sao "escova" continuam com preco normal.
 
 ---
 
-## 1. Admin - Melhorias no AdminPlans (ja existente)
+## Mudancas no fluxo de agendamento (`NewBooking.tsx`)
 
-O AdminPlans ja possui:
-- Criar, editar, excluir planos
-- Ativar/desativar planos (toggle)
-- Visualizar assinaturas ativas e cancelar
+1. **Ao carregar a pagina**, buscar tambem:
+   - A assinatura ativa do cliente (`subscriptions` com `plans(*)`)
+   - O numero de escovas ja usadas no mes atual (appointments com servico "escova", status != "cancelled")
 
-**Ajuste necessario:** Adicionar a opcao de o admin atribuir manualmente um plano a um cliente (vincular assinatura pelo admin).
+2. **No Step 1 (lista de servicos)**, ao lado do servico de escova:
+   - Se o cliente tem plano ativo E ainda tem escovas disponiveis: exibir "Cortesia do plano" e preco riscado ou R$ 0,00
+   - Se o cliente tem plano mas ja usou todas: exibir preco normal
+   - Para outros servicos: preco normal
 
-## 2. Cliente - Nova pagina "Meu Plano" (`/client/plans`)
+3. **No Step 4 (confirmacao)**:
+   - Se a escova sera coberta pelo plano: exibir "R$ 0,00 (incluso no plano)" no campo Valor
+   - Caso contrario: exibir preco normal
 
-Nova pagina onde o cliente pode:
-- Ver os planos disponiveis com precos, beneficios e restricoes
-- Ver seu plano atual (se tiver assinatura ativa)
-- Assinar um plano (cria registro na tabela `subscriptions`)
-- Cancelar sua assinatura ativa
-
-## 3. Cliente - Dashboard integrado ao plano
-
-No `ClientDashboard`, exibir:
-- Card destacado com o plano ativo do cliente (nome, preco, o que inclui)
-- Quantidade de escovas usadas no mes vs total do plano
-- Se nao tem plano, exibir CTA para conhecer os planos
-
-## 4. Cliente - Sidebar atualizada
-
-Adicionar item "Meu Plano" no menu lateral do cliente com icone `Crown`.
-
-## 5. Rota no App.tsx
-
-Adicionar rota `/client/plans` apontando para a nova pagina.
+4. **Logica de verificacao**: servico e "escova" se `service.name.toLowerCase().includes("escova")`. Escovas disponiveis = total do plano (parseado do campo `includes`) menos escovas usadas no mes.
 
 ---
 
 ## Detalhes Tecnicos
 
-### Novos Arquivos
-- `src/pages/client/ClientPlans.tsx` - pagina de visualizacao e assinatura de planos
+### Arquivo modificado: `src/pages/client/NewBooking.tsx`
 
-### Arquivos Modificados
-- `src/pages/client/ClientDashboard.tsx` - card do plano ativo + escovas usadas no mes
-- `src/components/client/ClientSidebar.tsx` - novo item "Meu Plano"
-- `src/App.tsx` - nova rota `/client/plans`
-- `src/pages/admin/AdminPlans.tsx` - adicionar funcao de vincular plano a cliente pelo admin
+**Novos estados:**
+- `subscription` - assinatura ativa do cliente (com `plans(*)`)
+- `escovasUsadas` - contagem de escovas usadas no mes
+- `escovasDisponiveis` - calculado: total do plano - usadas
 
-### Logica de escovas usadas no mes
-- Contar agendamentos do mes atual do cliente onde o servico e "Escova" (ou similar) e status != "cancelled"
-- Comparar com o numero de escovas do plano (extraido do campo `includes`, ex: "04 escovas por mes" -> 4)
+**Novos fetches no useEffect inicial:**
+- `supabase.from("subscriptions").select("*, plans(*)").eq("client_id", user.id).eq("status", "active").maybeSingle()`
+- `supabase.from("appointments").select("*, services(name)").eq("client_id", user.id).gte("appointment_date", startOfMonth).lte("appointment_date", endOfMonth).neq("status", "cancelled")` e filtrar por servicos com nome contendo "escova"
 
-### Fluxo de assinatura pelo cliente
-1. Cliente acessa `/client/plans`
-2. Ve os planos ativos com cards estilizados
-3. Clica em "Assinar" -> insere na tabela `subscriptions` com `client_id = auth.uid()`, `plan_id`, `status = "active"`, `started_at = now()`, `expires_at = now() + 30 dias`
-4. Se ja tem assinatura ativa, nao pode assinar outro (botao desabilitado)
+**Funcao auxiliar:**
+- Reutilizar `parseEscovasFromIncludes()` (mesma logica do `ClientDashboard`)
 
-### Fluxo de atribuicao pelo admin
-1. No AdminPlans, botao "Vincular Cliente"
-2. Dialog com select de clientes (busca da tabela profiles)
-3. Admin escolhe cliente e plano, cria a subscription
+**Calculo `isFreeEscova`:**
+- `const isEscova = selectedService?.name?.toLowerCase().includes("escova")`
+- `const isFreeEscova = isEscova && escovasDisponiveis > 0`
 
-### Sequencia de Implementacao
-1. `ClientPlans.tsx` (nova pagina)
-2. `ClientSidebar.tsx` (novo item no menu)
-3. `App.tsx` (nova rota)
-4. `ClientDashboard.tsx` (card do plano ativo)
-5. `AdminPlans.tsx` (vincular cliente a plano)
+**Exibicao no Step 1 (card do servico):**
+- Se escova + escovas disponiveis > 0: mostrar preco riscado + badge "Incluso no plano"
+- Senao: preco normal
+
+**Exibicao no Step 4 (confirmacao):**
+- Valor: `isFreeEscova ? "R$ 0,00 (incluso no plano)" : "R$ " + price`
+
+**Nenhuma mudanca no insert** do appointment - o agendamento continua sendo inserido normalmente. A diferenca e apenas visual (o preco exibido). A cobranca real pode ser controlada pelo admin no fluxo financeiro.
