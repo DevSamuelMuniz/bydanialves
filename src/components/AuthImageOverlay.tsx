@@ -11,10 +11,6 @@ export function AuthImageOverlay({ imageSrc }: AuthImageOverlayProps) {
       <img src={imageSrc} alt="Salão de beleza" className="absolute inset-0 w-full h-full object-cover" />
       <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/40 to-black/20" />
       
-      {/* Logo */}
-      <div className="relative z-10 p-8">
-        <img src={logo} alt="Dani Alves" className="h-16 w-16 rounded-full object-cover border-2 border-white/30 shadow-lg" />
-      </div>
 
       {/* Content */}
       <div className="relative z-10 mt-auto p-10 space-y-6">
