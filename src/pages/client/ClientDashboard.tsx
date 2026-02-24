@@ -50,9 +50,8 @@ export default function ClientDashboard() {
           .from("appointments")
           .select("*, services(name, price, duration_minutes)")
           .eq("client_id", user.id)
-          .gte("appointment_date", new Date().toISOString().split("T")[0])
-          .order("appointment_date", { ascending: true })
-          .limit(5),
+          .order("appointment_date", { ascending: false })
+          .order("appointment_time", { ascending: false }),
         supabase.from("subscriptions").select("*, plans(*)").eq("client_id", user.id).eq("status", "active").maybeSingle(),
         supabase
           .from("appointments")
