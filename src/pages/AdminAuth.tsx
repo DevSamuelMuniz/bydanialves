@@ -75,7 +75,7 @@ export default function AdminAuth() {
             <form onSubmit={handleForgotPassword} className="space-y-4">
               <div className="space-y-2">
                 <Label htmlFor="email">E-mail</Label>
-                <Input id="email" type="email" value={email} onChange={(e) => setEmail(e.target.value)} required className="h-11" />
+                <Input id="email" type="email" value={email} onChange={(e) => setEmail(e.target.value)} required className="h-11" placeholder="Digite seu e-mail" />
               </div>
               <Button type="submit" className="w-full h-11" disabled={loading}>
                 {loading ? "Enviando..." : "Enviar link de recuperação"}
@@ -103,11 +103,11 @@ export default function AdminAuth() {
           <form onSubmit={handleLogin} className="space-y-4">
             <div className="space-y-2">
               <Label htmlFor="admin-email">E-mail</Label>
-              <Input id="admin-email" type="email" value={email} onChange={(e) => setEmail(e.target.value)} required className="h-11" />
+              <Input id="admin-email" type="email" value={email} onChange={(e) => setEmail(e.target.value)} required className="h-11" placeholder="Digite seu e-mail" />
             </div>
             <div className="space-y-2">
               <Label htmlFor="admin-password">Senha</Label>
-              <PasswordInput id="admin-password" value={password} onChange={(e) => setPassword(e.target.value)} required />
+              <PasswordInput id="admin-password" value={password} onChange={(e) => setPassword(e.target.value)} required placeholder="Digite sua senha" />
             </div>
             <Button type="submit" className="w-full h-11" disabled={loading}>
               {loading ? "Entrando..." : "Entrar como Administrador"}
