@@ -19,7 +19,7 @@ export function AuthImageOverlay({ imageSrc }: AuthImageOverlayProps) {
       {/* Content */}
       <div className="relative z-10 mt-auto p-10 space-y-6">
         <h2 className="font-serif text-3xl font-bold text-white tracking-tight">
-          Dani Alves Studio
+          ESMALTERIA DANIELLA ALVES
         </h2>
         <p className="text-white/80 text-base leading-relaxed max-w-sm">
           Transforme seu visual com profissionais especializados. Agende online e aproveite uma experiência única.
