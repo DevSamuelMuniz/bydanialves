@@ -9,9 +9,9 @@ const corsHeaders = {
 
 // Map Stripe price IDs to DB plan IDs
 const PRICE_PLAN_MAP: Record<string, string> = {
-  "price_1T4BUGCYbhQ9R1GXkj34MsYP": "ef1be08b-36ce-4f36-8a5a-ec573bddc2e9", // BASIC CHIC
-  "price_1T4BUZCYbhQ9R1GXJ0O1ynoB": "545c2bea-6561-41bb-8be5-4d3a7dd185a4", // FASHION
-  "price_1T4BUlCYbhQ9R1GXeadYhSJy": "5c23ef55-ba6f-4820-bf17-b29e1879f79c", // GLAMOUR
+  "price_1T4BUGCYbhQ9R1GXkj34MsYP": "ef1be08b-36ce-4f36-8a5a-ec573bddc2e9",
+  "price_1T4BUZCYbhQ9R1GXJ0O1ynoB": "545c2bea-6561-41bb-8be5-4d3a7dd185a4",
+  "price_1T4BUlCYbhQ9R1GXeadYhSJy": "5c23ef55-ba6f-4820-bf17-b29e1879f79c",
 };
 
 const logStep = (step: string, details?: any) => {
@@ -50,7 +50,14 @@ serve(async (req) => {
     const customers = await stripe.customers.list({ email: user.email, limit: 1 });
 
     if (customers.data.length === 0) {
-      logStep("No Stripe customer found");
+      logStep("No Stripe customer found, cancelling any DB subscriptions");
+      // Cancel any active DB subscriptions since there's no Stripe customer
+      await supabaseClient
+        .from("subscriptions")
+        .update({ status: "cancelled" })
+        .eq("client_id", user.id)
+        .eq("status", "active");
+
       return new Response(JSON.stringify({ subscribed: false }), {
         headers: { ...corsHeaders, "Content-Type": "application/json" },
         status: 200,
@@ -60,6 +67,7 @@ serve(async (req) => {
     const customerId = customers.data[0].id;
     logStep("Found customer", { customerId });
 
+    // Check for active subscriptions
     const subscriptions = await stripe.subscriptions.list({
       customer: customerId,
       status: "active",
@@ -72,31 +80,69 @@ serve(async (req) => {
 
     if (hasActiveSub) {
       const sub = subscriptions.data[0];
-      subscriptionEnd = new Date(sub.current_period_end * 1000).toISOString();
-      const priceId = sub.items.data[0].price.id;
-      planId = PRICE_PLAN_MAP[priceId] || null;
-      logStep("Active subscription", { priceId, planId, subscriptionEnd });
+      
+      // Safely convert timestamps
+      const endTimestamp = sub.current_period_end;
+      const startTimestamp = sub.current_period_start;
+      
+      if (endTimestamp && typeof endTimestamp === 'number') {
+        subscriptionEnd = new Date(endTimestamp * 1000).toISOString();
+      }
+      
+      const startDate = (startTimestamp && typeof startTimestamp === 'number') 
+        ? new Date(startTimestamp * 1000).toISOString() 
+        : new Date().toISOString();
 
-      // Sync to DB: upsert subscription record
-      // First cancel any existing active subscriptions
-      await supabaseClient
-        .from("subscriptions")
-        .update({ status: "cancelled" })
-        .eq("client_id", user.id)
-        .eq("status", "active");
+      const priceId = sub.items.data[0]?.price?.id;
+      planId = priceId ? (PRICE_PLAN_MAP[priceId] || null) : null;
+      logStep("Active subscription found", { priceId, planId, subscriptionEnd });
 
       if (planId) {
-        await supabaseClient.from("subscriptions").insert({
-          client_id: user.id,
-          plan_id: planId,
-          status: "active",
-          started_at: new Date(sub.current_period_start * 1000).toISOString(),
-          expires_at: subscriptionEnd,
-        });
+        // Cancel any existing active DB subscriptions first
+        await supabaseClient
+          .from("subscriptions")
+          .update({ status: "cancelled" })
+          .eq("client_id", user.id)
+          .eq("status", "active")
+          .neq("plan_id", planId);
+
+        // Check if we already have this exact active subscription in DB
+        const { data: existingSub } = await supabaseClient
+          .from("subscriptions")
+          .select("id")
+          .eq("client_id", user.id)
+          .eq("plan_id", planId)
+          .eq("status", "active")
+          .maybeSingle();
+
+        if (existingSub) {
+          // Update expiry
+          await supabaseClient
+            .from("subscriptions")
+            .update({ expires_at: subscriptionEnd })
+            .eq("id", existingSub.id);
+          logStep("Updated existing DB subscription");
+        } else {
+          // Cancel all other active subs and insert new one
+          await supabaseClient
+            .from("subscriptions")
+            .update({ status: "cancelled" })
+            .eq("client_id", user.id)
+            .eq("status", "active");
+
+          await supabaseClient.from("subscriptions").insert({
+            client_id: user.id,
+            plan_id: planId,
+            status: "active",
+            started_at: startDate,
+            expires_at: subscriptionEnd,
+          });
+          logStep("Inserted new DB subscription");
+        }
       }
     } else {
-      logStep("No active subscription");
-      // Cancel DB subscriptions if no Stripe sub
+      logStep("No active Stripe subscription - cancelling DB subscriptions");
+      // No active Stripe sub = cancel all DB subs
       await supabaseClient
         .from("subscriptions")
         .update({ status: "cancelled" })

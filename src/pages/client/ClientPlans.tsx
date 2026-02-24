@@ -57,16 +57,35 @@ export default function ClientPlans() {
 
   useEffect(() => { fetchData(); }, [user]);
 
-  // Handle success/cancel from Stripe checkout
+  // Handle success/cancel from Stripe checkout with polling
   useEffect(() => {
     if (searchParams.get("success") === "true") {
-      toast({ title: "Assinatura realizada com sucesso! 🎉", description: "Seu plano foi ativado." });
-      checkStripeSubscription();
+      toast({ title: "Pagamento processado! 🎉", description: "Verificando sua assinatura..." });
+      // Poll a few times to wait for Stripe to process
+      let attempts = 0;
+      const poll = setInterval(async () => {
+        attempts++;
+        await checkStripeSubscription();
+        if (stripeSubscription?.subscribed || attempts >= 5) {
+          clearInterval(poll);
+          if (stripeSubscription?.subscribed) {
+            toast({ title: "Assinatura ativada com sucesso! 🎉" });
+          }
+        }
+      }, 3000);
+      return () => clearInterval(poll);
     }
     if (searchParams.get("canceled") === "true") {
       toast({ title: "Checkout cancelado", description: "Você pode tentar novamente quando quiser.", variant: "destructive" });
     }
   }, [searchParams]);
+
+  // Periodic check every 60s
+  useEffect(() => {
+    if (!user) return;
+    const interval = setInterval(checkStripeSubscription, 60000);
+    return () => clearInterval(interval);
+  }, [user]);
 
   const handleCheckout = async (planId: string) => {
     if (!user || actionLoading) return;
