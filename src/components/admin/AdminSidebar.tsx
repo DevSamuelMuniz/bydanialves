@@ -13,6 +13,7 @@ import {
 } from "@/components/ui/sidebar";
 import { LayoutDashboard, Users, Calendar, Scissors, DollarSign, BarChart3, LogOut, ShieldCheck, Crown } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import logoImg from "@/assets/logo-dani-alves.jpg";
 
 const items = [
   { title: "Dashboard", url: "/admin", icon: LayoutDashboard },
@@ -30,14 +31,15 @@ export function AdminSidebar() {
 
   return (
     <Sidebar className="border-r border-sidebar-border/60">
-      <div className="p-4 pb-2">
-        <div className="flex items-center gap-2 px-2">
-          <div className="h-8 w-8 rounded-lg gradient-gold flex items-center justify-center shadow-gold">
-            <ShieldCheck className="h-4 w-4 text-primary-foreground" />
-          </div>
-          <span className="font-serif text-base font-semibold tracking-tight text-sidebar-foreground">Admin</span>
-        </div>
+      {/* Logo */}
+      <div className="p-4 pb-3 flex items-center justify-center border-b border-sidebar-border/40">
+        <img
+          src={logoImg}
+          alt="Dani Alves Esmalteria"
+          className="h-16 w-auto object-contain"
+        />
       </div>
+
       <SidebarContent>
         <SidebarGroup>
           <SidebarGroupLabel className="text-xs uppercase tracking-wider text-muted-foreground font-sans font-medium px-4">
