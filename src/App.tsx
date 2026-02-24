@@ -24,7 +24,7 @@ import AdminFinance from "./pages/admin/AdminFinance";
 import AdminReports from "./pages/admin/AdminReports";
 import AdminUsers from "./pages/admin/AdminUsers";
 import AdminPlans from "./pages/admin/AdminPlans";
-
+import AdminProfile from "./pages/admin/AdminProfile";
 const queryClient = new QueryClient();
 
 function AuthRedirect() {
@@ -66,6 +66,7 @@ const App = () => (
               <Route path="finance" element={<AdminFinance />} />
               <Route path="reports" element={<AdminReports />} />
               <Route path="users" element={<AdminUsers />} />
+              <Route path="profile" element={<AdminProfile />} />
             </Route>
 
             <Route path="*" element={<NotFound />} />
