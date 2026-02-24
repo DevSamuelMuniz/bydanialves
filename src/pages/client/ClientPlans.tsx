@@ -6,78 +6,100 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useToast } from "@/hooks/use-toast";
-import { Crown, Check, AlertTriangle, Sparkles, ArrowRightLeft } from "lucide-react";
+import { Crown, Check, AlertTriangle, Sparkles, ArrowRightLeft, CreditCard, Settings } from "lucide-react";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
+import { useSearchParams } from "react-router-dom";
 
 export default function ClientPlans() {
   const { user } = useAuth();
   const { toast } = useToast();
   const [plans, setPlans] = useState<any[]>([]);
   const [subscription, setSubscription] = useState<any | null>(null);
+  const [stripeSubscription, setStripeSubscription] = useState<{ subscribed: boolean; plan_id: string | null; subscription_end: string | null } | null>(null);
   const [loading, setLoading] = useState(true);
   const [actionLoading, setActionLoading] = useState(false);
+  const [searchParams] = useSearchParams();
+
+  const fetchPlans = async () => {
+    const { data } = await supabase.from("plans").select("*").eq("active", true).order("price");
+    setPlans(data || []);
+  };
+
+  const checkStripeSubscription = async () => {
+    try {
+      const { data, error } = await supabase.functions.invoke("check-subscription");
+      if (error) throw error;
+      setStripeSubscription(data);
+      if (data?.subscribed && data?.plan_id) {
+        // Refresh local subscription from DB (synced by edge function)
+        const { data: subData } = await supabase
+          .from("subscriptions")
+          .select("*, plans(*)")
+          .eq("client_id", user!.id)
+          .eq("status", "active")
+          .maybeSingle();
+        setSubscription(subData);
+      } else {
+        setSubscription(null);
+      }
+    } catch (err) {
+      console.error("Error checking subscription:", err);
+    }
+  };
 
   const fetchData = async () => {
     if (!user) return;
     setLoading(true);
-    const [plansRes, subRes] = await Promise.all([
-      supabase.from("plans").select("*").eq("active", true).order("price"),
-      supabase.from("subscriptions").select("*, plans(*)").eq("client_id", user.id).eq("status", "active").maybeSingle(),
-    ]);
-    setPlans(plansRes.data || []);
-    setSubscription(subRes.data);
+    await fetchPlans();
+    await checkStripeSubscription();
     setLoading(false);
   };
 
   useEffect(() => { fetchData(); }, [user]);
 
-  const handleSubscribe = async (planId: string) => {
+  // Handle success/cancel from Stripe checkout
+  useEffect(() => {
+    if (searchParams.get("success") === "true") {
+      toast({ title: "Assinatura realizada com sucesso! 🎉", description: "Seu plano foi ativado." });
+      checkStripeSubscription();
+    }
+    if (searchParams.get("canceled") === "true") {
+      toast({ title: "Checkout cancelado", description: "Você pode tentar novamente quando quiser.", variant: "destructive" });
+    }
+  }, [searchParams]);
+
+  const handleCheckout = async (planId: string) => {
     if (!user || actionLoading) return;
     setActionLoading(true);
-
-    // If there's an existing subscription, cancel it first
-    if (subscription) {
-      const { error: cancelError } = await supabase
-        .from("subscriptions")
-        .update({ status: "cancelled" })
-        .eq("id", subscription.id);
-      if (cancelError) {
-        toast({ title: "Erro ao trocar plano", description: cancelError.message, variant: "destructive" });
-        setActionLoading(false);
-        return;
+    try {
+      const { data, error } = await supabase.functions.invoke("create-checkout", {
+        body: { planId },
+      });
+      if (error) throw error;
+      if (data?.url) {
+        window.open(data.url, "_blank");
       }
-    }
-
-    const expiresAt = new Date();
-    expiresAt.setDate(expiresAt.getDate() + 30);
-    const { error } = await supabase.from("subscriptions").insert({
-      client_id: user.id,
-      plan_id: planId,
-      status: "active",
-      expires_at: expiresAt.toISOString(),
-    });
-    if (error) {
-      toast({ title: "Erro", description: error.message, variant: "destructive" });
+    } catch (err: any) {
+      toast({ title: "Erro ao iniciar checkout", description: err.message, variant: "destructive" });
+    } finally {
       setActionLoading(false);
-      return;
     }
-    toast({ title: subscription ? "Plano trocado com sucesso! 🎉" : "Plano assinado com sucesso! 🎉" });
-    setActionLoading(false);
-    fetchData();
   };
 
-  const handleCancel = async () => {
-    if (!subscription || actionLoading) return;
+  const handleManageSubscription = async () => {
+    if (actionLoading) return;
     setActionLoading(true);
-    const { error } = await supabase.from("subscriptions").update({ status: "cancelled" }).eq("id", subscription.id);
-    if (error) {
-      toast({ title: "Erro", description: error.message, variant: "destructive" });
+    try {
+      const { data, error } = await supabase.functions.invoke("customer-portal");
+      if (error) throw error;
+      if (data?.url) {
+        window.open(data.url, "_blank");
+      }
+    } catch (err: any) {
+      toast({ title: "Erro", description: err.message, variant: "destructive" });
+    } finally {
       setActionLoading(false);
-      return;
     }
-    toast({ title: "Assinatura cancelada." });
-    setActionLoading(false);
-    fetchData();
   };
 
   if (loading) return (
@@ -112,26 +134,18 @@ export default function ClientPlans() {
             <p className="text-xl font-serif font-bold gradient-gold-text">{subscription.plans?.name}</p>
             <p className="text-sm text-muted-foreground">{subscription.plans?.includes}</p>
             <p className="text-sm text-muted-foreground">
-              Desde {new Date(subscription.started_at).toLocaleDateString("pt-BR")}
-              {subscription.expires_at && ` — expira em ${new Date(subscription.expires_at).toLocaleDateString("pt-BR")}`}
+              {stripeSubscription?.subscription_end && (
+                <>Válido até {new Date(stripeSubscription.subscription_end).toLocaleDateString("pt-BR")}</>
+              )}
             </p>
-            <AlertDialog>
-              <AlertDialogTrigger asChild>
-                <Button variant="outline" size="sm" className="mt-2" disabled={actionLoading}>
-                  Cancelar assinatura
-                </Button>
-              </AlertDialogTrigger>
-              <AlertDialogContent>
-                <AlertDialogHeader>
-                  <AlertDialogTitle>Cancelar assinatura?</AlertDialogTitle>
-                  <AlertDialogDescription>Você perderá acesso aos benefícios do plano.</AlertDialogDescription>
-                </AlertDialogHeader>
-                <AlertDialogFooter>
-                  <AlertDialogCancel>Voltar</AlertDialogCancel>
-                  <AlertDialogAction onClick={handleCancel}>Confirmar cancelamento</AlertDialogAction>
-                </AlertDialogFooter>
-              </AlertDialogContent>
-            </AlertDialog>
+            <div className="flex gap-2 mt-2">
+              <Button variant="outline" size="sm" onClick={handleManageSubscription} disabled={actionLoading}>
+                <Settings className="mr-1.5 h-4 w-4" /> Gerenciar assinatura
+              </Button>
+              <Button variant="ghost" size="sm" onClick={checkStripeSubscription} disabled={actionLoading}>
+                Atualizar status
+              </Button>
+            </div>
           </CardContent>
         </Card>
       )}
@@ -211,29 +225,15 @@ export default function ClientPlans() {
                     <Button className="w-full" disabled>
                       <Check className="mr-2 h-4 w-4" /> Plano atual
                     </Button>
-                  ) : subscription ? (
-                    <AlertDialog>
-                      <AlertDialogTrigger asChild>
-                        <Button variant="outline" className="w-full" disabled={actionLoading}>
-                          <ArrowRightLeft className="mr-2 h-4 w-4" /> Trocar para este
-                        </Button>
-                      </AlertDialogTrigger>
-                      <AlertDialogContent>
-                        <AlertDialogHeader>
-                          <AlertDialogTitle>Trocar de plano?</AlertDialogTitle>
-                          <AlertDialogDescription>
-                            Seu plano atual ({subscription.plans?.name}) será cancelado e você passará para o plano {p.name}.
-                          </AlertDialogDescription>
-                        </AlertDialogHeader>
-                        <AlertDialogFooter>
-                          <AlertDialogCancel>Voltar</AlertDialogCancel>
-                          <AlertDialogAction onClick={() => handleSubscribe(p.id)}>Confirmar troca</AlertDialogAction>
-                        </AlertDialogFooter>
-                      </AlertDialogContent>
-                    </AlertDialog>
                   ) : (
-                    <Button className={`w-full ${isMidPlan ? "" : "variant-outline"}`} variant={isMidPlan ? "default" : "outline"} onClick={() => handleSubscribe(p.id)} disabled={actionLoading}>
-                      {actionLoading ? "Processando..." : "Assinar agora"}
+                    <Button
+                      className={`w-full`}
+                      variant={isMidPlan ? "default" : "outline"}
+                      onClick={() => handleCheckout(p.id)}
+                      disabled={actionLoading}
+                    >
+                      <CreditCard className="mr-2 h-4 w-4" />
+                      {actionLoading ? "Processando..." : subscription ? "Trocar plano" : "Assinar agora"}
                     </Button>
                   )}
                 </div>
