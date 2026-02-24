@@ -62,14 +62,14 @@ export default function NewBooking() {
 
         const { data: appointments } = await supabase
           .from("appointments")
-          .select("*, services(name)")
+          .select("*, services(name, is_system)")
           .eq("client_id", user.id)
           .gte("appointment_date", startOfMonth)
           .lte("appointment_date", endStr)
           .neq("status", "cancelled");
 
         const escovasUsadas = (appointments || []).filter((a: any) =>
-          a.services?.name?.toLowerCase().includes("escova")
+          a.services?.is_system === true
         ).length;
 
         setEscovasDisponiveis(Math.max(0, totalEscovas - escovasUsadas));
@@ -96,10 +96,9 @@ export default function NewBooking() {
       });
   }, [selectedDate]);
 
-  const isEscova = (serviceName: string) =>
-    serviceName?.toLowerCase().includes("escova");
+  const isEscovaService = (service: any) => !!service?.is_system;
 
-  const isFreeEscova = selectedService && isEscova(selectedService.name) && escovasDisponiveis > 0;
+  const isFreeEscova = selectedService && isEscovaService(selectedService) && escovasDisponiveis > 0;
 
   const handleConfirm = async () => {
     if (!user || !selectedService || !selectedDate || !selectedTime) return;
@@ -151,7 +150,7 @@ export default function NewBooking() {
         <div className="space-y-3">
           <p className="text-muted-foreground">Escolha o serviço</p>
           {services.map((s) => {
-            const escova = isEscova(s.name);
+            const escova = isEscovaService(s);
             const free = escova && escovasDisponiveis > 0;
             return (
               <Card

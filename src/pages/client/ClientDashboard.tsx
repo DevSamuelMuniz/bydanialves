@@ -55,7 +55,7 @@ export default function ClientDashboard() {
         supabase.from("subscriptions").select("*, plans(*)").eq("client_id", user.id).eq("status", "active").maybeSingle(),
         supabase
           .from("appointments")
-          .select("*, services(name)")
+          .select("*, services(name, is_system)")
           .eq("client_id", user.id)
           .gte("appointment_date", startOfMonth)
           .lte("appointment_date", endOfMonth)
@@ -67,7 +67,7 @@ export default function ClientDashboard() {
 
       // Count escovas used
       const escovas = (escovasRes.data || []).filter((a: any) =>
-        a.services?.name?.toLowerCase().includes("escova")
+        a.services?.is_system === true
       );
       setEscovasUsadas(escovas.length);
       setLoading(false);

@@ -67,8 +67,14 @@ export default function AdminServices() {
                 <p className="text-sm text-muted-foreground">{s.duration_minutes} min — R$ {Number(s.price).toFixed(2)}</p>
               </div>
               <div className="flex items-center gap-3">
-                <Switch checked={s.active} onCheckedChange={(v) => toggleActive(s.id, v)} />
-                <Button variant="ghost" size="icon" onClick={() => openEdit(s)}><Pencil className="h-4 w-4" /></Button>
+                {s.is_system ? (
+                  <span className="text-xs text-muted-foreground italic">Padrão do sistema</span>
+                ) : (
+                  <>
+                    <Switch checked={s.active} onCheckedChange={(v) => toggleActive(s.id, v)} />
+                    <Button variant="ghost" size="icon" onClick={() => openEdit(s)}><Pencil className="h-4 w-4" /></Button>
+                  </>
+                )}
               </div>
             </CardContent>
           </Card>
