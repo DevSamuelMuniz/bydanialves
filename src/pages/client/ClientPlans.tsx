@@ -137,64 +137,106 @@ export default function ClientPlans() {
       )}
 
       {/* Available plans */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
         {plans.map((p, i) => {
           const isCurrentPlan = subscription?.plan_id === p.id;
+          const isMidPlan = plans.length >= 3 && i === 1;
+          const includesList = p.includes ? p.includes.split(/[,;•\n]+/).map((s: string) => s.trim()).filter(Boolean) : [];
+
           return (
             <Card
               key={p.id}
-              className={`border-border/60 relative animate-slide-up ${isCurrentPlan ? "ring-2 ring-primary shadow-gold" : ""}`}
+              className={`relative animate-slide-up overflow-hidden transition-all duration-300 flex flex-col
+                ${isCurrentPlan
+                  ? "ring-2 ring-primary shadow-gold border-primary/30"
+                  : isMidPlan
+                    ? "border-primary/25 shadow-elevated scale-[1.03] md:scale-105 z-10"
+                    : "border-border/50 hover:border-primary/20 hover:shadow-elevated"
+                }`}
               style={{ animationDelay: `${0.15 + i * 0.05}s` }}
             >
+              {/* Top accent bar */}
+              <div className={`h-1.5 w-full ${isCurrentPlan || isMidPlan ? "gradient-gold" : "bg-border/60"}`} />
+
               {isCurrentPlan && (
-                <Badge className="absolute -top-2.5 left-4 gradient-gold text-primary-foreground border-0 shadow-sm">
-                  Atual
+                <Badge className="absolute top-4 right-4 gradient-gold text-primary-foreground border-0 shadow-sm text-xs">
+                  ✓ Atual
                 </Badge>
               )}
-              <CardHeader className="pb-2">
-                <CardTitle className="font-serif text-lg tracking-tight">{p.name}</CardTitle>
-                {p.description && <p className="text-xs text-muted-foreground">{p.description}</p>}
+              {!isCurrentPlan && isMidPlan && !subscription && (
+                <Badge className="absolute top-4 right-4 bg-primary/10 text-primary border border-primary/20 text-xs">
+                  ★ Popular
+                </Badge>
+              )}
+
+              <CardHeader className="pb-1 pt-5">
+                <div className="h-10 w-10 rounded-xl bg-primary/10 flex items-center justify-center mb-3">
+                  <Crown className={`h-5 w-5 ${isCurrentPlan || isMidPlan ? "text-primary" : "text-muted-foreground"}`} />
+                </div>
+                <CardTitle className="font-serif text-xl tracking-tight">{p.name}</CardTitle>
+                {p.description && <p className="text-sm text-muted-foreground mt-1">{p.description}</p>}
               </CardHeader>
-              <CardContent className="space-y-3">
-                <p className="text-2xl font-serif font-bold gradient-gold-text">
-                  R$ {Number(p.price).toFixed(2)}
-                  <span className="text-sm font-normal text-muted-foreground ml-1">/mês</span>
-                </p>
-                <p className="text-sm">{p.includes}</p>
+
+              <CardContent className="space-y-5 flex-1 flex flex-col">
+                {/* Price */}
+                <div className="pt-1">
+                  <p className="text-3xl font-serif font-bold tracking-tight">
+                    <span className="gradient-gold-text">R$ {Number(p.price).toFixed(2)}</span>
+                  </p>
+                  <p className="text-sm text-muted-foreground mt-0.5">/mês</p>
+                </div>
+
+                {/* Divider */}
+                <div className="h-px bg-border/60" />
+
+                {/* Features list */}
+                <ul className="space-y-2.5 flex-1">
+                  {includesList.map((item: string, idx: number) => (
+                    <li key={idx} className="flex items-start gap-2.5 text-sm">
+                      <Check className="h-4 w-4 text-primary mt-0.5 shrink-0" />
+                      <span>{item}</span>
+                    </li>
+                  ))}
+                </ul>
+
                 {p.restriction && (
-                  <p className="text-xs text-muted-foreground flex items-center gap-1">
-                    <AlertTriangle className="h-3 w-3" /> {p.restriction}
+                  <p className="text-xs text-muted-foreground flex items-center gap-1.5 bg-muted/50 rounded-lg px-3 py-2">
+                    <AlertTriangle className="h-3.5 w-3.5 shrink-0" /> {p.restriction}
                   </p>
                 )}
-                {isCurrentPlan ? (
-                  <Button className="w-full mt-2" disabled>
-                    <Check className="mr-2 h-4 w-4" /> Plano atual
-                  </Button>
-                ) : subscription ? (
-                  <AlertDialog>
-                    <AlertDialogTrigger asChild>
-                      <Button variant="outline" className="w-full mt-2" disabled={actionLoading}>
-                        <ArrowRightLeft className="mr-2 h-4 w-4" /> Trocar para este
-                      </Button>
-                    </AlertDialogTrigger>
-                    <AlertDialogContent>
-                      <AlertDialogHeader>
-                        <AlertDialogTitle>Trocar de plano?</AlertDialogTitle>
-                        <AlertDialogDescription>
-                          Seu plano atual ({subscription.plans?.name}) será cancelado e você passará para o plano {p.name}.
-                        </AlertDialogDescription>
-                      </AlertDialogHeader>
-                      <AlertDialogFooter>
-                        <AlertDialogCancel>Voltar</AlertDialogCancel>
-                        <AlertDialogAction onClick={() => handleSubscribe(p.id)}>Confirmar troca</AlertDialogAction>
-                      </AlertDialogFooter>
-                    </AlertDialogContent>
-                  </AlertDialog>
-                ) : (
-                  <Button className="w-full mt-2" onClick={() => handleSubscribe(p.id)} disabled={actionLoading}>
-                    {actionLoading ? "Processando..." : "Assinar"}
-                  </Button>
-                )}
+
+                {/* Action */}
+                <div className="pt-2">
+                  {isCurrentPlan ? (
+                    <Button className="w-full" disabled>
+                      <Check className="mr-2 h-4 w-4" /> Plano atual
+                    </Button>
+                  ) : subscription ? (
+                    <AlertDialog>
+                      <AlertDialogTrigger asChild>
+                        <Button variant="outline" className="w-full" disabled={actionLoading}>
+                          <ArrowRightLeft className="mr-2 h-4 w-4" /> Trocar para este
+                        </Button>
+                      </AlertDialogTrigger>
+                      <AlertDialogContent>
+                        <AlertDialogHeader>
+                          <AlertDialogTitle>Trocar de plano?</AlertDialogTitle>
+                          <AlertDialogDescription>
+                            Seu plano atual ({subscription.plans?.name}) será cancelado e você passará para o plano {p.name}.
+                          </AlertDialogDescription>
+                        </AlertDialogHeader>
+                        <AlertDialogFooter>
+                          <AlertDialogCancel>Voltar</AlertDialogCancel>
+                          <AlertDialogAction onClick={() => handleSubscribe(p.id)}>Confirmar troca</AlertDialogAction>
+                        </AlertDialogFooter>
+                      </AlertDialogContent>
+                    </AlertDialog>
+                  ) : (
+                    <Button className={`w-full ${isMidPlan ? "" : "variant-outline"}`} variant={isMidPlan ? "default" : "outline"} onClick={() => handleSubscribe(p.id)} disabled={actionLoading}>
+                      {actionLoading ? "Processando..." : "Assinar agora"}
+                    </Button>
+                  )}
+                </div>
               </CardContent>
             </Card>
           );
