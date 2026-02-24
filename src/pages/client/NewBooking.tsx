@@ -6,12 +6,18 @@ import { Button } from "@/components/ui/button";
 import { Calendar } from "@/components/ui/calendar";
 import { useToast } from "@/hooks/use-toast";
 import { Skeleton } from "@/components/ui/skeleton";
+import { Badge } from "@/components/ui/badge";
 import { Check, ChevronLeft } from "lucide-react";
 
 const TIME_SLOTS = [
   "08:00", "09:00", "10:00", "11:00",
   "13:00", "14:00", "15:00", "16:00", "17:00",
 ];
+
+function parseEscovasFromIncludes(includes: string): number {
+  const match = includes.match(/(\d+)\s*escova/i);
+  return match ? parseInt(match[1], 10) : 0;
+}
 
 export default function NewBooking() {
   const { user } = useAuth();
@@ -24,13 +30,58 @@ export default function NewBooking() {
   const [bookedSlots, setBookedSlots] = useState<string[]>([]);
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
+  const [escovasDisponiveis, setEscovasDisponiveis] = useState(0);
 
   useEffect(() => {
-    supabase.from("services").select("*").eq("active", true).then(({ data }) => {
-      setServices(data || []);
+    if (!user) return;
+
+    const loadData = async () => {
+      // Load services
+      const { data: servicesData } = await supabase
+        .from("services")
+        .select("*")
+        .eq("active", true);
+      setServices(servicesData || []);
+
+      // Load active subscription
+      const { data: sub } = await supabase
+        .from("subscriptions")
+        .select("*, plans(*)")
+        .eq("client_id", user.id)
+        .eq("status", "active")
+        .maybeSingle();
+
+      if (sub && (sub as any).plans) {
+        const totalEscovas = parseEscovasFromIncludes((sub as any).plans.includes);
+
+        // Count escovas used this month
+        const now = new Date();
+        const startOfMonth = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}-01`;
+        const endOfMonth = new Date(now.getFullYear(), now.getMonth() + 1, 0);
+        const endStr = `${endOfMonth.getFullYear()}-${String(endOfMonth.getMonth() + 1).padStart(2, "0")}-${String(endOfMonth.getDate()).padStart(2, "0")}`;
+
+        const { data: appointments } = await supabase
+          .from("appointments")
+          .select("*, services(name)")
+          .eq("client_id", user.id)
+          .gte("appointment_date", startOfMonth)
+          .lte("appointment_date", endStr)
+          .neq("status", "cancelled");
+
+        const escovasUsadas = (appointments || []).filter((a: any) =>
+          a.services?.name?.toLowerCase().includes("escova")
+        ).length;
+
+        setEscovasDisponiveis(Math.max(0, totalEscovas - escovasUsadas));
+      } else {
+        setEscovasDisponiveis(0);
+      }
+
       setLoading(false);
-    });
-  }, []);
+    };
+
+    loadData();
+  }, [user]);
 
   useEffect(() => {
     if (!selectedDate) return;
@@ -44,6 +95,11 @@ export default function NewBooking() {
         setBookedSlots((data || []).map((a) => a.appointment_time?.slice(0, 5)));
       });
   }, [selectedDate]);
+
+  const isEscova = (serviceName: string) =>
+    serviceName?.toLowerCase().includes("escova");
+
+  const isFreeEscova = selectedService && isEscova(selectedService.name) && escovasDisponiveis > 0;
 
   const handleConfirm = async () => {
     if (!user || !selectedService || !selectedDate || !selectedTime) return;
@@ -94,25 +150,47 @@ export default function NewBooking() {
       {step === 1 && (
         <div className="space-y-3">
           <p className="text-muted-foreground">Escolha o serviço</p>
-          {services.map((s) => (
-            <Card
-              key={s.id}
-              className={`cursor-pointer transition border-2 ${selectedService?.id === s.id ? "border-primary" : "border-transparent hover:border-gold/20"}`}
-              onClick={() => { setSelectedService(s); setStep(2); }}
-            >
-              <CardContent className="py-4">
-                <div className="flex justify-between items-center">
-                  <div>
-                    <p className="font-medium">{s.name}</p>
-                    <p className="text-sm text-muted-foreground">{s.duration_minutes} min</p>
+          {services.map((s) => {
+            const escova = isEscova(s.name);
+            const free = escova && escovasDisponiveis > 0;
+            return (
+              <Card
+                key={s.id}
+                className={`cursor-pointer transition border-2 ${selectedService?.id === s.id ? "border-primary" : "border-transparent hover:border-gold/20"}`}
+                onClick={() => { setSelectedService(s); setStep(2); }}
+              >
+                <CardContent className="py-4">
+                  <div className="flex justify-between items-center">
+                    <div>
+                      <div className="flex items-center gap-2">
+                        <p className="font-medium">{s.name}</p>
+                        {free && (
+                          <Badge variant="secondary" className="text-xs">
+                            Incluso no plano
+                          </Badge>
+                        )}
+                      </div>
+                      <p className="text-sm text-muted-foreground">{s.duration_minutes} min</p>
+                    </div>
+                    <div className="text-right">
+                      {free ? (
+                        <div>
+                          <p className="text-sm text-muted-foreground line-through">
+                            R$ {Number(s.price).toFixed(2)}
+                          </p>
+                          <p className="font-serif text-lg text-primary">R$ 0,00</p>
+                        </div>
+                      ) : (
+                        <p className="font-serif text-lg text-primary">
+                          R$ {Number(s.price).toFixed(2)}
+                        </p>
+                      )}
+                    </div>
                   </div>
-                  <p className="font-serif text-lg text-primary">
-                    R$ {Number(s.price).toFixed(2)}
-                  </p>
-                </div>
-              </CardContent>
-            </Card>
-          ))}
+                </CardContent>
+              </Card>
+            );
+          })}
           {services.length === 0 && (
             <p className="text-center py-8 text-muted-foreground">Nenhum serviço disponível no momento.</p>
           )}
@@ -169,7 +247,14 @@ export default function NewBooking() {
               <p><span className="text-muted-foreground">Serviço:</span> {selectedService?.name}</p>
               <p><span className="text-muted-foreground">Data:</span> {selectedDate?.toLocaleDateString("pt-BR")}</p>
               <p><span className="text-muted-foreground">Horário:</span> {selectedTime}</p>
-              <p><span className="text-muted-foreground">Valor:</span> R$ {Number(selectedService?.price).toFixed(2)}</p>
+              <p>
+                <span className="text-muted-foreground">Valor:</span>{" "}
+                {isFreeEscova ? (
+                  <span className="text-primary font-medium">R$ 0,00 (incluso no plano)</span>
+                ) : (
+                  `R$ ${Number(selectedService?.price).toFixed(2)}`
+                )}
+              </p>
             </CardContent>
           </Card>
           <Button className="w-full" onClick={handleConfirm} disabled={submitting}>
