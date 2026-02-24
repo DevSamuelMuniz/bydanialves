@@ -7,7 +7,8 @@ import { Calendar } from "@/components/ui/calendar";
 import { useToast } from "@/hooks/use-toast";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Badge } from "@/components/ui/badge";
-import { Check, ChevronLeft } from "lucide-react";
+import { Check, ChevronLeft, ShieldX, MessageCircle } from "lucide-react";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from "@/components/ui/dialog";
 
 const TIME_SLOTS = [
   "08:00", "09:00", "10:00", "11:00",
@@ -18,6 +19,8 @@ function parseEscovasFromIncludes(includes: string): number {
   const match = includes.match(/(\d+)\s*escova/i);
   return match ? parseInt(match[1], 10) : 0;
 }
+
+const WHATSAPP_NUMBER = "5500000000000";
 
 export default function NewBooking() {
   const { user } = useAuth();
@@ -31,11 +34,27 @@ export default function NewBooking() {
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
   const [escovasDisponiveis, setEscovasDisponiveis] = useState(0);
+  const [blocked, setBlocked] = useState(false);
+  const [blockedModalOpen, setBlockedModalOpen] = useState(false);
 
   useEffect(() => {
     if (!user) return;
 
     const loadData = async () => {
+      // Check if user is blocked
+      const { data: profile } = await supabase
+        .from("profiles")
+        .select("blocked")
+        .eq("user_id", user.id)
+        .single();
+
+      if (profile?.blocked) {
+        setBlocked(true);
+        setBlockedModalOpen(true);
+        setLoading(false);
+        return;
+      }
+
       // Load services
       const { data: servicesData } = await supabase
         .from("services")
@@ -53,8 +72,6 @@ export default function NewBooking() {
 
       if (sub && (sub as any).plans) {
         const totalEscovas = parseEscovasFromIncludes((sub as any).plans.includes);
-
-        // Count escovas used this month
         const now = new Date();
         const startOfMonth = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}-01`;
         const endOfMonth = new Date(now.getFullYear(), now.getMonth() + 1, 0);
@@ -97,7 +114,6 @@ export default function NewBooking() {
   }, [selectedDate]);
 
   const isEscovaService = (service: any) => !!service?.is_system;
-
   const isFreeEscova = selectedService && isEscovaService(selectedService) && escovasDisponiveis > 0;
 
   const handleConfirm = async () => {
@@ -122,7 +138,63 @@ export default function NewBooking() {
     setSubmitting(false);
   };
 
-  if (loading) return <Skeleton className="h-64 w-full" />;
+  const handleWhatsAppQuestion = () => {
+    const message = encodeURIComponent(
+      "Olá! Minha conta foi bloqueada e gostaria de entender o motivo. Poderia me ajudar a resolver essa situação? Obrigada!"
+    );
+    window.open(`https://wa.me/${WHATSAPP_NUMBER}?text=${message}`, "_blank");
+  };
+
+  if (loading) return <Skeleton className="h-64 w-full rounded-lg" />;
+
+  // Blocked user modal + empty state
+  if (blocked) {
+    return (
+      <div className="max-w-2xl space-y-6">
+        <h1 className="font-serif text-2xl tracking-tight">Novo Agendamento</h1>
+
+        <Card className="border-destructive/20">
+          <CardContent className="py-10 text-center space-y-4">
+            <div className="h-14 w-14 rounded-2xl bg-destructive/10 flex items-center justify-center mx-auto">
+              <ShieldX className="h-7 w-7 text-destructive" />
+            </div>
+            <p className="text-lg font-serif font-medium">Conta bloqueada</p>
+            <p className="text-muted-foreground text-sm max-w-sm mx-auto">
+              Sua conta está temporariamente bloqueada e não é possível realizar novos agendamentos.
+            </p>
+            <Button onClick={handleWhatsAppQuestion} className="bg-green-600 hover:bg-green-700 text-white">
+              <MessageCircle className="mr-2 h-4 w-4" />
+              Falar no WhatsApp
+            </Button>
+          </CardContent>
+        </Card>
+
+        {/* Modal on first load */}
+        <Dialog open={blockedModalOpen} onOpenChange={setBlockedModalOpen}>
+          <DialogContent className="max-w-sm text-center">
+            <DialogHeader className="items-center">
+              <div className="h-16 w-16 rounded-2xl bg-destructive/10 flex items-center justify-center mx-auto mb-2">
+                <ShieldX className="h-8 w-8 text-destructive" />
+              </div>
+              <DialogTitle className="font-serif text-xl">Conta Bloqueada</DialogTitle>
+              <DialogDescription className="text-base">
+                Sua conta foi bloqueada e você não pode realizar agendamentos no momento. Entre em contato para mais informações.
+              </DialogDescription>
+            </DialogHeader>
+            <DialogFooter className="flex-col gap-2 sm:flex-col">
+              <Button onClick={handleWhatsAppQuestion} className="w-full bg-green-600 hover:bg-green-700 text-white">
+                <MessageCircle className="mr-2 h-4 w-4" />
+                Questionar via WhatsApp
+              </Button>
+              <Button variant="ghost" className="w-full" onClick={() => setBlockedModalOpen(false)}>
+                Fechar
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
+      </div>
+    );
+  }
 
   return (
     <div className="max-w-2xl space-y-6">
@@ -132,7 +204,7 @@ export default function NewBooking() {
             <ChevronLeft className="h-5 w-5" />
           </Button>
         )}
-        <h1 className="font-serif text-2xl">Novo Agendamento</h1>
+        <h1 className="font-serif text-2xl tracking-tight">Novo Agendamento</h1>
       </div>
 
       {/* Steps indicator */}
@@ -155,7 +227,7 @@ export default function NewBooking() {
             return (
               <Card
                 key={s.id}
-                className={`cursor-pointer transition border-2 ${selectedService?.id === s.id ? "border-primary" : "border-transparent hover:border-gold/20"}`}
+                className={`cursor-pointer transition border-2 ${selectedService?.id === s.id ? "border-primary" : "border-transparent hover:border-primary/20"}`}
                 onClick={() => { setSelectedService(s); setStep(2); }}
               >
                 <CardContent className="py-4">
@@ -206,7 +278,7 @@ export default function NewBooking() {
               selected={selectedDate}
               onSelect={(d) => { setSelectedDate(d); if (d) setStep(3); }}
               disabled={(date) => date < new Date() || date.getDay() === 0}
-              className="rounded-md border border-gold/20"
+              className="rounded-md border border-primary/15"
             />
           </div>
         </div>
@@ -241,7 +313,7 @@ export default function NewBooking() {
       {step === 4 && (
         <div className="space-y-4">
           <p className="text-muted-foreground">Confirme seu agendamento</p>
-          <Card className="border-gold/20">
+          <Card className="border-primary/15">
             <CardContent className="py-4 space-y-2">
               <p><span className="text-muted-foreground">Serviço:</span> {selectedService?.name}</p>
               <p><span className="text-muted-foreground">Data:</span> {selectedDate?.toLocaleDateString("pt-BR")}</p>
