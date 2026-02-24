@@ -1,112 +1,103 @@
 
+# Plano: Features Avançadas para Admin - Controle Total
 
-# Sistema Web para Salão de Beleza 💇‍♀️✨
+## Resumo
 
-## Visão Geral
-Sistema completo com **2 módulos** (Área do Cliente + CRM Administrativo) integrados via Supabase, com design **Elegante/Luxo em tons brancos e dourados**.
-
----
-
-## 🎨 Design & Identidade Visual
-- **Paleta**: Fundo branco/off-white, detalhes e acentos em dourado, textos em cinza escuro/preto
-- **Tipografia**: Fontes serifadas para títulos, sans-serif clean para corpo
-- **Estilo**: Minimalista luxuoso, espaçamentos generosos, bordas sutis douradas
-- **Mobile-first**: Layout responsivo otimizado para celular
+Vou expandir significativamente o painel administrativo para dar visibilidade e controle total sobre clientes, agendamentos e finanças. As melhorias incluem detalhes completos de clientes, gestao de usuarios, filtros avancados na agenda e financeiro, e um log de atividades.
 
 ---
 
-## 🗄️ Banco de Dados (Supabase)
+## 1. Gestao de Clientes Expandida (AdminClients)
 
-### Tabelas principais:
-1. **profiles** — Nome, telefone, avatar (vinculado a auth.users)
-2. **user_roles** — Controle de papéis (cliente/admin) com enum `app_role`
-3. **services** — Nome, descrição, preço, duração, imagem
-4. **appointments** — Cliente, serviço, data/hora, status (pendente/confirmado/concluído/cancelado)
-5. **financial_records** — Tipo (entrada/saída), valor, descrição, vínculo com agendamento
-6. **contacts** — Mensagens do formulário de contato (opcional futuro)
+**Atualmente:** Lista simples com nome e telefone.
 
-### Segurança:
-- RLS em todas as tabelas
-- Função `has_role()` para verificação de admin sem recursão
-- Clientes veem apenas seus próprios dados
+**Melhorias:**
+- Exibir email do cliente (buscar da tabela `auth.users` via edge function)
+- Mostrar quantidade de agendamentos e ultimo agendamento de cada cliente
+- Ao clicar no cliente, abrir um dialog/painel com:
+  - Historico completo de agendamentos (com status e servico)
+  - Total gasto pelo cliente
+  - Opcao de editar nome/telefone do perfil
+  - Opcao de bloquear/desbloquear cliente (novo campo `blocked` na tabela profiles)
+- Filtros: buscar por nome, telefone ou email
 
----
+## 2. Agenda com Filtros e Acoes (AdminAgenda)
 
-## 🔐 Módulo: Autenticação
-- **Login/Cadastro** com E-mail/Senha e Google OAuth
-- Página de **recuperação de senha**
-- Redirecionamento automático baseado no papel (cliente → dashboard cliente, admin → CRM)
-- Proteção de rotas: clientes bloqueados de acessar rotas admin
+**Atualmente:** Lista dos ultimos 50 agendamentos com troca de status.
 
----
+**Melhorias:**
+- Filtro por data (date picker para selecionar periodo)
+- Filtro por status (pendente, confirmado, concluido, cancelado)
+- Filtro por servico
+- Mostrar valor do servico em cada card
+- Botao para cancelar agendamento com confirmacao
+- Exibir notas/observacoes do agendamento
+- Campo para admin adicionar notas ao agendamento
+- Paginacao para ver mais que 50 registros
 
-## 👤 Módulo: Área do Cliente
+## 3. Financeiro Expandido (AdminFinance)
 
-### Tela: Dashboard do Cliente
-- Boas-vindas personalizadas
-- Próximos agendamentos em destaque
-- Botão rápido "Novo Agendamento"
+**Atualmente:** Lista de registros com totais simples.
 
-### Tela: Novo Agendamento
-- **Passo 1**: Escolher serviço (cards com nome, preço e duração)
-- **Passo 2**: Escolher data no calendário (dias disponíveis)
-- **Passo 3**: Escolher horário fixo disponível (slots como 9h, 10h, 11h...)
-- **Passo 4**: Confirmação e pagamento via Stripe
-- Notificação toast de sucesso
+**Melhorias:**
+- Filtro por periodo (data inicio/fim)
+- Filtro por tipo (entrada/saida)
+- Permitir registrar tanto entradas quanto saidas (atualmente so saidas)
+- Editar e excluir registros financeiros existentes
+- Exibir cliente/servico associado quando o registro vier de um agendamento
 
-### Tela: Histórico
-- Lista de agendamentos passados com status e detalhes
-- Filtros por período
+## 4. Dashboard Melhorado (AdminDashboard)
 
-### Navegação
-- Sidebar/header com: Dashboard, Novo Agendamento, Histórico, Perfil, Sair
+**Atualmente:** 3 KPIs + agenda do dia.
 
----
+**Melhorias:**
+- KPI de agendamentos pendentes (aguardando confirmacao)
+- KPI de agendamentos da semana
+- Grafico rapido de receita dos ultimos 7 dias (mini bar chart)
+- Lista dos ultimos 5 clientes cadastrados
 
-## 🛠️ Módulo: CRM Administrativo
+## 5. Gestao de Usuarios/Roles (Nova pagina)
 
-### Tela: Dashboard Admin
-- Resumo do dia: agendamentos de hoje
-- Faturamento do mês (card de destaque)
-- Gráfico de receita semanal/mensal
+**Nova rota:** `/admin/users`
 
-### Tela: Gestão de Clientes
-- Lista de todos os clientes com busca
-- Detalhes do cliente com histórico completo de atendimentos
-- CRUD completo
-
-### Tela: Controle de Agenda
-- Visão em lista/calendário de todos os agendamentos
-- Alterar status: pendente → confirmado → concluído / cancelado
-- Filtros por data e status
-
-### Tela: Gestão de Serviços
-- CRUD de serviços (nome, preço, duração, descrição)
-- Ativar/desativar serviços
-
-### Tela: Painel Financeiro
-- Fluxo de caixa: entradas automáticas (agendamentos concluídos) + saídas manuais
-- Integração com Stripe para visualização de pagamentos
-- Resumo por período
-
-### Tela: Relatórios
-- Serviços mais agendados (gráfico de barras)
-- Receita por período (gráfico de linhas)
-- Filtros de data
-
-### Navegação
-- Sidebar com: Dashboard, Clientes, Agenda, Serviços, Financeiro, Relatórios, Sair
+- Listar todos os usuarios com suas roles
+- Promover cliente para admin ou remover role admin
+- Ver status da conta (ativo, email verificado)
 
 ---
 
-## 💳 Integração Stripe
-- Pagamento no momento do agendamento
-- Registro automático de entrada financeira ao concluir
+## Detalhes Tecnicos
 
----
+### Banco de Dados
 
-## 📱 Extras de UX
-- Botão flutuante do WhatsApp em todas as telas
-- Toasts/notificações para ações importantes
-- Loading states e skeletons para carregamento suave
+1. **Novo campo `blocked` na tabela `profiles`:**
+```sql
+ALTER TABLE public.profiles ADD COLUMN blocked boolean NOT NULL DEFAULT false;
+```
 
+2. **Edge function `admin-get-users`** para buscar emails da tabela `auth.users` (nao acessivel via client SDK):
+   - Recebe lista de user_ids
+   - Retorna emails usando `supabase-admin` (service role key)
+   - Protegida: valida que o caller e admin
+
+### Novos Arquivos
+- `src/pages/admin/AdminUsers.tsx` - pagina de gestao de roles
+- `supabase/functions/admin-get-users/index.ts` - edge function para dados de auth
+
+### Arquivos Modificados
+- `src/pages/admin/AdminClients.tsx` - expansao com detalhes, historico, bloqueio
+- `src/pages/admin/AdminAgenda.tsx` - filtros, notas, paginacao
+- `src/pages/admin/AdminFinance.tsx` - filtros, edicao, entradas/saidas
+- `src/pages/admin/AdminDashboard.tsx` - novos KPIs e graficos
+- `src/components/admin/AdminSidebar.tsx` - novo item "Usuarios"
+- `src/App.tsx` - nova rota `/admin/users`
+
+### Sequencia de Implementacao
+1. Migracao do banco (campo `blocked`)
+2. Edge function `admin-get-users`
+3. AdminClients expandido
+4. AdminAgenda com filtros
+5. AdminFinance expandido
+6. AdminDashboard melhorado
+7. AdminUsers (nova pagina)
+8. Sidebar e rotas atualizadas
