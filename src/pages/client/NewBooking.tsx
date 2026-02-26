@@ -221,47 +221,71 @@ export default function NewBooking() {
       {step === 1 && (
         <div className="space-y-3">
           <p className="text-muted-foreground">Escolha o serviço</p>
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
           {services.map((s) => {
             const escova = isEscovaService(s);
             const free = escova && escovasDisponiveis > 0;
+            const isSelected = selectedService?.id === s.id;
+            // Use service image_url or a category-based placeholder
+            const imgUrl = s.image_url ||
+              `https://images.unsplash.com/photo-1522337360788-8b13dee7a37e?w=600&q=60&auto=format&fit=crop`;
             return (
-              <Card
+              <div
                 key={s.id}
-                className={`cursor-pointer transition border-2 ${selectedService?.id === s.id ? "border-primary" : "border-transparent hover:border-primary/20"}`}
                 onClick={() => { setSelectedService(s); setStep(2); }}
+                className={`relative overflow-hidden rounded-xl cursor-pointer transition-all duration-300 border-2 h-44
+                  ${isSelected ? "border-primary shadow-elevated scale-[1.02]" : "border-transparent hover:border-primary/40 hover:scale-[1.01]"}`}
               >
-                <CardContent className="py-4">
-                  <div className="flex justify-between items-center">
+                {/* Background image */}
+                <img
+                  src={imgUrl}
+                  alt={s.name}
+                  className="absolute inset-0 w-full h-full object-cover"
+                />
+                {/* Gradient overlay */}
+                <div className="absolute inset-0 bg-gradient-to-t from-black/75 via-black/30 to-black/10" />
+
+                {/* Content */}
+                <div className="relative z-10 h-full flex flex-col justify-end p-4">
+                  <div className="flex justify-between items-end">
                     <div>
-                      <div className="flex items-center gap-2">
-                        <p className="font-medium">{s.name}</p>
+                      <div className="flex items-center gap-2 flex-wrap mb-1">
+                        <p className="font-semibold text-white text-base leading-tight">{s.name}</p>
                         {free && (
-                          <Badge variant="secondary" className="text-xs">
+                          <Badge className="text-xs bg-primary/90 text-primary-foreground border-0">
                             Incluso no plano
                           </Badge>
                         )}
                       </div>
-                      <p className="text-sm text-muted-foreground">{s.duration_minutes} min</p>
+                      <p className="text-sm text-white/70">{s.duration_minutes} min</p>
                     </div>
                     <div className="text-right">
                       {free ? (
                         <div>
-                          <p className="text-sm text-muted-foreground line-through">
+                          <p className="text-xs text-white/50 line-through">
                             R$ {Number(s.price).toFixed(2)}
                           </p>
-                          <p className="font-serif text-lg text-primary">R$ 0,00</p>
+                          <p className="font-serif text-xl text-primary">R$ 0,00</p>
                         </div>
                       ) : (
-                        <p className="font-serif text-lg text-primary">
+                        <p className="font-serif text-xl text-white">
                           R$ {Number(s.price).toFixed(2)}
                         </p>
                       )}
                     </div>
                   </div>
-                </CardContent>
-              </Card>
+                </div>
+
+                {/* Selected indicator */}
+                {isSelected && (
+                  <div className="absolute top-3 right-3 h-6 w-6 rounded-full bg-primary flex items-center justify-center">
+                    <Check className="h-3.5 w-3.5 text-primary-foreground" />
+                  </div>
+                )}
+              </div>
             );
           })}
+          </div>
           {services.length === 0 && (
             <p className="text-center py-8 text-muted-foreground">Nenhum serviço disponível no momento.</p>
           )}
