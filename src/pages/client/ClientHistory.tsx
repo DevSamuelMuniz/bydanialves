@@ -80,26 +80,46 @@ export default function ClientHistory() {
       ) : appointments.length === 0 ? (
         <p className="text-muted-foreground text-center py-8">Nenhum agendamento encontrado.</p>
       ) : (
-        <div className="space-y-3">
-          {appointments.map((appt) => (
-            <Card key={appt.id} className="border-gold/10">
-              <CardContent className="py-4 flex items-center justify-between">
-                <div>
-                  <p className="font-medium">{(appt as any).services?.name}</p>
-                  <p className="text-sm text-muted-foreground flex items-center gap-1">
-                    <Clock className="h-3 w-3" />
-                    {new Date(appt.appointment_date).toLocaleDateString("pt-BR")} às {appt.appointment_time?.slice(0, 5)}
-                  </p>
-                  <p className="text-sm text-muted-foreground">
-                    R$ {Number((appt as any).services?.price).toFixed(2)}
-                  </p>
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          {appointments.map((appt) => {
+            const imgUrl = (appt as any).services?.image_url ||
+              `https://images.unsplash.com/photo-1522337360788-8b13dee7a37e?w=600&q=60&auto=format&fit=crop`;
+            return (
+              <div key={appt.id} className="relative overflow-hidden rounded-xl border border-gold/10 h-36">
+                {/* Background image */}
+                <img
+                  src={imgUrl}
+                  alt={(appt as any).services?.name}
+                  className="absolute inset-0 w-full h-full object-cover"
+                />
+                {/* Gradient overlay */}
+                <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/40 to-black/10" />
+
+                {/* Content */}
+                <div className="relative z-10 h-full flex flex-col justify-end p-4">
+                  <div className="flex justify-between items-end">
+                    <div>
+                      <p className="font-semibold text-white text-base leading-tight mb-1">
+                        {(appt as any).services?.name}
+                      </p>
+                      <p className="text-xs text-white/70 flex items-center gap-1">
+                        <Clock className="h-3 w-3" />
+                        {new Date(appt.appointment_date).toLocaleDateString("pt-BR")} às {appt.appointment_time?.slice(0, 5)}
+                      </p>
+                    </div>
+                    <div className="flex flex-col items-end gap-1">
+                      <Badge variant="secondary" className={statusColors[appt.status]}>
+                        {statusLabels[appt.status]}
+                      </Badge>
+                      <p className="font-serif text-base text-white">
+                        R$ {Number((appt as any).services?.price).toFixed(2)}
+                      </p>
+                    </div>
+                  </div>
                 </div>
-                <Badge variant="secondary" className={statusColors[appt.status]}>
-                  {statusLabels[appt.status]}
-                </Badge>
-              </CardContent>
-            </Card>
-          ))}
+              </div>
+            );
+          })}
         </div>
       )}
     </div>
