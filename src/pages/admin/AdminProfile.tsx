@@ -91,7 +91,7 @@ export default function AdminProfile() {
   };
 
   if (loading) return (
-    <div className="space-y-4 animate-pulse max-w-2xl">
+    <div className="space-y-4 animate-pulse max-w-4xl">
       <div className="h-48 rounded-xl bg-muted" />
       <div className="grid grid-cols-3 gap-4">
         <div className="h-20 rounded-xl bg-muted" />
@@ -110,7 +110,7 @@ export default function AdminProfile() {
     : null;
 
   return (
-    <div className="max-w-2xl space-y-6">
+    <div className="max-w-4xl space-y-6">
       <h1 className="font-serif text-2xl">Meu Perfil</h1>
 
       {/* Banner + Avatar card */}

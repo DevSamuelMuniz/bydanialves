@@ -51,7 +51,7 @@ export default function ClientHistory() {
   }, [fetchAppointments]);
 
   return (
-    <div className="max-w-2xl space-y-6">
+    <div className="max-w-5xl space-y-6">
       <h1 className="font-serif text-2xl">Histórico</h1>
 
       {/* Filter */}

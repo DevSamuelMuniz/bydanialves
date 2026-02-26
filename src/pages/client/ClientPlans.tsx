@@ -122,7 +122,7 @@ export default function ClientPlans() {
   };
 
   if (loading) return (
-    <div className="space-y-4 max-w-3xl">
+    <div className="space-y-4 max-w-5xl">
       <Skeleton className="h-12 w-64 rounded-lg" />
       <Skeleton className="h-48 w-full rounded-lg" />
       <Skeleton className="h-48 w-full rounded-lg" />
@@ -130,7 +130,7 @@ export default function ClientPlans() {
   );
 
   return (
-    <div className="space-y-8 max-w-3xl">
+    <div className="space-y-8 max-w-5xl">
       <div className="animate-slide-up">
         <h1 className="font-serif text-2xl md:text-3xl flex items-center gap-2 tracking-tight">
           <Crown className="h-6 w-6 text-primary" /> Meu Plano

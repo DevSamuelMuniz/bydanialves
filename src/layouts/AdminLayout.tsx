@@ -11,7 +11,7 @@ export default function AdminLayout() {
         <AdminSidebar />
         <main className="flex-1 flex flex-col">
           <AdminHeader />
-          <div className="flex-1 p-4 md:p-8 animate-fade-in">
+          <div className="flex-1 p-4 md:p-8 animate-fade-in overflow-auto w-full">
             <Outlet />
           </div>
         </main>
