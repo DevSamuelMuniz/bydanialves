@@ -283,28 +283,27 @@ export default function AdminClients() {
                 ) : clientAppointments.length === 0 ? (
                   <p className="text-sm text-muted-foreground">Nenhum agendamento.</p>
                 ) : (
-                  <div className="space-y-2 max-h-60 overflow-y-auto">
+                  <div className="space-y-2 max-h-60 overflow-y-auto pr-1">
                     {clientAppointments.map((a) => (
-                      <div
-                        key={a.id}
-                        className="flex items-center justify-between p-2 rounded-md bg-muted/50 text-sm"
-                      >
-                        <div>
-                          <p className="font-medium">{a.services?.name || "Serviço"}</p>
-                          <p className="text-xs text-muted-foreground">
-                            {new Date(a.appointment_date).toLocaleDateString("pt-BR")} às{" "}
-                            {a.appointment_time?.slice(0, 5)}
-                          </p>
-                        </div>
-                        <div className="text-right">
-                          <Badge variant="outline" className="text-xs">
-                            {statusLabels[a.status] || a.status}
-                          </Badge>
-                          <p className="text-xs text-muted-foreground mt-1">
-                            R$ {Number(a.services?.price || 0).toFixed(2)}
-                          </p>
-                        </div>
-                      </div>
+                      <Card key={a.id} className="border-border/60">
+                        <CardContent className="py-3 px-4 flex items-center justify-between">
+                          <div>
+                            <p className="text-sm font-medium">{a.services?.name || "Serviço"}</p>
+                            <p className="text-xs text-muted-foreground">
+                              {new Date(a.appointment_date).toLocaleDateString("pt-BR")} às{" "}
+                              {a.appointment_time?.slice(0, 5)}
+                            </p>
+                          </div>
+                          <div className="text-right space-y-1">
+                            <Badge variant="outline" className="text-xs block">
+                              {statusLabels[a.status] || a.status}
+                            </Badge>
+                            <p className="text-xs text-muted-foreground">
+                              R$ {Number(a.services?.price || 0).toFixed(2)}
+                            </p>
+                          </div>
+                        </CardContent>
+                      </Card>
                     ))}
                   </div>
                 )}
