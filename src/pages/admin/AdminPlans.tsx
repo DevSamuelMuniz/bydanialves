@@ -153,35 +153,64 @@ export default function AdminPlans() {
       </div>
 
       {/* Plans */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
         {plans.map((p) => (
-          <Card key={p.id} className={`border-border relative ${!p.active ? "opacity-60" : ""}`}>
-            <CardHeader className="pb-2">
-              <div className="flex items-start justify-between">
+          <Card key={p.id} className={`relative overflow-hidden border-border/60 flex flex-col ${!p.active ? "opacity-60" : ""}`}>
+            {/* Gold accent top bar */}
+            <div className="h-1 w-full gradient-gold" />
+            <CardHeader className="pb-3 pt-5">
+              <div className="flex items-start justify-between gap-2">
                 <div>
-                  <CardTitle className="font-serif text-lg">{p.name}</CardTitle>
-                  {p.description && <p className="text-xs text-muted-foreground">{p.description}</p>}
+                  <p className="text-xs font-semibold uppercase tracking-widest text-muted-foreground mb-1">Plano</p>
+                  <CardTitle className="font-serif text-xl leading-tight">{p.name}</CardTitle>
+                  {p.description && <p className="text-xs text-muted-foreground mt-1">{p.description}</p>}
                 </div>
-                {!p.active && <Badge variant="secondary" className="text-xs">Inativo</Badge>}
+                {!p.active && <Badge variant="secondary" className="text-xs shrink-0">Inativo</Badge>}
               </div>
             </CardHeader>
-            <CardContent className="space-y-3">
-              <p className="text-2xl font-serif font-bold text-primary">R$ {Number(p.price).toFixed(2)}<span className="text-sm font-normal text-muted-foreground">/mês</span></p>
-              <p className="text-sm">{p.includes}</p>
-              {p.restriction && (
-                <p className="text-xs text-muted-foreground italic">{p.restriction}</p>
-              )}
-              <div className="flex items-center gap-1 text-xs text-muted-foreground">
-                <Users className="h-3 w-3" />
-                {subsCountByPlan(p.id)} assinante(s) ativo(s)
+            <CardContent className="flex flex-col flex-1 space-y-4">
+              {/* Price */}
+              <div className="flex items-end gap-1">
+                <span className="text-3xl font-serif font-bold text-primary">R$ {Number(p.price).toFixed(2)}</span>
+                <span className="text-sm text-muted-foreground mb-1">/mês</span>
               </div>
-              <div className="flex gap-2 pt-2">
-                <Button variant="outline" size="sm" onClick={() => openEdit(p)}>
+
+              {/* Divider */}
+              <div className="border-t border-border/50" />
+
+              {/* Includes */}
+              <div className="flex items-start gap-2">
+                <div className="mt-0.5 h-4 w-4 rounded-full gradient-gold flex items-center justify-center shrink-0">
+                  <span className="text-[8px] text-primary-foreground font-bold">✓</span>
+                </div>
+                <p className="text-sm leading-snug">{p.includes}</p>
+              </div>
+
+              {/* Restriction */}
+              {p.restriction && (
+                <div className="rounded-md bg-muted/60 px-3 py-2 text-xs text-muted-foreground italic border border-border/40">
+                  {p.restriction}
+                </div>
+              )}
+
+              {/* Subscribers badge */}
+              <div className="flex items-center gap-1.5 mt-auto">
+                <div className="flex items-center gap-1.5 bg-secondary/60 rounded-full px-3 py-1">
+                  <Users className="h-3 w-3 text-primary" />
+                  <span className="text-xs font-medium">{subsCountByPlan(p.id)} assinante(s)</span>
+                </div>
+              </div>
+
+              {/* Actions */}
+              <div className="flex gap-2 pt-1">
+                <Button variant="outline" size="sm" className="flex-1" onClick={() => openEdit(p)}>
                   <Edit2 className="mr-1 h-3 w-3" />Editar
                 </Button>
                 <AlertDialog>
                   <AlertDialogTrigger asChild>
-                    <Button variant="ghost" size="sm"><Trash2 className="h-3 w-3 text-destructive" /></Button>
+                    <Button variant="ghost" size="sm" className="border border-border/40 hover:bg-destructive/10 hover:border-destructive/40">
+                      <Trash2 className="h-3 w-3 text-destructive" />
+                    </Button>
                   </AlertDialogTrigger>
                   <AlertDialogContent>
                     <AlertDialogHeader>
