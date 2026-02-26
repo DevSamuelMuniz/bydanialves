@@ -6,8 +6,10 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
+import { Badge } from "@/components/ui/badge";
+import { Separator } from "@/components/ui/separator";
 import { useToast } from "@/hooks/use-toast";
-import { User } from "lucide-react";
+import { User, Mail, Phone, Shield, Calendar, Edit3, Save } from "lucide-react";
 
 export default function AdminProfile() {
   const { user } = useAuth();
@@ -15,6 +17,7 @@ export default function AdminProfile() {
   const [profile, setProfile] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
+  const [editing, setEditing] = useState(false);
   const [form, setForm] = useState({ full_name: "", phone: "" });
 
   useEffect(() => {
@@ -45,45 +48,160 @@ export default function AdminProfile() {
     if (error) {
       toast({ title: "Erro", description: error.message, variant: "destructive" });
     } else {
-      toast({ title: "Perfil atualizado!" });
+      setProfile({ ...profile, ...form });
+      setEditing(false);
+      toast({ title: "Perfil atualizado! ✨" });
     }
   };
 
-  if (loading) return null;
+  if (loading) return (
+    <div className="space-y-4 animate-pulse">
+      <div className="h-48 rounded-xl bg-muted" />
+      <div className="h-32 rounded-xl bg-muted" />
+    </div>
+  );
 
   const initials = form.full_name
     ? form.full_name.split(" ").map((n: string) => n[0]).join("").slice(0, 2).toUpperCase()
     : "AD";
 
+  const memberSince = profile?.created_at
+    ? new Date(profile.created_at).toLocaleDateString("pt-BR", { month: "long", year: "numeric" })
+    : null;
+
   return (
-    <div className="max-w-lg mx-auto space-y-6">
+    <div className="max-w-2xl space-y-6">
       <h1 className="font-serif text-2xl">Meu Perfil</h1>
-      <Card>
-        <CardHeader className="items-center">
-          <Avatar className="h-20 w-20">
-            <AvatarFallback className="bg-primary text-primary-foreground text-2xl font-serif">
-              {initials}
-            </AvatarFallback>
-          </Avatar>
-          <CardTitle className="font-serif text-lg mt-2">{form.full_name || "Admin"}</CardTitle>
-          <p className="text-sm text-muted-foreground">{user?.email}</p>
-        </CardHeader>
-        <CardContent>
-          <form onSubmit={handleSave} className="space-y-4">
-            <div className="space-y-2">
-              <Label>Nome completo</Label>
-              <Input value={form.full_name} onChange={(e) => setForm({ ...form, full_name: e.target.value })} />
-            </div>
-            <div className="space-y-2">
-              <Label>Telefone</Label>
-              <Input value={form.phone} onChange={(e) => setForm({ ...form, phone: e.target.value })} />
-            </div>
-            <Button type="submit" className="w-full" disabled={saving}>
-              {saving ? "Salvando..." : "Salvar"}
+
+      {/* Banner + Avatar card */}
+      <Card className="overflow-hidden border-border/60">
+        {/* Banner */}
+        <div className="relative h-36 gradient-gold">
+          <div className="absolute inset-0 opacity-20"
+            style={{ backgroundImage: "repeating-linear-gradient(45deg, transparent, transparent 20px, rgba(255,255,255,0.05) 20px, rgba(255,255,255,0.05) 40px)" }}
+          />
+          {/* Badge admin */}
+          <div className="absolute top-4 right-4">
+            <Badge className="bg-background/80 text-foreground border border-border/60 backdrop-blur-sm gap-1.5">
+              <Shield className="h-3 w-3 text-primary" />
+              Administrador
+            </Badge>
+          </div>
+        </div>
+
+        {/* Avatar overlapping banner */}
+        <div className="px-6 pb-6">
+          <div className="flex items-end justify-between -mt-12 mb-4">
+            <Avatar className="h-24 w-24 ring-4 ring-background shadow-elevated">
+              <AvatarFallback className="gradient-gold text-primary-foreground text-3xl font-serif">
+                {initials}
+              </AvatarFallback>
+            </Avatar>
+            <Button
+              variant="outline"
+              size="sm"
+              className="gap-1.5 border-border/60"
+              onClick={() => setEditing(!editing)}
+            >
+              <Edit3 className="h-3.5 w-3.5" />
+              {editing ? "Cancelar" : "Editar perfil"}
             </Button>
-          </form>
-        </CardContent>
+          </div>
+
+          <div>
+            <h2 className="font-serif text-xl font-semibold">{profile?.full_name || "Administrador"}</h2>
+            <p className="text-sm text-muted-foreground">{user?.email}</p>
+          </div>
+        </div>
       </Card>
+
+      {/* Info cards row */}
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+        <Card className="border-border/60">
+          <CardContent className="pt-5 pb-4 flex items-center gap-3">
+            <div className="h-9 w-9 rounded-full bg-primary/10 flex items-center justify-center shrink-0">
+              <Mail className="h-4 w-4 text-primary" />
+            </div>
+            <div className="min-w-0">
+              <p className="text-xs text-muted-foreground uppercase tracking-wide">E-mail</p>
+              <p className="text-sm font-medium truncate">{user?.email}</p>
+            </div>
+          </CardContent>
+        </Card>
+
+        <Card className="border-border/60">
+          <CardContent className="pt-5 pb-4 flex items-center gap-3">
+            <div className="h-9 w-9 rounded-full bg-primary/10 flex items-center justify-center shrink-0">
+              <Phone className="h-4 w-4 text-primary" />
+            </div>
+            <div className="min-w-0">
+              <p className="text-xs text-muted-foreground uppercase tracking-wide">Telefone</p>
+              <p className="text-sm font-medium">{profile?.phone || "—"}</p>
+            </div>
+          </CardContent>
+        </Card>
+
+        <Card className="border-border/60">
+          <CardContent className="pt-5 pb-4 flex items-center gap-3">
+            <div className="h-9 w-9 rounded-full bg-primary/10 flex items-center justify-center shrink-0">
+              <Calendar className="h-4 w-4 text-primary" />
+            </div>
+            <div className="min-w-0">
+              <p className="text-xs text-muted-foreground uppercase tracking-wide">Membro desde</p>
+              <p className="text-sm font-medium capitalize">{memberSince || "—"}</p>
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+
+      {/* Edit form */}
+      {editing && (
+        <Card className="border-border/60 animate-in fade-in slide-in-from-top-2 duration-300">
+          <CardHeader className="pb-3">
+            <CardTitle className="font-serif text-base flex items-center gap-2">
+              <Edit3 className="h-4 w-4 text-primary" />
+              Editar informações
+            </CardTitle>
+          </CardHeader>
+          <Separator className="mb-0" />
+          <CardContent className="pt-5">
+            <form onSubmit={handleSave} className="space-y-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label>Nome completo</Label>
+                  <Input
+                    value={form.full_name}
+                    onChange={(e) => setForm({ ...form, full_name: e.target.value })}
+                    placeholder="Seu nome completo"
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label>Telefone</Label>
+                  <Input
+                    value={form.phone}
+                    onChange={(e) => setForm({ ...form, phone: e.target.value })}
+                    placeholder="(00) 00000-0000"
+                  />
+                </div>
+              </div>
+              <div className="space-y-2">
+                <Label>E-mail</Label>
+                <Input value={user?.email || ""} disabled className="opacity-60" />
+                <p className="text-xs text-muted-foreground">O e-mail não pode ser alterado por aqui.</p>
+              </div>
+              <div className="flex gap-3 pt-1">
+                <Button type="submit" className="gap-2" disabled={saving}>
+                  <Save className="h-3.5 w-3.5" />
+                  {saving ? "Salvando..." : "Salvar alterações"}
+                </Button>
+                <Button type="button" variant="outline" onClick={() => setEditing(false)}>
+                  Cancelar
+                </Button>
+              </div>
+            </form>
+          </CardContent>
+        </Card>
+      )}
     </div>
   );
 }
