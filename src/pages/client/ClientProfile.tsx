@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -7,28 +7,78 @@ import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
-import { Avatar, AvatarFallback } from "@/components/ui/avatar";
-import { useToast } from "@/hooks/use-toast";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Skeleton } from "@/components/ui/skeleton";
-import { Mail, Phone, Calendar, Edit3, Save, Star } from "lucide-react";
+import { useToast } from "@/hooks/use-toast";
+import { Mail, Phone, Calendar, Edit3, Save, Star, Camera, Loader2, Crown, Clock } from "lucide-react";
 
 export default function ClientProfile() {
   const { user } = useAuth();
   const { toast } = useToast();
+  const fileInputRef = useRef<HTMLInputElement>(null);
+
   const [profile, setProfile] = useState<any>(null);
+  const [subscription, setSubscription] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
+  const [uploading, setUploading] = useState(false);
   const [editing, setEditing] = useState(false);
+  const [avatarUrl, setAvatarUrl] = useState<string | null>(null);
   const [form, setForm] = useState({ full_name: "", phone: "" });
 
   useEffect(() => {
     if (!user) return;
-    supabase.from("profiles").select("*").eq("user_id", user.id).single().then(({ data }) => {
-      setProfile(data);
-      if (data) setForm({ full_name: data.full_name || "", phone: data.phone || "" });
+    Promise.all([
+      supabase.from("profiles").select("*").eq("user_id", user.id).single(),
+      supabase
+        .from("subscriptions")
+        .select("*, plans(name, price)")
+        .eq("client_id", user.id)
+        .eq("status", "active")
+        .order("created_at", { ascending: false })
+        .limit(1)
+        .maybeSingle(),
+    ]).then(([{ data: profileData }, { data: subData }]) => {
+      if (profileData) {
+        setProfile(profileData);
+        setForm({ full_name: profileData.full_name || "", phone: profileData.phone || "" });
+        if (profileData.avatar_url) {
+          const { data: urlData } = supabase.storage.from("avatars").getPublicUrl(profileData.avatar_url);
+          setAvatarUrl(urlData.publicUrl);
+        }
+      }
+      if (subData) setSubscription(subData);
       setLoading(false);
     });
   }, [user]);
+
+  const handleAvatarUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file || !user) return;
+    setUploading(true);
+    const ext = file.name.split(".").pop();
+    const filePath = `${user.id}/avatar.${ext}`;
+    const { error: uploadError } = await supabase.storage
+      .from("avatars")
+      .upload(filePath, file, { upsert: true });
+    if (uploadError) {
+      toast({ title: "Erro ao enviar foto", description: uploadError.message, variant: "destructive" });
+      setUploading(false);
+      return;
+    }
+    const { error: updateError } = await supabase
+      .from("profiles")
+      .update({ avatar_url: filePath })
+      .eq("user_id", user.id);
+    if (updateError) {
+      toast({ title: "Erro ao salvar foto", description: updateError.message, variant: "destructive" });
+    } else {
+      const { data: urlData } = supabase.storage.from("avatars").getPublicUrl(filePath);
+      setAvatarUrl(urlData.publicUrl + "?t=" + Date.now());
+      toast({ title: "Foto atualizada! 📸" });
+    }
+    setUploading(false);
+  };
 
   const handleSave = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -49,7 +99,7 @@ export default function ClientProfile() {
   };
 
   if (loading) return (
-    <div className="space-y-4 animate-pulse max-w-2xl">
+    <div className="space-y-4 max-w-2xl">
       <Skeleton className="h-48 w-full rounded-xl" />
       <div className="grid grid-cols-3 gap-4">
         <Skeleton className="h-20 rounded-xl" />
@@ -67,13 +117,23 @@ export default function ClientProfile() {
     ? new Date(profile.created_at).toLocaleDateString("pt-BR", { month: "long", year: "numeric" })
     : null;
 
+  const expiresAt = subscription?.expires_at
+    ? new Date(subscription.expires_at).toLocaleDateString("pt-BR", { day: "2-digit", month: "long", year: "numeric" })
+    : null;
+
+  const statusLabel: Record<string, { label: string; className: string }> = {
+    active: { label: "Ativo", className: "bg-success/15 text-success border-success/30" },
+    cancelled: { label: "Cancelado", className: "bg-destructive/15 text-destructive border-destructive/30" },
+    expired: { label: "Expirado", className: "bg-muted text-muted-foreground border-border" },
+  };
+  const subStatus = statusLabel[subscription?.status] ?? statusLabel["active"];
+
   return (
     <div className="max-w-2xl space-y-6">
       <h1 className="font-serif text-2xl">Meu Perfil</h1>
 
       {/* Banner + Avatar card */}
       <Card className="overflow-hidden border-border/60">
-        {/* Banner */}
         <div className="relative h-36 gradient-gold">
           <div className="absolute inset-0 opacity-20"
             style={{ backgroundImage: "repeating-linear-gradient(45deg, transparent, transparent 20px, rgba(255,255,255,0.05) 20px, rgba(255,255,255,0.05) 40px)" }}
@@ -86,14 +146,35 @@ export default function ClientProfile() {
           </div>
         </div>
 
-        {/* Avatar overlapping banner */}
         <div className="px-6 pb-6">
           <div className="flex items-end justify-between -mt-12 mb-4">
-            <Avatar className="h-24 w-24 ring-4 ring-background shadow-elevated">
-              <AvatarFallback className="gradient-gold text-primary-foreground text-3xl font-serif">
-                {initials}
-              </AvatarFallback>
-            </Avatar>
+            {/* Avatar with upload */}
+            <div className="relative group">
+              <Avatar className="h-24 w-24 ring-4 ring-background shadow-elevated">
+                <AvatarImage src={avatarUrl || undefined} />
+                <AvatarFallback className="gradient-gold text-primary-foreground text-3xl font-serif">
+                  {initials}
+                </AvatarFallback>
+              </Avatar>
+              <button
+                onClick={() => fileInputRef.current?.click()}
+                disabled={uploading}
+                className="absolute inset-0 flex items-center justify-center rounded-full bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity cursor-pointer"
+              >
+                {uploading
+                  ? <Loader2 className="h-5 w-5 text-white animate-spin" />
+                  : <Camera className="h-5 w-5 text-white" />
+                }
+              </button>
+              <input
+                ref={fileInputRef}
+                type="file"
+                accept="image/*"
+                className="hidden"
+                onChange={handleAvatarUpload}
+              />
+            </div>
+
             <Button
               variant="outline"
               size="sm"
@@ -150,6 +231,50 @@ export default function ClientProfile() {
           </CardContent>
         </Card>
       </div>
+
+      {/* Active subscription card */}
+      <Card className={`border-border/60 overflow-hidden ${subscription ? "border-primary/30" : ""}`}>
+        {subscription && <div className="h-0.5 w-full gradient-gold" />}
+        <CardHeader className="pb-3 pt-5">
+          <CardTitle className="font-serif text-base flex items-center gap-2">
+            <Crown className="h-4 w-4 text-primary" />
+            Assinatura
+          </CardTitle>
+        </CardHeader>
+        <Separator className="mb-0" />
+        <CardContent className="pt-5">
+          {subscription ? (
+            <div className="flex items-center justify-between flex-wrap gap-4">
+              <div className="space-y-1">
+                <p className="font-serif text-lg font-semibold">{subscription.plans?.name}</p>
+                <p className="text-sm text-muted-foreground">
+                  R$ {Number(subscription.plans?.price).toFixed(2)}/mês
+                </p>
+                {expiresAt && (
+                  <div className="flex items-center gap-1.5 text-xs text-muted-foreground mt-1">
+                    <Clock className="h-3 w-3" />
+                    Expira em {expiresAt}
+                  </div>
+                )}
+              </div>
+              <Badge
+                variant="outline"
+                className={`text-xs px-3 py-1 font-medium ${subStatus.className}`}
+              >
+                {subStatus.label}
+              </Badge>
+            </div>
+          ) : (
+            <div className="flex items-center justify-between flex-wrap gap-4">
+              <div>
+                <p className="text-sm font-medium">Nenhuma assinatura ativa</p>
+                <p className="text-xs text-muted-foreground mt-0.5">Assine um plano para aproveitar todos os benefícios.</p>
+              </div>
+              <Badge variant="outline" className="text-xs text-muted-foreground">Sem plano</Badge>
+            </div>
+          )}
+        </CardContent>
+      </Card>
 
       {/* Edit form */}
       {editing && (

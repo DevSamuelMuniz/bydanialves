@@ -1,23 +1,27 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Avatar, AvatarFallback } from "@/components/ui/avatar";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
 import { useToast } from "@/hooks/use-toast";
-import { User, Mail, Phone, Shield, Calendar, Edit3, Save } from "lucide-react";
+import { Mail, Phone, Calendar, Edit3, Save, Shield, Camera, Loader2 } from "lucide-react";
 
 export default function AdminProfile() {
   const { user } = useAuth();
   const { toast } = useToast();
+  const fileInputRef = useRef<HTMLInputElement>(null);
+
   const [profile, setProfile] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
+  const [uploading, setUploading] = useState(false);
   const [editing, setEditing] = useState(false);
+  const [avatarUrl, setAvatarUrl] = useState<string | null>(null);
   const [form, setForm] = useState({ full_name: "", phone: "" });
 
   useEffect(() => {
@@ -31,10 +35,42 @@ export default function AdminProfile() {
         if (data) {
           setProfile(data);
           setForm({ full_name: data.full_name || "", phone: data.phone || "" });
+          if (data.avatar_url) {
+            const { data: urlData } = supabase.storage.from("avatars").getPublicUrl(data.avatar_url);
+            setAvatarUrl(urlData.publicUrl);
+          }
         }
         setLoading(false);
       });
   }, [user]);
+
+  const handleAvatarUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file || !user) return;
+    setUploading(true);
+    const ext = file.name.split(".").pop();
+    const filePath = `${user.id}/avatar.${ext}`;
+    const { error: uploadError } = await supabase.storage
+      .from("avatars")
+      .upload(filePath, file, { upsert: true });
+    if (uploadError) {
+      toast({ title: "Erro ao enviar foto", description: uploadError.message, variant: "destructive" });
+      setUploading(false);
+      return;
+    }
+    const { error: updateError } = await supabase
+      .from("profiles")
+      .update({ avatar_url: filePath })
+      .eq("user_id", user.id);
+    if (updateError) {
+      toast({ title: "Erro ao salvar foto", description: updateError.message, variant: "destructive" });
+    } else {
+      const { data: urlData } = supabase.storage.from("avatars").getPublicUrl(filePath);
+      setAvatarUrl(urlData.publicUrl + "?t=" + Date.now());
+      toast({ title: "Foto atualizada! 📸" });
+    }
+    setUploading(false);
+  };
 
   const handleSave = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -55,9 +91,13 @@ export default function AdminProfile() {
   };
 
   if (loading) return (
-    <div className="space-y-4 animate-pulse">
+    <div className="space-y-4 animate-pulse max-w-2xl">
       <div className="h-48 rounded-xl bg-muted" />
-      <div className="h-32 rounded-xl bg-muted" />
+      <div className="grid grid-cols-3 gap-4">
+        <div className="h-20 rounded-xl bg-muted" />
+        <div className="h-20 rounded-xl bg-muted" />
+        <div className="h-20 rounded-xl bg-muted" />
+      </div>
     </div>
   );
 
@@ -75,12 +115,10 @@ export default function AdminProfile() {
 
       {/* Banner + Avatar card */}
       <Card className="overflow-hidden border-border/60">
-        {/* Banner */}
         <div className="relative h-36 gradient-gold">
           <div className="absolute inset-0 opacity-20"
             style={{ backgroundImage: "repeating-linear-gradient(45deg, transparent, transparent 20px, rgba(255,255,255,0.05) 20px, rgba(255,255,255,0.05) 40px)" }}
           />
-          {/* Badge admin */}
           <div className="absolute top-4 right-4">
             <Badge className="bg-background/80 text-foreground border border-border/60 backdrop-blur-sm gap-1.5">
               <Shield className="h-3 w-3 text-primary" />
@@ -89,14 +127,35 @@ export default function AdminProfile() {
           </div>
         </div>
 
-        {/* Avatar overlapping banner */}
         <div className="px-6 pb-6">
           <div className="flex items-end justify-between -mt-12 mb-4">
-            <Avatar className="h-24 w-24 ring-4 ring-background shadow-elevated">
-              <AvatarFallback className="gradient-gold text-primary-foreground text-3xl font-serif">
-                {initials}
-              </AvatarFallback>
-            </Avatar>
+            {/* Avatar with upload button */}
+            <div className="relative group">
+              <Avatar className="h-24 w-24 ring-4 ring-background shadow-elevated">
+                <AvatarImage src={avatarUrl || undefined} />
+                <AvatarFallback className="gradient-gold text-primary-foreground text-3xl font-serif">
+                  {initials}
+                </AvatarFallback>
+              </Avatar>
+              <button
+                onClick={() => fileInputRef.current?.click()}
+                disabled={uploading}
+                className="absolute inset-0 flex items-center justify-center rounded-full bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity cursor-pointer"
+              >
+                {uploading
+                  ? <Loader2 className="h-5 w-5 text-white animate-spin" />
+                  : <Camera className="h-5 w-5 text-white" />
+                }
+              </button>
+              <input
+                ref={fileInputRef}
+                type="file"
+                accept="image/*"
+                className="hidden"
+                onChange={handleAvatarUpload}
+              />
+            </div>
+
             <Button
               variant="outline"
               size="sm"
@@ -115,7 +174,7 @@ export default function AdminProfile() {
         </div>
       </Card>
 
-      {/* Info cards row */}
+      {/* Info cards */}
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
         <Card className="border-border/60">
           <CardContent className="pt-5 pb-4 flex items-center gap-3">
