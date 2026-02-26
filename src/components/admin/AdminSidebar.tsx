@@ -11,7 +11,7 @@ import {
   SidebarMenuItem,
   SidebarFooter,
 } from "@/components/ui/sidebar";
-import { LayoutDashboard, Users, Calendar, Scissors, DollarSign, BarChart3, LogOut, ShieldCheck, Crown } from "lucide-react";
+import { LayoutDashboard, Users, Calendar, Scissors, DollarSign, BarChart3, LogOut, ShieldCheck, Crown, Activity } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import logoImg from "@/assets/logo-dani-alves.jpg";
 
@@ -24,6 +24,7 @@ const items = [
   { title: "Financeiro", url: "/admin/finance", icon: DollarSign },
   { title: "Relatórios", url: "/admin/reports", icon: BarChart3 },
   { title: "Usuários", url: "/admin/users", icon: ShieldCheck },
+  { title: "Logs", url: "/admin/logs", icon: Activity },
 ];
 
 export function AdminSidebar() {
