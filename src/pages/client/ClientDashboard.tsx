@@ -75,7 +75,7 @@ export default function ClientDashboard() {
 
   if (loading) {
     return (
-      <div className="space-y-6 max-w-4xl">
+      <div className="space-y-6 w-full">
         <Skeleton className="h-12 w-64 rounded-lg" />
         <Skeleton className="h-36 w-full rounded-lg" />
         <Skeleton className="h-36 w-full rounded-lg" />
@@ -87,7 +87,7 @@ export default function ClientDashboard() {
   const progressPercent = totalEscovas > 0 ? Math.min((escovasUsadas / totalEscovas) * 100, 100) : 0;
 
   return (
-    <div className="space-y-8 max-w-4xl">
+    <div className="space-y-8 w-full">
       {/* Welcome */}
       <div className="animate-slide-up">
         <h1 className="font-serif text-2xl md:text-3xl tracking-tight">
