@@ -150,7 +150,7 @@ export default function NewBooking() {
   // Blocked user modal + empty state
   if (blocked) {
     return (
-      <div className="max-w-4xl space-y-6">
+      <div className="w-full space-y-6">
         <h1 className="font-serif text-2xl tracking-tight">Novo Agendamento</h1>
 
         <Card className="border-destructive/20">
@@ -197,7 +197,7 @@ export default function NewBooking() {
   }
 
   return (
-    <div className="max-w-4xl space-y-6">
+    <div className="w-full space-y-6">
       <div className="flex items-center gap-2">
         {step > 1 && (
           <Button variant="ghost" size="icon" onClick={() => setStep(step - 1)}>

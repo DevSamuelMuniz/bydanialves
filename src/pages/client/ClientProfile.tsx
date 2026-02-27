@@ -99,7 +99,7 @@ export default function ClientProfile() {
   };
 
   if (loading) return (
-    <div className="space-y-4 max-w-4xl">
+    <div className="space-y-4 w-full">
       <Skeleton className="h-48 w-full rounded-xl" />
       <div className="grid grid-cols-3 gap-4">
         <Skeleton className="h-20 rounded-xl" />
@@ -129,7 +129,7 @@ export default function ClientProfile() {
   const subStatus = statusLabel[subscription?.status] ?? statusLabel["active"];
 
   return (
-    <div className="max-w-4xl space-y-6">
+    <div className="w-full space-y-6">
       <h1 className="font-serif text-2xl">Meu Perfil</h1>
 
       {/* Banner + Avatar card */}
