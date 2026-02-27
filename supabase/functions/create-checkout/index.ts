@@ -54,6 +54,19 @@ serve(async (req) => {
     let customerId: string | undefined;
     if (customers.data.length > 0) {
       customerId = customers.data[0].id;
+
+      // Cancel any active Stripe subscriptions before creating a new one (plan switch)
+      const activeSubs = await stripe.subscriptions.list({ customer: customerId, status: "active", limit: 10 });
+      for (const sub of activeSubs.data) {
+        await stripe.subscriptions.cancel(sub.id);
+      }
+
+      // Also cancel DB subscriptions
+      await dbClient
+        .from("subscriptions")
+        .update({ status: "cancelled", updated_at: new Date().toISOString() })
+        .eq("client_id", user.id)
+        .eq("status", "active");
     }
 
     const origin = req.headers.get("origin") || "https://id-preview--76555cc4-4bca-4bf7-af8c-8a10b830603b.lovable.app";
