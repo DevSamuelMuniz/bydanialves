@@ -60,6 +60,17 @@ export default function AdminMyAppointments() {
 
   useEffect(() => { fetchData(); }, [user]);
 
+  // Realtime: re-fetch quando appointments mudar
+  useEffect(() => {
+    const channel = supabase
+      .channel("my-appointments-realtime")
+      .on("postgres_changes", { event: "*", schema: "public", table: "appointments" }, () => {
+        fetchData();
+      })
+      .subscribe();
+    return () => { supabase.removeChannel(channel); };
+  }, [user]);
+
   const markComplete = async (id: string) => {
     const { error } = await supabase.from("appointments").update({ status: "completed" }).eq("id", id);
     if (error) toast({ title: "Erro", description: error.message, variant: "destructive" });
