@@ -132,7 +132,7 @@ export default function Auth() {
       <div className="w-full lg:w-1/2 flex justify-center bg-background px-6 py-12 overflow-y-auto h-screen">
         <div className="w-full max-w-md space-y-6 my-auto">
           <div className="text-center">
-            <img alt="Dani Alves" className="mx-auto h-16 w-16 mb-4" src="/lovable-uploads/918087c5-cbd1-4b65-a2a5-90fdab6041dc.png" />
+            <img alt="Dani Alves" className="mx-auto h-auto w-28 mb-4" src="/lovable-uploads/918087c5-cbd1-4b65-a2a5-90fdab6041dc.png" />
             <h1 className="font-serif text-2xl font-bold tracking-tight">Dani Alves Studio</h1>
             <p className="text-muted-foreground mt-1">Agende seus serviços com elegância</p>
           </div>

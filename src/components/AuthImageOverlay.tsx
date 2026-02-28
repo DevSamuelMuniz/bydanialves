@@ -14,8 +14,8 @@ export function AuthImageOverlay({ imageSrc }: AuthImageOverlayProps) {
 
       {/* Content */}
       <div className="relative z-10 mt-auto p-10 space-y-6">
-        <h2 className="font-serif text-3xl font-bold text-white tracking-tight">
-          ESMALTERIA DANIELLA ALVES
+        <h2 className="font-serif font-bold text-white tracking-tight text-4xl">
+          DANIELLA ALVES ESMALTERIA  
         </h2>
         <p className="text-white/80 text-base leading-relaxed max-w-sm">
           Transforme seu visual com profissionais especializados. Agende online e aproveite uma experiência única.
@@ -48,6 +48,6 @@ export function AuthImageOverlay({ imageSrc }: AuthImageOverlayProps) {
           </div>
         </div>
       </div>
-    </div>
-  );
+    </div>);
+
 }
