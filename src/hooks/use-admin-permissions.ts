@@ -62,7 +62,7 @@ export function useAdminPermissions() {
     canManageBranches: r >= 3,
 
     // ── Dashboard ──────────────────────────────────────
-    canViewDashboard: r >= 1 && adminLevel !== "professional",
+    canViewDashboard: r >= 2 && adminLevel !== "professional",
     canViewDashboardFinancials: r >= 4,
     canViewBranchKpis: r >= 3,
   };
