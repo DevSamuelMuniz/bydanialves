@@ -154,44 +154,51 @@ export default function AdminClients() {
       {filtered.length === 0 ? (
         <p className="text-muted-foreground text-center py-8">Nenhum cliente encontrado.</p>
       ) : (
-        <div className="space-y-2">
+        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3">
           {filtered.map((c) => (
             <Card
               key={c.id}
-              className="border-border hover:border-primary/30 transition-colors cursor-pointer"
+              className="cursor-pointer hover:shadow-md transition-shadow border-border"
               onClick={() => openDetail(c)}
             >
-              <CardContent className="py-4 flex items-center justify-between">
-                <div>
-                  <div className="flex items-center gap-2">
-                    <p className="font-medium">{c.full_name || "Sem nome"}</p>
+              <CardContent className="p-4 flex flex-col items-center text-center gap-2">
+                {/* Avatar */}
+                <div className="h-12 w-12 rounded-full bg-primary/10 flex items-center justify-center shrink-0">
+                  <span className="text-lg font-bold text-primary">
+                    {(c.full_name || "?")[0].toUpperCase()}
+                  </span>
+                </div>
+
+                <div className="w-full min-w-0">
+                  <div className="flex items-center justify-center gap-1 flex-wrap">
+                    <p className="font-medium text-sm truncate">{c.full_name || "Sem nome"}</p>
                     {c.blocked && (
-                      <Badge variant="destructive" className="text-xs">
-                        Bloqueado
-                      </Badge>
+                      <Badge variant="destructive" className="text-xs">Bloqueado</Badge>
                     )}
                   </div>
-                  <p className="text-sm text-muted-foreground">{c.phone || "Sem telefone"}</p>
+                  <p className="text-xs text-muted-foreground truncate">{c.phone || "Sem telefone"}</p>
                   {emails[c.user_id] && (
-                    <p className="text-sm text-muted-foreground">{emails[c.user_id].email}</p>
+                    <p className="text-xs text-muted-foreground truncate">{emails[c.user_id].email}</p>
                   )}
                 </div>
+
                 {!isProfessional && (
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    toggleBlock(c);
-                  }}
-                  title={c.blocked ? "Desbloquear" : "Bloquear"}
-                >
-                  {c.blocked ? (
-                    <CheckCircle className="h-4 w-4 text-green-600" />
-                  ) : (
-                    <Ban className="h-4 w-4 text-destructive" />
-                  )}
-                </Button>
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    className="h-7 w-7 shrink-0"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      toggleBlock(c);
+                    }}
+                    title={c.blocked ? "Desbloquear" : "Bloquear"}
+                  >
+                    {c.blocked ? (
+                      <CheckCircle className="h-4 w-4 text-green-600" />
+                    ) : (
+                      <Ban className="h-4 w-4 text-destructive" />
+                    )}
+                  </Button>
                 )}
               </CardContent>
             </Card>
