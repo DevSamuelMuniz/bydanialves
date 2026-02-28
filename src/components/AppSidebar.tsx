@@ -10,8 +10,8 @@ import {
   SidebarMenu,
   SidebarMenuButton,
   SidebarMenuItem,
-  SidebarFooter,
-} from "@/components/ui/sidebar";
+  SidebarFooter } from
+"@/components/ui/sidebar";
 import { LogOut, LucideIcon } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import logoImg from "@/assets/logo-dani-alves.jpg";
@@ -39,14 +39,14 @@ export function AppSidebar({ items, groupLabel, topBadge, bottomSlot }: AppSideb
         <img
           src={logoImg}
           alt="Dani Alves Esmalteria"
-          className="h-16 w-auto object-contain"
-        />
+          className="w-28 h-auto object-contain" />
+
       </div>
 
       {/* Optional badge (e.g. admin level) */}
-      {topBadge && (
-        <div className="px-4 pt-3 pb-1">{topBadge}</div>
-      )}
+      {topBadge &&
+      <div className="px-4 pt-3 pb-1">{topBadge}</div>
+      }
 
       <SidebarContent className="flex-1">
         <SidebarGroup>
@@ -55,43 +55,43 @@ export function AppSidebar({ items, groupLabel, topBadge, bottomSlot }: AppSideb
           </SidebarGroupLabel>
           <SidebarGroupContent>
             <SidebarMenu>
-              {items.map((item) => (
-                <SidebarMenuItem key={item.title}>
+              {items.map((item) =>
+              <SidebarMenuItem key={item.title}>
                   <SidebarMenuButton asChild>
                     <NavLink
-                      to={item.url}
-                      end
-                      className="rounded-lg mx-2 px-3 py-2.5 transition-all duration-200 hover:bg-sidebar-accent"
-                      activeClassName="bg-primary/10 text-primary font-medium shadow-sm"
-                    >
+                    to={item.url}
+                    end
+                    className="rounded-lg mx-2 px-3 py-2.5 transition-all duration-200 hover:bg-sidebar-accent"
+                    activeClassName="bg-primary/10 text-primary font-medium shadow-sm">
+
                       <item.icon className="mr-3 h-4 w-4" />
                       <span>{item.title}</span>
                     </NavLink>
                   </SidebarMenuButton>
                 </SidebarMenuItem>
-              ))}
+              )}
             </SidebarMenu>
           </SidebarGroupContent>
         </SidebarGroup>
       </SidebarContent>
 
       {/* Optional bottom slot (e.g. plan status) */}
-      {bottomSlot && (
-        <div className="border-t border-sidebar-border/40 p-3 space-y-3">
+      {bottomSlot &&
+      <div className="border-t border-sidebar-border/40 p-3 space-y-3">
           {bottomSlot}
         </div>
-      )}
+      }
 
       <SidebarFooter className="p-3 pt-0">
         <Button
           variant="ghost"
           className="w-full justify-start text-muted-foreground hover:text-destructive rounded-lg"
-          onClick={signOut}
-        >
+          onClick={signOut}>
+
           <LogOut className="mr-3 h-4 w-4" />
           Sair
         </Button>
       </SidebarFooter>
-    </Sidebar>
-  );
+    </Sidebar>);
+
 }
