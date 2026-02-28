@@ -18,6 +18,7 @@ import ClientPlans from "./pages/client/ClientPlans";
 import AdminDashboard from "./pages/admin/AdminDashboard";
 import AdminClients from "./pages/admin/AdminClients";
 import AdminAgenda from "./pages/admin/AdminAgenda";
+import AdminMyAppointments from "./pages/admin/AdminMyAppointments";
 import AdminServices from "./pages/admin/AdminServices";
 import AdminFinance from "./pages/admin/AdminFinance";
 import AdminReports from "./pages/admin/AdminReports";
@@ -61,6 +62,7 @@ const App = () => (
               <Route index element={<AdminDashboard />} />
               <Route path="clients" element={<AdminClients />} />
               <Route path="agenda" element={<AdminAgenda />} />
+              <Route path="my-appointments" element={<AdminMyAppointments />} />
               <Route path="services" element={<AdminServices />} />
               <Route path="plans" element={<AdminPlans />} />
               <Route path="finance" element={<AdminFinance />} />

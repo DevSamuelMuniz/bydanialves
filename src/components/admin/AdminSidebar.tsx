@@ -12,7 +12,7 @@ import {
   SidebarMenuItem,
   SidebarFooter,
 } from "@/components/ui/sidebar";
-import { LayoutDashboard, Users, Calendar, Scissors, DollarSign, BarChart3, LogOut, ShieldCheck, Crown, Activity } from "lucide-react";
+import { LayoutDashboard, Users, Calendar, Scissors, DollarSign, BarChart3, LogOut, ShieldCheck, Crown, Activity, ClipboardList } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import logoImg from "@/assets/logo-dani-alves.jpg";
@@ -25,6 +25,7 @@ export function AdminSidebar() {
     { title: "Dashboard", url: "/admin", icon: LayoutDashboard, show: perms.canViewDashboard },
     { title: "Clientes", url: "/admin/clients", icon: Users, show: perms.canViewClients },
     { title: "Agenda", url: "/admin/agenda", icon: Calendar, show: perms.canViewAgenda },
+    { title: "Meus Atendimentos", url: "/admin/my-appointments", icon: ClipboardList, show: perms.adminLevel === "professional" },
     { title: "Serviços", url: "/admin/services", icon: Scissors, show: perms.canViewServices },
     { title: "Planos", url: "/admin/plans", icon: Crown, show: perms.canViewPlans },
     { title: "Financeiro", url: "/admin/finance", icon: DollarSign, show: perms.canViewFinance },
