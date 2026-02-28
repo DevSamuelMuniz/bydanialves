@@ -286,23 +286,46 @@ export default function Auth() {
 
                 {/* Modal de confirmação de termos */}
                 <Dialog open={showTermsModal} onOpenChange={setShowTermsModal}>
-                  <DialogContent className="max-w-md">
+                  <DialogContent className="max-w-md max-h-[90vh] overflow-y-auto">
                     <DialogHeader>
-                      <DialogTitle>Confirmar aceitação</DialogTitle>
+                      <DialogTitle>Resumo dos Termos</DialogTitle>
                       <DialogDescription>
-                        Ao aceitar, você confirma que leu e concorda com os nossos{" "}
-                        <a href="/termosdeservico" target="_blank" className="text-primary underline underline-offset-2 hover:opacity-80">Termos de Serviço</a>{" "}
-                        e a{" "}
-                        <a href="/politicadeprivacidade" target="_blank" className="text-primary underline underline-offset-2 hover:opacity-80">Política de Privacidade</a>.
+                        Leia os pontos principais antes de confirmar.
                       </DialogDescription>
                     </DialogHeader>
-                    <div className="flex flex-col gap-2 pt-2">
+
+                    <div className="space-y-3 py-1">
+                      {[
+                        { icon: "📋", title: "Uso da plataforma", text: "Ao se cadastrar, você concorda em usar a plataforma apenas para fins lícitos e fornecer informações verdadeiras." },
+                        { icon: "📅", title: "Agendamentos", text: "Cancelamentos devem ser feitos com no mínimo 2 horas de antecedência. Cancelamentos fora desse prazo podem acarretar cobrança ou perda do horário." },
+                        { icon: "👑", title: "Planos e assinaturas", text: "Planos podem ser cancelados a qualquer momento, sem multa, com efeito a partir do próximo ciclo de cobrança." },
+                        { icon: "🔒", title: "Privacidade", text: "Coletamos apenas dados necessários para o funcionamento do serviço (nome, telefone, e-mail). Seus dados não são vendidos a terceiros." },
+                        { icon: "⚠️", title: "Conduta", text: "Contas que utilizarem a plataforma de forma abusiva ou fraudulenta poderão ser suspensas ou encerradas." },
+                      ].map((item) => (
+                        <div key={item.title} className="flex gap-3 p-3 rounded-lg bg-muted/50 border border-border">
+                          <span className="text-lg shrink-0">{item.icon}</span>
+                          <div>
+                            <p className="text-sm font-semibold leading-tight mb-0.5">{item.title}</p>
+                            <p className="text-xs text-muted-foreground leading-relaxed">{item.text}</p>
+                          </div>
+                        </div>
+                      ))}
+
+                      <p className="text-xs text-muted-foreground text-center pt-1">
+                        Leia na íntegra:{" "}
+                        <a href="/termosdeservico" target="_blank" className="text-primary underline underline-offset-2">Termos de Serviço</a>{" "}
+                        e{" "}
+                        <a href="/politicadeprivacidade" target="_blank" className="text-primary underline underline-offset-2">Política de Privacidade</a>
+                      </p>
+                    </div>
+
+                    <div className="flex flex-col gap-2 pt-1">
                       <Button
                         type="button"
                         className="w-full"
                         onClick={() => { setAcceptTerms(true); setShowTermsModal(false); }}
                       >
-                        Confirmar e aceitar
+                        Li e aceito os termos
                       </Button>
                       <Button
                         type="button"
