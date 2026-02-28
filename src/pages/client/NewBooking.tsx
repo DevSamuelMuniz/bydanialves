@@ -16,7 +16,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, Di
 import { ptBR } from "date-fns/locale";
 import { format } from "date-fns";
 
-interface Branch { id: string; name: string; address: string | null; image_url?: string | null; }
+interface Branch { id: string; name: string; address: string | null; image_url: string | null; }
 
 interface ServiceItem {
   id: string;
@@ -35,15 +35,10 @@ function parseEscovasFromIncludes(includes: string): number {
 
 const WHATSAPP_NUMBER = "5500000000000";
 
-const BRANCH_IMAGES: Record<number, string> = {
-  0: "https://images.unsplash.com/photo-1582095133179-bfd08e2d6b27?w=800&q=70&auto=format&fit=crop",
-  1: "https://images.unsplash.com/photo-1600948836101-f9ffda59d250?w=800&q=70&auto=format&fit=crop",
-  2: "https://images.unsplash.com/photo-1559599101-f09722fb4948?w=800&q=70&auto=format&fit=crop",
-  3: "https://images.unsplash.com/photo-1565520834234-5b4c5b394dce?w=800&q=70&auto=format&fit=crop",
-};
+const DEFAULT_BRANCH_IMAGE = "https://images.unsplash.com/photo-1582095133179-bfd08e2d6b27?w=800&q=70&auto=format&fit=crop";
 
-function getBranchImage(index: number) {
-  return BRANCH_IMAGES[index % 4];
+function getBranchImage(branch: Branch) {
+  return branch.image_url || DEFAULT_BRANCH_IMAGE;
 }
 
 // Generate available time slots based on services total duration
@@ -87,7 +82,6 @@ export default function NewBooking() {
   const [step, setStep] = useState(1);
   const [branches, setBranches] = useState<Branch[]>([]);
   const [selectedBranch, setSelectedBranch] = useState<Branch | null>(null);
-  const [selectedBranchIndex, setSelectedBranchIndex] = useState<number>(0);
   const [services, setServices] = useState<ServiceItem[]>([]);
   const [selectedServices, setSelectedServices] = useState<ServiceItem[]>([]);
   const [selectedDate, setSelectedDate] = useState<Date | undefined>();
@@ -325,17 +319,17 @@ export default function NewBooking() {
             </div>
           ) : (
             <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-              {branches.map((b, idx) => (
+              {branches.map((b) => (
                 <div
                   key={b.id}
-                  onClick={() => { setSelectedBranch(b); setSelectedBranchIndex(idx); setStep(2); }}
+                  onClick={() => { setSelectedBranch(b); setStep(2); }}
                   className={`group relative rounded-2xl overflow-hidden cursor-pointer transition-all duration-300 border-2 flex flex-col
                     ${selectedBranch?.id === b.id ? "border-primary shadow-elevated" : "border-border/50 hover:border-primary/50 hover:shadow-elegant"}`}
                 >
                   {/* Branch image */}
                   <div className="relative h-44 overflow-hidden">
                     <img
-                      src={getBranchImage(idx)}
+                      src={getBranchImage(b)}
                       alt={b.name}
                       className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
                     />
@@ -592,7 +586,7 @@ export default function NewBooking() {
           {/* Branch photo header */}
           <div className="relative rounded-2xl overflow-hidden h-40 shadow-elegant">
             <img
-              src={getBranchImage(selectedBranchIndex)}
+              src={selectedBranch ? getBranchImage(selectedBranch) : DEFAULT_BRANCH_IMAGE}
               alt={selectedBranch?.name || "Filial"}
               className="w-full h-full object-cover"
             />
