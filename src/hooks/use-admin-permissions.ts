@@ -55,6 +55,7 @@ export function useAdminPermissions() {
     canViewUsers: r >= 4,
     canManageUsers: r >= 4,
     canViewLogs: r >= 4,
+    canManageCoupons: r >= 4,
     canManageSystemSettings: r >= 4,
 
     // ── Filiais ────────────────────────────────────────
