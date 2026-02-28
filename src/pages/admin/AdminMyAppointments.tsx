@@ -22,7 +22,6 @@ export default function AdminMyAppointments() {
   const { toast } = useToast();
 
   const [profName, setProfName] = useState("");
-  const [pending, setPending] = useState<any[]>([]);
   const [confirmed, setConfirmed] = useState<any[]>([]);
   const [history, setHistory] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
@@ -53,8 +52,7 @@ export default function AdminMyAppointments() {
       .order("appointment_time", { ascending: true });
 
     const all = data || [];
-    setPending(all.filter((a) => a.status === "pending"));
-    setConfirmed(all.filter((a) => a.status === "confirmed"));
+    setConfirmed(all.filter((a) => ["pending", "confirmed"].includes(a.status)));
     setHistory(all.filter((a) => ["completed", "cancelled"].includes(a.status)).reverse());
     setLoading(false);
   };
@@ -125,7 +123,7 @@ export default function AdminMyAppointments() {
                 <DollarSign className="h-3 w-3" />
                 <span className="font-medium text-foreground">R$ {Number(a.services?.price || 0).toFixed(2)}</span>
                 {a.services?.duration_minutes && (
-                  <span className="ml-auto text-muted-foreground">{a.services.duration_minutes} min</span>
+                  <span className="ml-auto">{a.services.duration_minutes} min</span>
                 )}
               </div>
             </div>
@@ -183,20 +181,16 @@ export default function AdminMyAppointments() {
       </div>
 
       {loading ? (
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-          {[...Array(3)].map((_, i) => (
-            <div key={i} className="space-y-3">
-              <Skeleton className="h-8 w-full" />
-              <Skeleton className="h-36 w-full" />
-              <Skeleton className="h-36 w-full" />
-            </div>
-          ))}
+        <div className="space-y-6">
+          <Skeleton className="h-10 w-full" />
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+            {[...Array(3)].map((_, i) => <Skeleton key={i} className="h-40 w-full" />)}
+          </div>
         </div>
       ) : (
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 items-start">
+        <div className="space-y-8">
 
-
-          {/* Coluna 2: Em Atendimento */}
+          {/* Em Atendimento */}
           <div className="space-y-3">
             <Card className="border-blue-400/30 bg-blue-500/5">
               <CardHeader className="py-3 px-4">
@@ -210,12 +204,16 @@ export default function AdminMyAppointments() {
               </CardHeader>
             </Card>
             {confirmed.length === 0
-              ? <EmptyCol icon={PlayCircle} text="Nenhum em andamento" />
-              : confirmed.map((a) => <AppointmentCard key={a.id} a={a} showActions />)
+              ? <EmptyCol icon={PlayCircle} text="Nenhum em andamento. Use 'Pegar Agendamento' na Agenda." />
+              : (
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+                  {confirmed.map((a) => <AppointmentCard key={a.id} a={a} showActions />)}
+                </div>
+              )
             }
           </div>
 
-          {/* Coluna 3: Histórico */}
+          {/* Histórico */}
           <div className="space-y-3">
             <Card className="border-border bg-muted/20">
               <CardHeader className="py-3 px-4">
@@ -240,18 +238,14 @@ export default function AdminMyAppointments() {
                 </CardTitle>
               </CardHeader>
             </Card>
-
             {historyOpen && (
-              <>
-                {history.length === 0
-                  ? <EmptyCol icon={ListChecks} text="Nenhum histórico ainda" />
-                  : (
-                    <div className="space-y-2 max-h-[calc(100vh-260px)] overflow-y-auto pr-1">
-                      {history.map((a) => <AppointmentCard key={a.id} a={a} showActions={false} />)}
-                    </div>
-                  )
-                }
-              </>
+              history.length === 0
+                ? <EmptyCol icon={ListChecks} text="Nenhum histórico ainda" />
+                : (
+                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+                    {history.map((a) => <AppointmentCard key={a.id} a={a} showActions={false} />)}
+                  </div>
+                )
             )}
           </div>
 
