@@ -19,6 +19,7 @@ interface Branch {
   address: string | null;
   active: boolean;
   created_at: string;
+  image_url: string | null;
   staffCount?: number;
 }
 
@@ -31,6 +32,7 @@ export default function AdminBranches() {
   const [editing, setEditing] = useState<Branch | null>(null);
   const [name, setName] = useState("");
   const [address, setAddress] = useState("");
+  const [imageUrl, setImageUrl] = useState("");
   const [saving, setSaving] = useState(false);
 
   const fetchBranches = async () => {
@@ -54,6 +56,7 @@ export default function AdminBranches() {
     setEditing(null);
     setName("");
     setAddress("");
+    setImageUrl("");
     setDialogOpen(true);
   };
 
@@ -61,6 +64,7 @@ export default function AdminBranches() {
     setEditing(b);
     setName(b.name);
     setAddress(b.address || "");
+    setImageUrl(b.image_url || "");
     setDialogOpen(true);
   };
 
@@ -70,13 +74,13 @@ export default function AdminBranches() {
     setSaving(true);
     if (editing) {
       const { error } = await (supabase.from("branches" as any) as any)
-        .update({ name: name.trim(), address: address.trim() || null })
+        .update({ name: name.trim(), address: address.trim() || null, image_url: imageUrl.trim() || null })
         .eq("id", editing.id);
       if (error) toast({ title: "Erro", description: error.message, variant: "destructive" });
       else { toast({ title: "Filial atualizada!" }); setDialogOpen(false); fetchBranches(); }
     } else {
       const { error } = await (supabase.from("branches" as any) as any)
-        .insert({ name: name.trim(), address: address.trim() || null });
+        .insert({ name: name.trim(), address: address.trim() || null, image_url: imageUrl.trim() || null });
       if (error) toast({ title: "Erro", description: error.message, variant: "destructive" });
       else { toast({ title: "Filial criada!" }); setDialogOpen(false); fetchBranches(); }
     }
@@ -205,6 +209,21 @@ export default function AdminBranches() {
                 placeholder="Rua, número, bairro..."
                 className="h-10"
               />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="branch-image">URL da Foto de Fachada</Label>
+              <Input
+                id="branch-image"
+                value={imageUrl}
+                onChange={(e) => setImageUrl(e.target.value)}
+                placeholder="https://..."
+                className="h-10"
+              />
+              {imageUrl && (
+                <div className="mt-2 rounded-xl overflow-hidden h-28 border border-border/60">
+                  <img src={imageUrl} alt="Preview" className="w-full h-full object-cover" />
+                </div>
+              )}
             </div>
             <DialogFooter>
               <Button type="button" variant="ghost" onClick={() => setDialogOpen(false)}>Cancelar</Button>
