@@ -8,10 +8,11 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Label } from "@/components/ui/label";
 import { useToast } from "@/hooks/use-toast";
-import { Search, Ban, CheckCircle, Calendar, DollarSign, Edit2, Save, X, Star, MessageCircle, UserPlus } from "lucide-react";
+import { Search, Ban, CheckCircle, Calendar, DollarSign, Edit2, Save, X, MessageCircle } from "lucide-react";
 import { useAdminPermissions } from "@/hooks/use-admin-permissions";
 import { cn } from "@/lib/utils";
 import Avatar3D from "@/components/ui/avatar-3d";
+import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 
 interface ClientProfile {
   id: string;
@@ -20,6 +21,7 @@ interface ClientProfile {
   phone: string | null;
   blocked: boolean;
   created_at: string;
+  gender?: string | null;
 }
 
 interface Appointment {
@@ -49,7 +51,7 @@ export default function AdminClients() {
   const [clientAppointments, setClientAppointments] = useState<Appointment[]>([]);
   const [loadingDetail, setLoadingDetail] = useState(false);
   const [editing, setEditing] = useState(false);
-  const [editForm, setEditForm] = useState({ full_name: "", phone: "" });
+  const [editForm, setEditForm] = useState({ full_name: "", phone: "", gender: "male" });
 
   const fetchClients = async () => {
     const { data } = await supabase.from("profiles").select("*").order("full_name");
@@ -72,7 +74,7 @@ export default function AdminClients() {
   const openDetail = async (client: ClientProfile) => {
     setSelectedClient(client);
     setEditing(false);
-    setEditForm({ full_name: client.full_name, phone: client.phone || "" });
+    setEditForm({ full_name: client.full_name, phone: client.phone || "", gender: client.gender || "male" });
     setLoadingDetail(true);
     const { data } = await supabase
       .from("appointments")
@@ -105,7 +107,7 @@ export default function AdminClients() {
     if (!selectedClient) return;
     const { error } = await supabase
       .from("profiles")
-      .update({ full_name: editForm.full_name, phone: editForm.phone || null })
+      .update({ full_name: editForm.full_name, phone: editForm.phone || null, gender: editForm.gender } as any)
       .eq("id", selectedClient.id);
     if (error) {
       toast({ title: "Erro", description: error.message, variant: "destructive" });
@@ -113,7 +115,7 @@ export default function AdminClients() {
       toast({ title: "Perfil atualizado!" });
       setEditing(false);
       fetchClients();
-      setSelectedClient({ ...selectedClient, full_name: editForm.full_name, phone: editForm.phone || null });
+      setSelectedClient({ ...selectedClient, full_name: editForm.full_name, phone: editForm.phone || null, gender: editForm.gender });
     }
   };
 
@@ -181,22 +183,39 @@ export default function AdminClients() {
                {/* Info */}
                <div className="space-y-3">
                  {editing && !isProfessional ? (
-                  <div className="space-y-3">
-                    <div className="space-y-1">
-                      <Label>Nome</Label>
-                      <Input
-                        value={editForm.full_name}
-                        onChange={(e) => setEditForm({ ...editForm, full_name: e.target.value })}
-                      />
-                    </div>
-                    <div className="space-y-1">
-                      <Label>Telefone</Label>
-                      <Input
-                        value={editForm.phone}
-                        onChange={(e) => setEditForm({ ...editForm, phone: e.target.value })}
-                      />
-                    </div>
-                    <div className="flex gap-2">
+                   <div className="space-y-3">
+                     <div className="space-y-1">
+                       <Label>Nome</Label>
+                       <Input
+                         value={editForm.full_name}
+                         onChange={(e) => setEditForm({ ...editForm, full_name: e.target.value })}
+                       />
+                     </div>
+                     <div className="space-y-1">
+                       <Label>Telefone</Label>
+                       <Input
+                         value={editForm.phone}
+                         onChange={(e) => setEditForm({ ...editForm, phone: e.target.value })}
+                       />
+                     </div>
+                     <div className="space-y-1">
+                       <Label>Gênero</Label>
+                       <RadioGroup
+                         value={editForm.gender}
+                         onValueChange={(v) => setEditForm({ ...editForm, gender: v })}
+                         className="flex gap-4"
+                       >
+                         <div className="flex items-center gap-2">
+                           <RadioGroupItem value="male" id="gender-male" />
+                           <Label htmlFor="gender-male" className="cursor-pointer">Masculino</Label>
+                         </div>
+                         <div className="flex items-center gap-2">
+                           <RadioGroupItem value="female" id="gender-female" />
+                           <Label htmlFor="gender-female" className="cursor-pointer">Feminino</Label>
+                         </div>
+                       </RadioGroup>
+                     </div>
+                     <div className="flex gap-2">
                       <Button size="sm" onClick={saveEdit}>
                         <Save className="mr-1 h-3 w-3" />
                         Salvar
@@ -347,7 +366,7 @@ function ClientProfileCard({ client, email, isProfessional, onClick, onToggleBlo
 
       {/* Avatar 3D */}
       <div className="relative mt-2 transition-transform duration-300 group-hover:scale-105">
-        <Avatar3D name={client.full_name || "?"} blocked={client.blocked} />
+        <Avatar3D name={client.full_name || "?"} blocked={client.blocked} gender={client.gender ?? undefined} />
         <div className="absolute inset-0 rounded-full ring-2 ring-primary/0 transition-all duration-300 group-hover:ring-primary/40 group-hover:ring-offset-2" />
       </div>
 
@@ -372,7 +391,7 @@ function ClientProfileCard({ client, email, isProfessional, onClick, onToggleBlo
             className={cn(
               "flex items-center justify-center h-6 w-6 rounded-full border transition-all duration-200 hover:scale-105",
               client.blocked
-                ? "bg-green-500/10 hover:bg-green-500/20 border-green-500/20 text-green-600"
+                ? "bg-success/10 hover:bg-success/20 border-success/20 text-success"
                 : "bg-destructive/10 hover:bg-destructive/20 border-destructive/20 text-destructive"
             )}
             onClick={onToggleBlock}
