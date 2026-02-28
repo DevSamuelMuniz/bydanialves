@@ -9,7 +9,8 @@ import { Switch } from "@/components/ui/switch";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { useToast } from "@/hooks/use-toast";
 import { Skeleton } from "@/components/ui/skeleton";
-import { Plus, Pencil } from "lucide-react";
+import { Plus, Pencil, Clock, DollarSign, FileText } from "lucide-react";
+import { Textarea } from "@/components/ui/textarea";
 
 export default function AdminServices() {
   const { toast } = useToast();
@@ -62,23 +63,41 @@ export default function AdminServices() {
         )}
       </div>
 
-      <div className="space-y-3">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
         {services.map((s) => (
-          <Card key={s.id} className={`border-gold/10 ${!s.active ? "opacity-50" : ""}`}>
-            <CardContent className="py-4 flex items-center justify-between">
-              <div>
-                <p className="font-medium">{s.name}</p>
-                <p className="text-sm text-muted-foreground">{s.duration_minutes} min — R$ {Number(s.price).toFixed(2)}</p>
+          <Card key={s.id} className={`border-border/40 hover:border-primary/30 transition-all duration-200 ${!s.active ? "opacity-50" : ""}`}>
+            <CardContent className="p-5 flex flex-col gap-3">
+              <div className="flex items-start justify-between gap-2">
+                <p className="font-semibold text-base leading-snug">{s.name}</p>
+                <div className="flex items-center gap-1 shrink-0">
+                  {s.is_system ? (
+                    <span className="text-xs text-muted-foreground italic">Padrão</span>
+                  ) : canManageServices ? (
+                    <>
+                      <Switch checked={s.active} onCheckedChange={(v) => toggleActive(s.id, v)} />
+                      <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => openEdit(s)}>
+                        <Pencil className="h-3.5 w-3.5" />
+                      </Button>
+                    </>
+                  ) : null}
+                </div>
               </div>
-              <div className="flex items-center gap-3">
-                {s.is_system ? (
-                  <span className="text-xs text-muted-foreground italic">Padrão do sistema</span>
-                ) : canManageServices ? (
-                  <>
-                    <Switch checked={s.active} onCheckedChange={(v) => toggleActive(s.id, v)} />
-                    <Button variant="ghost" size="icon" onClick={() => openEdit(s)}><Pencil className="h-4 w-4" /></Button>
-                  </>
-                ) : null}
+
+              {s.description && (
+                <p className="text-sm text-muted-foreground leading-relaxed line-clamp-3">
+                  {s.description}
+                </p>
+              )}
+
+              <div className="flex items-center gap-4 mt-auto pt-2 border-t border-border/30">
+                <div className="flex items-center gap-1.5 text-sm text-muted-foreground">
+                  <Clock className="h-3.5 w-3.5" />
+                  <span>{s.duration_minutes} min</span>
+                </div>
+                <div className="flex items-center gap-1.5 text-sm font-medium text-foreground">
+                  <DollarSign className="h-3.5 w-3.5 text-primary" />
+                  <span>R$ {Number(s.price).toFixed(2)}</span>
+                </div>
               </div>
             </CardContent>
           </Card>
@@ -90,7 +109,15 @@ export default function AdminServices() {
           <DialogHeader><DialogTitle className="font-serif">{editing ? "Editar" : "Novo"} Serviço</DialogTitle></DialogHeader>
           <form onSubmit={handleSave} className="space-y-4">
             <div className="space-y-2"><Label>Nome</Label><Input value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} required /></div>
-            <div className="space-y-2"><Label>Descrição</Label><Input value={form.description} onChange={(e) => setForm({ ...form, description: e.target.value })} /></div>
+            <div className="space-y-2">
+              <Label className="flex items-center gap-1.5"><FileText className="h-3.5 w-3.5" />Descrição</Label>
+              <Textarea
+                value={form.description}
+                onChange={(e) => setForm({ ...form, description: e.target.value })}
+                placeholder="Descreva o serviço, o que inclui, benefícios..."
+                rows={3}
+              />
+            </div>
             <div className="grid grid-cols-2 gap-4">
               <div className="space-y-2"><Label>Preço (R$)</Label><Input type="number" step="0.01" value={form.price} onChange={(e) => setForm({ ...form, price: e.target.value })} required /></div>
               <div className="space-y-2"><Label>Duração (min)</Label><Input type="number" value={form.duration_minutes} onChange={(e) => setForm({ ...form, duration_minutes: e.target.value })} required /></div>
