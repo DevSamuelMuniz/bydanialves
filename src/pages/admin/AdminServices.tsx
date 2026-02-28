@@ -63,7 +63,7 @@ export default function AdminServices() {
         )}
       </div>
 
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
         {services.map((s) => (
           <Card key={s.id} className={`border-border/40 hover:border-primary/30 transition-all duration-200 ${!s.active ? "opacity-50" : ""}`}>
             <CardContent className="p-5 flex flex-col gap-3">
