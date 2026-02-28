@@ -1,12 +1,11 @@
 import { useState } from "react";
-import { useNavigate, Link } from "react-router-dom";
+import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useToast } from "@/hooks/use-toast";
-import { Eye, EyeOff } from "lucide-react";
 import { PasswordInput } from "@/components/PasswordInput";
 import authBg from "@/assets/auth-bg.jpg";
 import logo from "@/assets/logo-dani-alves.jpg";
@@ -31,25 +30,15 @@ export default function Auth() {
       return;
     }
 
+    // Check role and redirect accordingly
     const { data: roleData } = await supabase
       .from("user_roles")
       .select("role")
       .eq("user_id", data.user.id)
       .eq("role", "admin")
-      .single();
+      .maybeSingle();
 
-    if (roleData) {
-      await supabase.auth.signOut();
-      toast({
-        title: "Área do cliente",
-        description: "Para acesso administrativo, use o login de admin.",
-        variant: "destructive",
-      });
-      setLoading(false);
-      return;
-    }
-
-    navigate("/client");
+    navigate(roleData ? "/admin" : "/client");
     setLoading(false);
   };
 
@@ -86,13 +75,10 @@ export default function Auth() {
     setLoading(false);
   };
 
-
   if (showForgot) {
     return (
       <div className="min-h-screen flex">
         <AuthImageOverlay imageSrc={authBg} />
-
-        {/* Right form */}
         <div className="w-full lg:w-1/2 flex items-center justify-center bg-background px-6 py-12">
           <div className="w-full max-w-md space-y-6">
             <div className="text-center">
@@ -122,7 +108,6 @@ export default function Auth() {
     <div className="min-h-screen flex">
       <AuthImageOverlay imageSrc={authBg} />
 
-      {/* Right form */}
       <div className="w-full lg:w-1/2 flex items-center justify-center bg-background px-6 py-12">
         <div className="w-full max-w-md space-y-6">
           <div className="text-center">
@@ -136,15 +121,30 @@ export default function Auth() {
               <TabsTrigger value="login" className="rounded-md">Entrar</TabsTrigger>
               <TabsTrigger value="signup" className="rounded-md">Cadastrar</TabsTrigger>
             </TabsList>
+
             <TabsContent value="login">
               <form onSubmit={handleLogin} className="space-y-4 mt-4">
                 <div className="space-y-2">
                   <Label htmlFor="login-email">E-mail</Label>
-                  <Input id="login-email" type="email" value={email} onChange={(e) => setEmail(e.target.value)} required className="h-11" placeholder="Digite seu e-mail" />
+                  <Input
+                    id="login-email"
+                    type="email"
+                    value={email}
+                    onChange={(e) => setEmail(e.target.value)}
+                    required
+                    className="h-11"
+                    placeholder="Digite seu e-mail"
+                  />
                 </div>
                 <div className="space-y-2">
                   <Label htmlFor="login-password">Senha</Label>
-                  <PasswordInput id="login-password" value={password} onChange={(e) => setPassword(e.target.value)} required placeholder="Digite sua senha" />
+                  <PasswordInput
+                    id="login-password"
+                    value={password}
+                    onChange={(e) => setPassword(e.target.value)}
+                    required
+                    placeholder="Digite sua senha"
+                  />
                 </div>
                 <Button type="submit" className="w-full h-11" disabled={loading}>
                   {loading ? "Entrando..." : "Entrar"}
@@ -154,19 +154,42 @@ export default function Auth() {
                 </Button>
               </form>
             </TabsContent>
+
             <TabsContent value="signup">
               <form onSubmit={handleSignUp} className="space-y-4 mt-4">
                 <div className="space-y-2">
                   <Label htmlFor="name">Nome completo</Label>
-                  <Input id="name" value={fullName} onChange={(e) => setFullName(e.target.value)} required className="h-11" placeholder="Digite seu nome completo" />
+                  <Input
+                    id="name"
+                    value={fullName}
+                    onChange={(e) => setFullName(e.target.value)}
+                    required
+                    className="h-11"
+                    placeholder="Digite seu nome completo"
+                  />
                 </div>
                 <div className="space-y-2">
                   <Label htmlFor="signup-email">E-mail</Label>
-                  <Input id="signup-email" type="email" value={email} onChange={(e) => setEmail(e.target.value)} required className="h-11" placeholder="Digite seu e-mail" />
+                  <Input
+                    id="signup-email"
+                    type="email"
+                    value={email}
+                    onChange={(e) => setEmail(e.target.value)}
+                    required
+                    className="h-11"
+                    placeholder="Digite seu e-mail"
+                  />
                 </div>
                 <div className="space-y-2">
                   <Label htmlFor="signup-password">Senha</Label>
-                  <PasswordInput id="signup-password" value={password} onChange={(e) => setPassword(e.target.value)} required minLength={6} placeholder="Crie uma senha" />
+                  <PasswordInput
+                    id="signup-password"
+                    value={password}
+                    onChange={(e) => setPassword(e.target.value)}
+                    required
+                    minLength={6}
+                    placeholder="Crie uma senha"
+                  />
                 </div>
                 <Button type="submit" className="w-full h-11" disabled={loading}>
                   {loading ? "Cadastrando..." : "Criar conta"}
@@ -174,11 +197,6 @@ export default function Auth() {
               </form>
             </TabsContent>
           </Tabs>
-          <div className="text-center">
-            <Link to="/admin/login" className="text-sm text-muted-foreground hover:text-primary transition-colors duration-200">
-              Acesso administrativo →
-            </Link>
-          </div>
         </div>
       </div>
     </div>
