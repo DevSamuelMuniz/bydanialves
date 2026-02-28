@@ -165,6 +165,8 @@ export default function AdminAgenda() {
     },
   ];
 
+  const isAttendant = adminLevel === "attendant";
+
   const AppointmentCard = ({ a, col }: { a: any; col: typeof columns[0] }) => {
     const isConfirmCol  = col.key === "confirm";
     const isTakeCol     = col.key === "take";
@@ -245,7 +247,7 @@ export default function AdminAgenda() {
                 Confirmar
               </Button>
             )}
-            {isTakeCol && (
+            {isTakeCol && !isAttendant && (
               <Button
                 size="sm"
                 className="h-7 text-xs gap-1"
@@ -257,7 +259,7 @@ export default function AdminAgenda() {
                 {takingId === a.id ? "Pegando..." : "Pegar"}
               </Button>
             )}
-            {isCompleteCol && (
+            {isCompleteCol && !isAttendant && (
               <Button
                 size="sm"
                 className="h-7 text-xs gap-1 bg-green-600 hover:bg-green-700 text-white"
