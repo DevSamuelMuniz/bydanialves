@@ -7,7 +7,7 @@ import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Separator } from "@/components/ui/separator";
 import { useToast } from "@/hooks/use-toast";
-import { Clock, DollarSign, User, Scissors, CheckCircle2, XCircle, PlayCircle, ListChecks, AlertCircle } from "lucide-react";
+import { Clock, DollarSign, User, Scissors, CheckCircle2, XCircle, PlayCircle, ListChecks, AlertCircle, ChevronDown, ChevronUp } from "lucide-react";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
 
 const statusConfig: Record<string, { label: string; color: string }> = {
@@ -26,6 +26,7 @@ export default function AdminMyAppointments() {
   const [confirmed, setConfirmed] = useState<any[]>([]);
   const [history, setHistory] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
+  const [historyOpen, setHistoryOpen] = useState(true);
 
   const TAG_PREFIX = "[Atendido por:";
 
@@ -194,7 +195,7 @@ export default function AdminMyAppointments() {
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4 items-start">
 
-          {/* Coluna 1: A Confirmar (Pendentes) */}
+          {/* Coluna 1: A Confirmar */}
           <div className="space-y-3">
             <Card className="border-amber-400/30 bg-amber-500/5">
               <CardHeader className="py-3 px-4">
@@ -213,7 +214,7 @@ export default function AdminMyAppointments() {
             }
           </div>
 
-          {/* Coluna 2: Em Atendimento (Confirmados) */}
+          {/* Coluna 2: Em Atendimento */}
           <div className="space-y-3">
             <Card className="border-blue-400/30 bg-blue-500/5">
               <CardHeader className="py-3 px-4">
@@ -242,17 +243,34 @@ export default function AdminMyAppointments() {
                   <Badge variant="outline" className="ml-auto text-muted-foreground text-xs">
                     {history.length}
                   </Badge>
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    className="h-6 w-6 ml-1 shrink-0"
+                    onClick={() => setHistoryOpen((v) => !v)}
+                    title={historyOpen ? "Esconder histórico" : "Mostrar histórico"}
+                  >
+                    {historyOpen
+                      ? <ChevronUp className="h-4 w-4 text-muted-foreground" />
+                      : <ChevronDown className="h-4 w-4 text-muted-foreground" />
+                    }
+                  </Button>
                 </CardTitle>
               </CardHeader>
             </Card>
-            {history.length === 0
-              ? <EmptyCol icon={ListChecks} text="Nenhum histórico ainda" />
-              : (
-                <div className="space-y-2 max-h-[calc(100vh-260px)] overflow-y-auto pr-1">
-                  {history.map((a) => <AppointmentCard key={a.id} a={a} showActions={false} />)}
-                </div>
-              )
-            }
+
+            {historyOpen && (
+              <>
+                {history.length === 0
+                  ? <EmptyCol icon={ListChecks} text="Nenhum histórico ainda" />
+                  : (
+                    <div className="space-y-2 max-h-[calc(100vh-260px)] overflow-y-auto pr-1">
+                      {history.map((a) => <AppointmentCard key={a.id} a={a} showActions={false} />)}
+                    </div>
+                  )
+                }
+              </>
+            )}
           </div>
 
         </div>
