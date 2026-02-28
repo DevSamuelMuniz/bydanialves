@@ -347,7 +347,7 @@ function ClientProfileCard({ client, email, isProfessional, onClick, onToggleBlo
 
       {/* Avatar 3D */}
       <div className="relative mt-2 transition-transform duration-300 group-hover:scale-105">
-        <Avatar3D initial={initials} blocked={client.blocked} />
+        <Avatar3D name={client.full_name || "?"} blocked={client.blocked} />
         <div className="absolute inset-0 rounded-full ring-2 ring-primary/0 transition-all duration-300 group-hover:ring-primary/40 group-hover:ring-offset-2" />
       </div>
 
