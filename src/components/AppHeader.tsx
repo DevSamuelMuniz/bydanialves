@@ -58,8 +58,8 @@ export function AppHeader({ title, profilePath, onSearch }: AppHeaderProps) {
         {title}
       </h1>
 
-      {/* Search bar — expands to fill space */}
-      <div className="flex-1 ml-2">
+      {/* Search bar */}
+      <div className="w-48 md:w-64 ml-2">
         <div className="relative">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
           <Input
