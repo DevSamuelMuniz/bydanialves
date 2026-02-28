@@ -9,6 +9,7 @@ import { useToast } from "@/hooks/use-toast";
 import { PasswordInput } from "@/components/PasswordInput";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Checkbox } from "@/components/ui/checkbox";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import authBg from "@/assets/auth-bg.jpg";
 import logo from "@/assets/logo-dani-alves.jpg";
 import { AuthImageOverlay } from "@/components/AuthImageOverlay";
@@ -23,6 +24,7 @@ export default function Auth() {
   const [gender, setGender] = useState("male");
   const [branchId, setBranchId] = useState("");
   const [acceptTerms, setAcceptTerms] = useState(false);
+  const [showTermsModal, setShowTermsModal] = useState(false);
   const [loading, setLoading] = useState(false);
   const [showForgot, setShowForgot] = useState(false);
   const navigate = useNavigate();
@@ -268,7 +270,10 @@ export default function Auth() {
                   <Checkbox
                     id="accept-terms"
                     checked={acceptTerms}
-                    onCheckedChange={(v) => setAcceptTerms(!!v)}
+                    onCheckedChange={(v) => {
+                      if (v) setShowTermsModal(true);
+                      else setAcceptTerms(false);
+                    }}
                     className="mt-0.5"
                   />
                   <Label htmlFor="accept-terms" className="font-normal text-sm leading-snug cursor-pointer text-muted-foreground">
@@ -278,6 +283,38 @@ export default function Auth() {
                     <a href="/politicadeprivacidade" target="_blank" className="text-primary underline underline-offset-2 hover:opacity-80">política de privacidade</a>
                   </Label>
                 </div>
+
+                {/* Modal de confirmação de termos */}
+                <Dialog open={showTermsModal} onOpenChange={setShowTermsModal}>
+                  <DialogContent className="max-w-md">
+                    <DialogHeader>
+                      <DialogTitle>Confirmar aceitação</DialogTitle>
+                      <DialogDescription>
+                        Ao aceitar, você confirma que leu e concorda com os nossos{" "}
+                        <a href="/termosdeservico" target="_blank" className="text-primary underline underline-offset-2 hover:opacity-80">Termos de Serviço</a>{" "}
+                        e a{" "}
+                        <a href="/politicadeprivacidade" target="_blank" className="text-primary underline underline-offset-2 hover:opacity-80">Política de Privacidade</a>.
+                      </DialogDescription>
+                    </DialogHeader>
+                    <div className="flex flex-col gap-2 pt-2">
+                      <Button
+                        type="button"
+                        className="w-full"
+                        onClick={() => { setAcceptTerms(true); setShowTermsModal(false); }}
+                      >
+                        Confirmar e aceitar
+                      </Button>
+                      <Button
+                        type="button"
+                        variant="outline"
+                        className="w-full"
+                        onClick={() => { setAcceptTerms(false); setShowTermsModal(false); }}
+                      >
+                        Cancelar
+                      </Button>
+                    </div>
+                  </DialogContent>
+                </Dialog>
 
                 <Button type="submit" className="w-full h-11" disabled={loading}>
                   {loading ? "Cadastrando..." : "Criar conta"}
