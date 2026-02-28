@@ -27,22 +27,22 @@ export default function AdminProfile() {
 
   useEffect(() => {
     if (!user) return;
-    supabase
-      .from("profiles")
-      .select("*")
-      .eq("user_id", user.id)
-      .single()
-      .then(({ data }) => {
-        if (data) {
-          setProfile(data);
-          setForm({ full_name: data.full_name || "", phone: data.phone || "", bio: (data as any).bio || "" });
-          if (data.avatar_url) {
-            const { data: urlData } = supabase.storage.from("avatars").getPublicUrl(data.avatar_url);
-            setAvatarUrl(urlData.publicUrl);
-          }
+    supabase.
+    from("profiles").
+    select("*").
+    eq("user_id", user.id).
+    single().
+    then(({ data }) => {
+      if (data) {
+        setProfile(data);
+        setForm({ full_name: data.full_name || "", phone: data.phone || "", bio: (data as any).bio || "" });
+        if (data.avatar_url) {
+          const { data: urlData } = supabase.storage.from("avatars").getPublicUrl(data.avatar_url);
+          setAvatarUrl(urlData.publicUrl);
         }
-        setLoading(false);
-      });
+      }
+      setLoading(false);
+    });
   }, [user]);
 
   const handleAvatarUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -51,18 +51,18 @@ export default function AdminProfile() {
     setUploading(true);
     const ext = file.name.split(".").pop();
     const filePath = `${user.id}/avatar.${ext}`;
-    const { error: uploadError } = await supabase.storage
-      .from("avatars")
-      .upload(filePath, file, { upsert: true });
+    const { error: uploadError } = await supabase.storage.
+    from("avatars").
+    upload(filePath, file, { upsert: true });
     if (uploadError) {
       toast({ title: "Erro ao enviar foto", description: uploadError.message, variant: "destructive" });
       setUploading(false);
       return;
     }
-    const { error: updateError } = await supabase
-      .from("profiles")
-      .update({ avatar_url: filePath })
-      .eq("user_id", user.id);
+    const { error: updateError } = await supabase.
+    from("profiles").
+    update({ avatar_url: filePath }).
+    eq("user_id", user.id);
     if (updateError) {
       toast({ title: "Erro ao salvar foto", description: updateError.message, variant: "destructive" });
     } else {
@@ -77,10 +77,10 @@ export default function AdminProfile() {
     e.preventDefault();
     if (!user) return;
     setSaving(true);
-    const { error } = await supabase
-      .from("profiles")
-      .update({ full_name: form.full_name, phone: form.phone, bio: form.bio } as any)
-      .eq("user_id", user.id);
+    const { error } = await supabase.
+    from("profiles").
+    update({ full_name: form.full_name, phone: form.phone, bio: form.bio } as any).
+    eq("user_id", user.id);
     setSaving(false);
     if (error) {
       toast({ title: "Erro", description: error.message, variant: "destructive" });
@@ -99,16 +99,16 @@ export default function AdminProfile() {
         <div className="h-20 rounded-xl bg-muted" />
         <div className="h-20 rounded-xl bg-muted" />
       </div>
-    </div>
-  );
+    </div>);
 
-  const initials = form.full_name
-    ? form.full_name.split(" ").map((n: string) => n[0]).join("").slice(0, 2).toUpperCase()
-    : "AD";
 
-  const memberSince = profile?.created_at
-    ? new Date(profile.created_at).toLocaleDateString("pt-BR", { month: "long", year: "numeric" })
-    : null;
+  const initials = form.full_name ?
+  form.full_name.split(" ").map((n: string) => n[0]).join("").slice(0, 2).toUpperCase() :
+  "AD";
+
+  const memberSince = profile?.created_at ?
+  new Date(profile.created_at).toLocaleDateString("pt-BR", { month: "long", year: "numeric" }) :
+  null;
 
   return (
     <div className="w-full space-y-6">
@@ -118,8 +118,8 @@ export default function AdminProfile() {
           variant={editing ? "outline" : "default"}
           size="sm"
           className="gap-1.5"
-          onClick={() => setEditing(!editing)}
-        >
+          onClick={() => setEditing(!editing)}>
+
           <Edit3 className="h-3.5 w-3.5" />
           {editing ? "Cancelar" : "Editar perfil"}
         </Button>
@@ -129,8 +129,8 @@ export default function AdminProfile() {
       <Card className="overflow-hidden border-border/60">
         <div className="relative h-40 gradient-gold">
           <div className="absolute inset-0 opacity-20"
-            style={{ backgroundImage: "repeating-linear-gradient(45deg, transparent, transparent 20px, rgba(255,255,255,0.05) 20px, rgba(255,255,255,0.05) 40px)" }}
-          />
+          style={{ backgroundImage: "repeating-linear-gradient(45deg, transparent, transparent 20px, rgba(255,255,255,0.05) 20px, rgba(255,255,255,0.05) 40px)" }} />
+
           <div className="absolute top-4 right-4">
             <Badge className="bg-background/80 text-foreground border border-border/60 backdrop-blur-sm gap-1.5">
               <Shield className="h-3 w-3 text-primary" />
@@ -152,11 +152,11 @@ export default function AdminProfile() {
               <button
                 onClick={() => fileInputRef.current?.click()}
                 disabled={uploading}
-                className="absolute inset-0 flex items-center justify-center rounded-full bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity cursor-pointer"
-              >
-                {uploading
-                  ? <Loader2 className="h-5 w-5 text-white animate-spin" />
-                  : <Camera className="h-5 w-5 text-white" />
+                className="absolute inset-0 flex items-center justify-center rounded-full bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity cursor-pointer">
+
+                {uploading ?
+                <Loader2 className="h-5 w-5 text-white animate-spin" /> :
+                <Camera className="h-5 w-5 text-white" />
                 }
               </button>
               <input
@@ -164,25 +164,25 @@ export default function AdminProfile() {
                 type="file"
                 accept="image/*"
                 className="hidden"
-                onChange={handleAvatarUpload}
-              />
+                onChange={handleAvatarUpload} />
+
             </div>
             <div className="mt-12">
-              <h2 className="font-serif text-xl font-semibold">{profile?.full_name || "Administrador"}</h2>
+              <h2 className="font-serif text-xl font-semibold my-[3px]">{profile?.full_name || "Administrador"}</h2>
               <p className="text-sm text-muted-foreground">{user?.email}</p>
             </div>
           </div>
 
           {/* Bio display */}
-          {profile?.bio && !editing && (
-            <div className="mt-1">
+          {profile?.bio && !editing &&
+          <div className="mt-1">
               <Separator className="mb-4" />
               <div className="flex gap-2">
                 <Info className="h-4 w-4 text-muted-foreground mt-0.5 shrink-0" />
                 <p className="text-sm text-muted-foreground leading-relaxed">{profile.bio}</p>
               </div>
             </div>
-          )}
+          }
         </div>
       </Card>
 
@@ -226,8 +226,8 @@ export default function AdminProfile() {
       </div>
 
       {/* Edit form */}
-      {editing && (
-        <Card className="border-border/60 animate-in fade-in slide-in-from-top-2 duration-300">
+      {editing &&
+      <Card className="border-border/60 animate-in fade-in slide-in-from-top-2 duration-300">
           <CardHeader className="pb-3">
             <CardTitle className="font-serif text-base flex items-center gap-2">
               <Edit3 className="h-4 w-4 text-primary" />
@@ -244,10 +244,10 @@ export default function AdminProfile() {
                     Nome completo
                   </Label>
                   <Input
-                    value={form.full_name}
-                    onChange={(e) => setForm({ ...form, full_name: e.target.value })}
-                    placeholder="Seu nome completo"
-                  />
+                  value={form.full_name}
+                  onChange={(e) => setForm({ ...form, full_name: e.target.value })}
+                  placeholder="Seu nome completo" />
+
                 </div>
                 <div className="space-y-2">
                   <Label className="flex items-center gap-1.5">
@@ -255,10 +255,10 @@ export default function AdminProfile() {
                     Telefone
                   </Label>
                   <Input
-                    value={form.phone}
-                    onChange={(e) => setForm({ ...form, phone: e.target.value })}
-                    placeholder="(00) 00000-0000"
-                  />
+                  value={form.phone}
+                  onChange={(e) => setForm({ ...form, phone: e.target.value })}
+                  placeholder="(00) 00000-0000" />
+
                 </div>
               </div>
               <div className="space-y-2">
@@ -275,12 +275,12 @@ export default function AdminProfile() {
                   Sobre mim
                 </Label>
                 <Textarea
-                  value={form.bio}
-                  onChange={(e) => setForm({ ...form, bio: e.target.value })}
-                  placeholder="Uma breve descrição sobre você, seu trabalho ou especialidade..."
-                  className="resize-none min-h-[100px]"
-                  maxLength={300}
-                />
+                value={form.bio}
+                onChange={(e) => setForm({ ...form, bio: e.target.value })}
+                placeholder="Uma breve descrição sobre você, seu trabalho ou especialidade..."
+                className="resize-none min-h-[100px]"
+                maxLength={300} />
+
                 <p className="text-xs text-muted-foreground text-right">{form.bio.length}/300</p>
               </div>
               <div className="flex gap-3 pt-1">
@@ -295,7 +295,7 @@ export default function AdminProfile() {
             </form>
           </CardContent>
         </Card>
-      )}
-    </div>
-  );
+      }
+    </div>);
+
 }
