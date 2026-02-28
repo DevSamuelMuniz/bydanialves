@@ -7,15 +7,26 @@ import { Calendar } from "@/components/ui/calendar";
 import { useToast } from "@/hooks/use-toast";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Badge } from "@/components/ui/badge";
-import { Check, ChevronLeft, ShieldX, MessageCircle, Building2, MapPin } from "lucide-react";
+import {
+  Check, ChevronLeft, ShieldX, MessageCircle, Building2, MapPin,
+  Scissors, Clock, CalendarDays, Timer, DollarSign, Star, Sparkles,
+  ChevronRight
+} from "lucide-react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from "@/components/ui/dialog";
+import { ptBR } from "date-fns/locale";
+import { format } from "date-fns";
 
-interface Branch { id: string; name: string; address: string | null; }
+interface Branch { id: string; name: string; address: string | null; image_url?: string | null; }
 
-const TIME_SLOTS = [
-  "08:00", "09:00", "10:00", "11:00",
-  "13:00", "14:00", "15:00", "16:00", "17:00",
-];
+interface ServiceItem {
+  id: string;
+  name: string;
+  description: string | null;
+  price: number;
+  duration_minutes: number;
+  image_url: string | null;
+  is_system: boolean;
+}
 
 function parseEscovasFromIncludes(includes: string): number {
   const match = includes.match(/(\d+)\s*escova/i);
@@ -24,22 +35,83 @@ function parseEscovasFromIncludes(includes: string): number {
 
 const WHATSAPP_NUMBER = "5500000000000";
 
+const BRANCH_IMAGES: Record<number, string> = {
+  0: "https://images.unsplash.com/photo-1560066984-138daaa0a2dc?w=800&q=70&auto=format&fit=crop",
+  1: "https://images.unsplash.com/photo-1470259078422-826894b933aa?w=800&q=70&auto=format&fit=crop",
+  2: "https://images.unsplash.com/photo-1521590832167-7bcbfaa6381f?w=800&q=70&auto=format&fit=crop",
+  3: "https://images.unsplash.com/photo-1503951914875-452162b0f3f1?w=800&q=70&auto=format&fit=crop",
+};
+
+function getBranchImage(index: number) {
+  return BRANCH_IMAGES[index % 4];
+}
+
+// Generate available time slots based on services total duration
+function generateTimeSlots(totalMinutes: number): string[] {
+  const slots: string[] = [];
+  const start = 8 * 60; // 08:00
+  const end = 18 * 60;  // 18:00
+  let t = start;
+  while (t + totalMinutes <= end) {
+    if (t < 12 * 60 || t >= 13 * 60) { // Lunch break 12-13
+      const h = Math.floor(t / 60);
+      const m = t % 60;
+      slots.push(`${String(h).padStart(2, "0")}:${String(m).padStart(2, "0")}`);
+    }
+    t += 30;
+  }
+  return slots;
+}
+
+// Check if a time slot is free given booked appointments and total duration
+function isSlotAvailable(
+  slot: string,
+  totalMinutes: number,
+  bookedRanges: { start: number; end: number }[],
+  professionals: number
+): boolean {
+  const [h, m] = slot.split(":").map(Number);
+  const slotStart = h * 60 + m;
+  const slotEnd = slotStart + totalMinutes;
+
+  const conflicts = bookedRanges.filter(
+    (r) => slotStart < r.end && slotEnd > r.start
+  ).length;
+
+  return conflicts < professionals;
+}
+
 export default function NewBooking() {
   const { user } = useAuth();
   const { toast } = useToast();
   const [step, setStep] = useState(1);
   const [branches, setBranches] = useState<Branch[]>([]);
   const [selectedBranch, setSelectedBranch] = useState<Branch | null>(null);
-  const [services, setServices] = useState<any[]>([]);
-  const [selectedService, setSelectedService] = useState<any>(null);
+  const [selectedBranchIndex, setSelectedBranchIndex] = useState<number>(0);
+  const [services, setServices] = useState<ServiceItem[]>([]);
+  const [selectedServices, setSelectedServices] = useState<ServiceItem[]>([]);
   const [selectedDate, setSelectedDate] = useState<Date | undefined>();
   const [selectedTime, setSelectedTime] = useState<string | null>(null);
-  const [bookedSlots, setBookedSlots] = useState<string[]>([]);
+  const [bookedRanges, setBookedRanges] = useState<{ start: number; end: number }[]>([]);
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
   const [escovasDisponiveis, setEscovasDisponiveis] = useState(0);
   const [blocked, setBlocked] = useState(false);
   const [blockedModalOpen, setBlockedModalOpen] = useState(false);
+  const [professionals] = useState(3); // Number of simultaneous professionals
+
+  // Total duration of selected services
+  const totalDuration = selectedServices.reduce((acc, s) => acc + s.duration_minutes, 0);
+  const totalPrice = selectedServices.reduce((acc, s) => {
+    const free = s.is_system && escovasDisponiveis > 0;
+    return acc + (free ? 0 : Number(s.price));
+  }, 0);
+
+  const availableSlots = selectedDate
+    ? generateTimeSlots(totalDuration).filter((slot) =>
+        isSlotAvailable(slot, totalDuration, bookedRanges, professionals)
+      )
+    : [];
 
   useEffect(() => {
     supabase.from("branches" as any).select("id, name, address").eq("active", true).order("name")
@@ -48,9 +120,7 @@ export default function NewBooking() {
 
   useEffect(() => {
     if (!user) return;
-
     const loadData = async () => {
-      // Check if user is blocked
       const { data: profile } = await supabase
         .from("profiles")
         .select("blocked")
@@ -64,14 +134,12 @@ export default function NewBooking() {
         return;
       }
 
-      // Load services
       const { data: servicesData } = await supabase
         .from("services")
         .select("*")
         .eq("active", true);
-      setServices(servicesData || []);
+      setServices((servicesData as unknown as ServiceItem[]) || []);
 
-      // Load active subscription
       const { data: sub } = await supabase
         .from("subscriptions")
         .select("*, plans(*)")
@@ -85,7 +153,6 @@ export default function NewBooking() {
         const startOfMonth = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}-01`;
         const endOfMonth = new Date(now.getFullYear(), now.getMonth() + 1, 0);
         const endStr = `${endOfMonth.getFullYear()}-${String(endOfMonth.getMonth() + 1).padStart(2, "0")}-${String(endOfMonth.getDate()).padStart(2, "0")}`;
-
         const { data: appointments } = await supabase
           .from("appointments")
           .select("*, services(name, is_system)")
@@ -93,55 +160,67 @@ export default function NewBooking() {
           .gte("appointment_date", startOfMonth)
           .lte("appointment_date", endStr)
           .neq("status", "cancelled");
-
-        const escovasUsadas = (appointments || []).filter((a: any) =>
-          a.services?.is_system === true
-        ).length;
-
+        const escovasUsadas = (appointments || []).filter((a: any) => a.services?.is_system === true).length;
         setEscovasDisponiveis(Math.max(0, totalEscovas - escovasUsadas));
-      } else {
-        setEscovasDisponiveis(0);
       }
-
       setLoading(false);
     };
-
     loadData();
   }, [user]);
 
   useEffect(() => {
-    if (!selectedDate) return;
+    if (!selectedDate || !selectedBranch) return;
     const dateStr = selectedDate.toISOString().split("T")[0];
     supabase
       .from("appointments")
-      .select("appointment_time")
+      .select("appointment_time, services(duration_minutes)")
       .eq("appointment_date", dateStr)
+      .eq("branch_id", selectedBranch.id)
       .neq("status", "cancelled")
       .then(({ data }) => {
-        setBookedSlots((data || []).map((a) => a.appointment_time?.slice(0, 5)));
+        const ranges = (data || []).map((a: any) => {
+          const [h, m] = (a.appointment_time || "00:00").slice(0, 5).split(":").map(Number);
+          const start = h * 60 + m;
+          const dur = a.services?.duration_minutes || 60;
+          return { start, end: start + dur };
+        });
+        setBookedRanges(ranges);
       });
-  }, [selectedDate]);
+  }, [selectedDate, selectedBranch]);
 
-  const isEscovaService = (service: any) => !!service?.is_system;
-  const isFreeEscova = selectedService && isEscovaService(selectedService) && escovasDisponiveis > 0;
+  const toggleService = (s: ServiceItem) => {
+    setSelectedServices((prev) => {
+      const exists = prev.find((x) => x.id === s.id);
+      if (exists) return prev.filter((x) => x.id !== s.id);
+      return [...prev, s];
+    });
+  };
 
   const handleConfirm = async () => {
-    if (!user || !selectedService || !selectedDate || !selectedTime) return;
+    if (!user || selectedServices.length === 0 || !selectedDate || !selectedTime) return;
     setSubmitting(true);
-    const { error } = await supabase.from("appointments").insert({
-      client_id: user.id,
-      service_id: selectedService.id,
-      appointment_date: selectedDate.toISOString().split("T")[0],
-      appointment_time: selectedTime + ":00",
-      status: "pending",
-      branch_id: selectedBranch?.id || null,
-    } as any);
-    if (error) {
-      toast({ title: "Erro ao agendar", description: error.message, variant: "destructive" });
+
+    const dateStr = selectedDate.toISOString().split("T")[0];
+    const errors: string[] = [];
+
+    for (const service of selectedServices) {
+      const { error } = await supabase.from("appointments").insert({
+        client_id: user.id,
+        service_id: service.id,
+        appointment_date: dateStr,
+        appointment_time: selectedTime + ":00",
+        status: "pending",
+        branch_id: selectedBranch?.id || null,
+      } as any);
+      if (error) errors.push(error.message);
+    }
+
+    if (errors.length) {
+      toast({ title: "Erro ao agendar", description: errors[0], variant: "destructive" });
     } else {
-      toast({ title: "Agendamento realizado! ✨", description: "Seu horário foi reservado com sucesso." });
+      toast({ title: "Agendamento realizado! ✨", description: "Seus horários foram reservados com sucesso." });
       setStep(1);
-      setSelectedService(null);
+      setSelectedServices([]);
       setSelectedDate(undefined);
       setSelectedTime(null);
       setSelectedBranch(null);
@@ -151,19 +230,24 @@ export default function NewBooking() {
 
   const handleWhatsAppQuestion = () => {
     const message = encodeURIComponent(
-      "Olá! Minha conta foi bloqueada e gostaria de entender o motivo. Poderia me ajudar a resolver essa situação? Obrigada!"
+      "Olá! Minha conta foi bloqueada e gostaria de entender o motivo. Poderia me ajudar a resolver essa situação?"
     );
     window.open(`https://wa.me/${WHATSAPP_NUMBER}?text=${message}`, "_blank");
   };
 
-  if (loading) return <Skeleton className="h-64 w-full rounded-lg" />;
+  if (loading) return (
+    <div className="space-y-4">
+      <Skeleton className="h-8 w-48" />
+      <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
+        {[1,2,3,4].map(i => <Skeleton key={i} className="h-64 rounded-2xl" />)}
+      </div>
+    </div>
+  );
 
-  // Blocked user modal + empty state
   if (blocked) {
     return (
       <div className="w-full space-y-6">
         <h1 className="font-serif text-2xl tracking-tight">Novo Agendamento</h1>
-
         <Card className="border-destructive/20">
           <CardContent className="py-10 text-center space-y-4">
             <div className="h-14 w-14 rounded-2xl bg-destructive/10 flex items-center justify-center mx-auto">
@@ -179,8 +263,6 @@ export default function NewBooking() {
             </Button>
           </CardContent>
         </Card>
-
-        {/* Modal on first load */}
         <Dialog open={blockedModalOpen} onOpenChange={setBlockedModalOpen}>
           <DialogContent className="max-w-sm text-center">
             <DialogHeader className="items-center">
@@ -189,7 +271,7 @@ export default function NewBooking() {
               </div>
               <DialogTitle className="font-serif text-xl">Conta Bloqueada</DialogTitle>
               <DialogDescription className="text-base">
-                Sua conta foi bloqueada e você não pode realizar agendamentos no momento. Entre em contato para mais informações.
+                Sua conta foi bloqueada. Entre em contato para mais informações.
               </DialogDescription>
             </DialogHeader>
             <DialogFooter className="flex-col gap-2 sm:flex-col">
@@ -197,9 +279,7 @@ export default function NewBooking() {
                 <MessageCircle className="mr-2 h-4 w-4" />
                 Questionar via WhatsApp
               </Button>
-              <Button variant="ghost" className="w-full" onClick={() => setBlockedModalOpen(false)}>
-                Fechar
-              </Button>
+              <Button variant="ghost" className="w-full" onClick={() => setBlockedModalOpen(false)}>Fechar</Button>
             </DialogFooter>
           </DialogContent>
         </Dialog>
@@ -207,53 +287,80 @@ export default function NewBooking() {
     );
   }
 
+  // Step labels
+  const STEP_LABELS = ["Filial", "Serviços", "Data", "Horário", "Confirmação"];
+
   return (
     <div className="w-full space-y-6">
-      <div className="flex items-center gap-2">
+      {/* Header */}
+      <div className="flex items-center gap-3">
         {step > 1 && (
-          <Button variant="ghost" size="icon" onClick={() => setStep(step - 1)}>
-            <ChevronLeft className="h-5 w-5" />
+          <Button variant="ghost" size="icon" onClick={() => setStep(step - 1)} className="rounded-full h-9 w-9 border border-border/60">
+            <ChevronLeft className="h-4 w-4" />
           </Button>
         )}
-        <h1 className="font-serif text-2xl tracking-tight">Novo Agendamento</h1>
+        <div>
+          <h1 className="font-serif text-2xl tracking-tight">Novo Agendamento</h1>
+          <p className="text-sm text-muted-foreground">{STEP_LABELS[step - 1]}</p>
+        </div>
       </div>
 
       {/* Steps indicator */}
-      <div className="flex gap-2">
+      <div className="flex gap-1.5">
         {[1, 2, 3, 4, 5].map((s) => (
-          <div
-            key={s}
-            className={`h-1.5 flex-1 rounded-full transition-colors ${s <= step ? "bg-primary" : "bg-muted"}`}
-          />
+          <div key={s} className="flex-1 flex flex-col items-center gap-1">
+            <div className={`h-1.5 w-full rounded-full transition-colors duration-300 ${s <= step ? "bg-primary" : "bg-muted"}`} />
+          </div>
         ))}
       </div>
 
-      {/* Step 1: Choose branch */}
+      {/* ── STEP 1: Filiais ── */}
       {step === 1 && (
-        <div className="space-y-3">
-          <p className="text-muted-foreground">Escolha a filial</p>
+        <div className="space-y-4">
+          <p className="text-muted-foreground text-sm">Selecione a unidade onde deseja ser atendido</p>
           {branches.length === 0 ? (
-            <p className="text-center py-8 text-muted-foreground">Nenhuma filial disponível.</p>
+            <div className="text-center py-16 text-muted-foreground">
+              <Building2 className="h-10 w-10 mx-auto mb-3 opacity-30" />
+              <p>Nenhuma filial disponível no momento.</p>
+            </div>
           ) : (
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-              {branches.map((b) => (
+            <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+              {branches.map((b, idx) => (
                 <div
                   key={b.id}
-                  onClick={() => { setSelectedBranch(b); setStep(2); }}
-                  className={`flex items-center gap-4 p-4 rounded-xl border-2 cursor-pointer transition-all duration-200
-                    ${selectedBranch?.id === b.id ? "border-primary bg-primary/5" : "border-border/60 hover:border-primary/40"}`}
+                  onClick={() => { setSelectedBranch(b); setSelectedBranchIndex(idx); setStep(2); }}
+                  className={`group relative rounded-2xl overflow-hidden cursor-pointer transition-all duration-300 border-2 flex flex-col
+                    ${selectedBranch?.id === b.id ? "border-primary shadow-elevated" : "border-border/50 hover:border-primary/50 hover:shadow-elegant"}`}
                 >
-                  <div className="h-10 w-10 rounded-xl bg-primary/10 flex items-center justify-center shrink-0">
-                    <Building2 className="h-5 w-5 text-primary" />
-                  </div>
-                  <div className="min-w-0">
-                    <p className="font-medium text-sm">{b.name}</p>
-                    {b.address && (
-                      <p className="text-xs text-muted-foreground flex items-center gap-1 mt-0.5 truncate">
-                        <MapPin className="h-3 w-3 shrink-0" />
-                        {b.address}
-                      </p>
+                  {/* Branch image */}
+                  <div className="relative h-44 overflow-hidden">
+                    <img
+                      src={getBranchImage(idx)}
+                      alt={b.name}
+                      className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
+                    />
+                    <div className="absolute inset-0 bg-gradient-to-t from-black/40 to-transparent" />
+                    {selectedBranch?.id === b.id && (
+                      <div className="absolute top-3 right-3 h-7 w-7 rounded-full bg-primary flex items-center justify-center shadow">
+                        <Check className="h-3.5 w-3.5 text-primary-foreground" />
+                      </div>
                     )}
+                  </div>
+                  {/* Branch info */}
+                  <div className="p-4 flex flex-col gap-2 bg-card flex-1">
+                    <p className="font-semibold text-base leading-tight">{b.name}</p>
+                    {b.address ? (
+                      <p className="text-xs text-muted-foreground flex items-start gap-1.5">
+                        <MapPin className="h-3.5 w-3.5 shrink-0 mt-0.5 text-primary" />
+                        <span>{b.address}</span>
+                      </p>
+                    ) : (
+                      <p className="text-xs text-muted-foreground">Endereço não informado</p>
+                    )}
+                    <div className="mt-auto pt-2 flex items-center justify-between">
+                      <Badge variant="secondary" className="text-xs">Disponível</Badge>
+                      <ChevronRight className="h-4 w-4 text-muted-foreground group-hover:text-primary transition-colors" />
+                    </div>
                   </div>
                 </div>
               ))}
@@ -262,130 +369,332 @@ export default function NewBooking() {
         </div>
       )}
 
-      {/* Step 2: Choose service */}
+      {/* ── STEP 2: Serviços (múltipla seleção) ── */}
       {step === 2 && (
-        <div className="space-y-3">
-          <p className="text-muted-foreground">Escolha o serviço</p>
+        <div className="space-y-4">
+          <div className="flex items-center justify-between">
+            <p className="text-muted-foreground text-sm">Selecione um ou mais serviços</p>
+            {selectedServices.length > 0 && (
+              <Badge className="bg-primary text-primary-foreground">
+                {selectedServices.length} selecionado{selectedServices.length > 1 ? "s" : ""}
+              </Badge>
+            )}
+          </div>
+
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-          {services.map((s) => {
-            const escova = isEscovaService(s);
-            const free = escova && escovasDisponiveis > 0;
-            const isSelected = selectedService?.id === s.id;
-            const imgUrl = s.image_url ||
-              `https://images.unsplash.com/photo-1522337360788-8b13dee7a37e?w=600&q=60&auto=format&fit=crop`;
-            return (
-              <div
-                key={s.id}
-                onClick={() => { setSelectedService(s); setStep(3); }}
-                className={`relative overflow-hidden rounded-xl cursor-pointer transition-all duration-300 border-2 h-44
-                  ${isSelected ? "border-primary shadow-elevated scale-[1.02]" : "border-transparent hover:border-primary/40 hover:scale-[1.01]"}`}
-              >
-                <img src={imgUrl} alt={s.name} className="absolute inset-0 w-full h-full object-cover" />
-                <div className="absolute inset-0 bg-gradient-to-t from-black/75 via-black/30 to-black/10" />
-                <div className="relative z-10 h-full flex flex-col justify-end p-4">
-                  <div className="flex justify-between items-end">
+            {services.map((s) => {
+              const free = s.is_system && escovasDisponiveis > 0;
+              const isSelected = selectedServices.some((x) => x.id === s.id);
+              const imgUrl = s.image_url ||
+                `https://images.unsplash.com/photo-1522337360788-8b13dee7a37e?w=800&q=60&auto=format&fit=crop`;
+              return (
+                <div
+                  key={s.id}
+                  onClick={() => toggleService(s)}
+                  className={`relative overflow-hidden rounded-xl cursor-pointer transition-all duration-300 border-2
+                    ${isSelected ? "border-primary shadow-elevated" : "border-transparent hover:border-primary/40"}`}
+                >
+                  {/* 16:9 image */}
+                  <div className="relative w-full" style={{ paddingBottom: "56.25%" }}>
+                    <img src={imgUrl} alt={s.name} className="absolute inset-0 w-full h-full object-cover" />
+                    <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/20 to-transparent" />
+                    {isSelected && (
+                      <div className="absolute top-3 right-3 h-7 w-7 rounded-full bg-primary flex items-center justify-center shadow-lg">
+                        <Check className="h-3.5 w-3.5 text-primary-foreground" />
+                      </div>
+                    )}
+                    {free && (
+                      <div className="absolute top-3 left-3">
+                        <Badge className="bg-primary/90 text-primary-foreground border-0 text-xs">
+                          <Star className="h-3 w-3 mr-1" /> Incluso no plano
+                        </Badge>
+                      </div>
+                    )}
+                  </div>
+                  {/* Info below image */}
+                  <div className="p-3 bg-card flex items-center justify-between">
                     <div>
-                      <div className="flex items-center gap-2 flex-wrap mb-1">
-                        <p className="font-semibold text-white text-base leading-tight">{s.name}</p>
-                        {free && (
-                          <Badge className="text-xs bg-primary/90 text-primary-foreground border-0">
-                            Incluso no plano
-                          </Badge>
+                      <p className="font-semibold text-sm">{s.name}</p>
+                      <div className="flex items-center gap-3 mt-1">
+                        <span className="text-xs text-muted-foreground flex items-center gap-1">
+                          <Timer className="h-3 w-3" /> {s.duration_minutes} min
+                        </span>
+                        {s.description && (
+                          <span className="text-xs text-muted-foreground truncate max-w-[120px]">{s.description}</span>
                         )}
                       </div>
-                      <p className="text-sm text-white/70">{s.duration_minutes} min</p>
                     </div>
-                    <div className="text-right">
+                    <div className="text-right shrink-0 ml-2">
                       {free ? (
                         <div>
-                          <p className="text-xs text-white/50 line-through">R$ {Number(s.price).toFixed(2)}</p>
-                          <p className="font-serif text-xl text-primary">R$ 0,00</p>
+                          <p className="text-xs text-muted-foreground line-through">R$ {Number(s.price).toFixed(2)}</p>
+                          <p className="font-serif font-semibold text-primary text-sm">Grátis</p>
                         </div>
                       ) : (
-                        <p className="font-serif text-xl text-white">R$ {Number(s.price).toFixed(2)}</p>
+                        <p className="font-serif font-semibold text-foreground text-sm">R$ {Number(s.price).toFixed(2)}</p>
                       )}
                     </div>
                   </div>
                 </div>
-                {isSelected && (
-                  <div className="absolute top-3 right-3 h-6 w-6 rounded-full bg-primary flex items-center justify-center">
-                    <Check className="h-3.5 w-3.5 text-primary-foreground" />
-                  </div>
-                )}
-              </div>
-            );
-          })}
+              );
+            })}
           </div>
+
           {services.length === 0 && (
             <p className="text-center py-8 text-muted-foreground">Nenhum serviço disponível no momento.</p>
+          )}
+
+          {selectedServices.length > 0 && (
+            <div className="sticky bottom-4 z-10">
+              <div className="bg-card border border-primary/20 rounded-2xl p-4 shadow-elevated flex items-center justify-between gap-4">
+                <div>
+                  <p className="text-sm font-medium">{selectedServices.length} serviço{selectedServices.length > 1 ? "s" : ""} • {totalDuration} min</p>
+                  <p className="text-xs text-muted-foreground">Total: R$ {totalPrice.toFixed(2)}</p>
+                </div>
+                <Button onClick={() => setStep(3)} className="rounded-xl px-6">
+                  Continuar <ChevronRight className="ml-1 h-4 w-4" />
+                </Button>
+              </div>
+            </div>
           )}
         </div>
       )}
 
-      {/* Step 3: Choose date */}
+      {/* ── STEP 3: Calendário ── */}
       {step === 3 && (
-        <div className="space-y-3">
-          <p className="text-muted-foreground">Escolha a data</p>
-          <div className="flex justify-center">
-            <Calendar
-              mode="single"
-              selected={selectedDate}
-              onSelect={(d) => { setSelectedDate(d); if (d) setStep(4); }}
-              disabled={(date) => date < new Date() || date.getDay() === 0}
-              className="rounded-md border border-primary/15"
-            />
-          </div>
-        </div>
-      )}
-
-      {/* Step 4: Choose time */}
-      {step === 4 && (
-        <div className="space-y-3">
-          <p className="text-muted-foreground">
-            Escolha o horário — {selectedDate?.toLocaleDateString("pt-BR")}
-          </p>
-          <div className="grid grid-cols-3 gap-2">
-            {TIME_SLOTS.map((t) => {
-              const booked = bookedSlots.includes(t);
-              return (
-                <Button
-                  key={t}
-                  variant={selectedTime === t ? "default" : "outline"}
-                  disabled={booked}
-                  className={booked ? "opacity-40" : ""}
-                  onClick={() => { setSelectedTime(t); setStep(5); }}
-                >
-                  {t}
-                </Button>
-              );
-            })}
-          </div>
-        </div>
-      )}
-
-      {/* Step 5: Confirm */}
-      {step === 5 && (
         <div className="space-y-4">
-          <p className="text-muted-foreground">Confirme seu agendamento</p>
-          <Card className="border-primary/15">
-            <CardContent className="py-4 space-y-2">
-              <p><span className="text-muted-foreground">Filial:</span> {selectedBranch?.name}</p>
-              <p><span className="text-muted-foreground">Serviço:</span> {selectedService?.name}</p>
-              <p><span className="text-muted-foreground">Data:</span> {selectedDate?.toLocaleDateString("pt-BR")}</p>
-              <p><span className="text-muted-foreground">Horário:</span> {selectedTime}</p>
-              <p>
-                <span className="text-muted-foreground">Valor:</span>{" "}
-                {isFreeEscova ? (
-                  <span className="text-primary font-medium">R$ 0,00 (incluso no plano)</span>
-                ) : (
-                  `R$ ${Number(selectedService?.price).toFixed(2)}`
-                )}
-              </p>
+          <div className="flex items-center gap-2 p-3 bg-secondary/60 rounded-xl">
+            <Timer className="h-4 w-4 text-primary shrink-0" />
+            <p className="text-sm">
+              <span className="font-medium">{selectedServices.length} serviço{selectedServices.length > 1 ? "s" : ""}</span>
+              {" · "}<span className="text-muted-foreground">{totalDuration} min no total</span>
+              {" · "}<span className="font-medium text-primary">R$ {totalPrice.toFixed(2)}</span>
+            </p>
+          </div>
+
+          <p className="text-muted-foreground text-sm">Escolha a data do atendimento</p>
+
+          <div className="flex justify-center">
+            <div className="border border-border/60 rounded-2xl overflow-hidden shadow-elegant bg-card w-full max-w-md">
+              <Calendar
+                mode="single"
+                selected={selectedDate}
+                onSelect={(d) => { setSelectedDate(d); if (d) setStep(4); }}
+                disabled={(date) => {
+                  const today = new Date();
+                  today.setHours(0, 0, 0, 0);
+                  return date < today || date.getDay() === 0;
+                }}
+                locale={ptBR}
+                className="p-4 pointer-events-auto w-full"
+                classNames={{
+                  months: "flex flex-col",
+                  month: "space-y-4",
+                  caption: "flex justify-center pt-1 relative items-center mb-2",
+                  caption_label: "text-base font-semibold font-serif capitalize",
+                  nav: "space-x-1 flex items-center",
+                  nav_button: "h-8 w-8 bg-transparent p-0 hover:bg-accent rounded-lg transition-colors",
+                  nav_button_previous: "absolute left-1",
+                  nav_button_next: "absolute right-1",
+                  table: "w-full border-collapse",
+                  head_row: "flex",
+                  head_cell: "text-muted-foreground rounded-md flex-1 font-medium text-xs uppercase tracking-wide text-center py-2",
+                  row: "flex w-full mt-1",
+                  cell: "flex-1 text-center text-sm p-0 relative",
+                  day: "h-10 w-10 mx-auto p-0 font-normal rounded-lg hover:bg-accent transition-colors aria-selected:opacity-100",
+                  day_selected: "bg-primary text-primary-foreground hover:bg-primary font-semibold rounded-lg",
+                  day_today: "bg-accent text-accent-foreground font-semibold",
+                  day_outside: "text-muted-foreground opacity-40",
+                  day_disabled: "text-muted-foreground opacity-30 cursor-not-allowed",
+                }}
+              />
+            </div>
+          </div>
+
+          <div className="bg-muted/40 rounded-xl p-3 text-xs text-muted-foreground flex items-start gap-2">
+            <Sparkles className="h-4 w-4 text-primary mt-0.5 shrink-0" />
+            <span>
+              Os horários disponíveis serão calculados com base na duração total dos seus serviços ({totalDuration} min)
+              e na disponibilidade de {professionals} profissionais simultâneos.
+            </span>
+          </div>
+        </div>
+      )}
+
+      {/* ── STEP 4: Horários disponíveis ── */}
+      {step === 4 && (
+        <div className="space-y-4">
+          <div className="flex items-center justify-between flex-wrap gap-2">
+            <p className="text-muted-foreground text-sm">
+              Horários disponíveis · <span className="font-medium text-foreground">{selectedDate && format(selectedDate, "EEEE, dd 'de' MMMM", { locale: ptBR })}</span>
+            </p>
+            <Badge variant="secondary" className="text-xs">
+              <Timer className="h-3 w-3 mr-1" /> {totalDuration} min
+            </Badge>
+          </div>
+
+          {availableSlots.length === 0 ? (
+            <div className="text-center py-16 space-y-3">
+              <div className="h-14 w-14 rounded-2xl bg-muted flex items-center justify-center mx-auto">
+                <CalendarDays className="h-7 w-7 text-muted-foreground" />
+              </div>
+              <p className="font-medium">Nenhum horário disponível</p>
+              <p className="text-sm text-muted-foreground">Tente outra data ou reduza os serviços selecionados.</p>
+              <Button variant="outline" onClick={() => setStep(3)}>Escolher outra data</Button>
+            </div>
+          ) : (
+            <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
+              {availableSlots.map((t) => {
+                const [h, m] = t.split(":").map(Number);
+                const endMin = h * 60 + m + totalDuration;
+                const endH = Math.floor(endMin / 60);
+                const endM = endMin % 60;
+                const endStr = `${String(endH).padStart(2, "0")}:${String(endM).padStart(2, "0")}`;
+                const isSelected = selectedTime === t;
+                return (
+                  <button
+                    key={t}
+                    onClick={() => { setSelectedTime(t); setStep(5); }}
+                    className={`group relative rounded-xl border-2 p-4 text-left transition-all duration-200 cursor-pointer
+                      ${isSelected
+                        ? "border-primary bg-primary text-primary-foreground shadow-elevated"
+                        : "border-border/60 bg-card hover:border-primary/60 hover:bg-accent/40 hover:shadow-elegant"
+                      }`}
+                  >
+                    <div className="flex items-center gap-2 mb-2">
+                      <Clock className={`h-4 w-4 ${isSelected ? "text-primary-foreground" : "text-primary"}`} />
+                      <span className="font-serif font-semibold text-xl tracking-tight">{t}</span>
+                    </div>
+                    <p className={`text-xs ${isSelected ? "text-primary-foreground/80" : "text-muted-foreground"}`}>
+                      Até {endStr}
+                    </p>
+                    <p className={`text-xs mt-0.5 ${isSelected ? "text-primary-foreground/70" : "text-muted-foreground/70"}`}>
+                      {totalDuration} min · {selectedServices.length} serviço{selectedServices.length > 1 ? "s" : ""}
+                    </p>
+                    {isSelected && (
+                      <div className="absolute top-3 right-3 h-5 w-5 rounded-full bg-primary-foreground/20 flex items-center justify-center">
+                        <Check className="h-3 w-3 text-primary-foreground" />
+                      </div>
+                    )}
+                  </button>
+                );
+              })}
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* ── STEP 5: Confirmação ── */}
+      {step === 5 && (
+        <div className="space-y-4 max-w-lg mx-auto">
+          <p className="text-muted-foreground text-sm text-center">Revise e confirme seu agendamento</p>
+
+          {/* Branch photo header */}
+          <div className="relative rounded-2xl overflow-hidden h-40 shadow-elegant">
+            <img
+              src={getBranchImage(selectedBranchIndex)}
+              alt={selectedBranch?.name || "Filial"}
+              className="w-full h-full object-cover"
+            />
+            <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/30 to-transparent" />
+            <div className="absolute bottom-0 left-0 right-0 p-4">
+              <div className="flex items-center gap-2">
+                <Building2 className="h-4 w-4 text-white/80" />
+                <p className="font-serif text-white font-semibold text-lg">{selectedBranch?.name}</p>
+              </div>
+              {selectedBranch?.address && (
+                <p className="text-white/70 text-xs flex items-center gap-1 mt-0.5">
+                  <MapPin className="h-3 w-3" /> {selectedBranch.address}
+                </p>
+              )}
+            </div>
+          </div>
+
+          {/* Summary card */}
+          <Card className="border-primary/15 shadow-elegant">
+            <CardContent className="p-0">
+              {/* Date & Time row */}
+              <div className="grid grid-cols-2 divide-x divide-border/60">
+                <div className="p-4 flex flex-col items-center gap-1">
+                  <div className="h-9 w-9 rounded-xl bg-primary/10 flex items-center justify-center mb-1">
+                    <CalendarDays className="h-4.5 w-4.5 text-primary" />
+                  </div>
+                  <p className="text-xs text-muted-foreground">Data</p>
+                  <p className="font-semibold text-sm text-center">
+                    {selectedDate && format(selectedDate, "dd 'de' MMM", { locale: ptBR })}
+                  </p>
+                  <p className="text-xs text-muted-foreground capitalize">
+                    {selectedDate && format(selectedDate, "EEEE", { locale: ptBR })}
+                  </p>
+                </div>
+                <div className="p-4 flex flex-col items-center gap-1">
+                  <div className="h-9 w-9 rounded-xl bg-primary/10 flex items-center justify-center mb-1">
+                    <Clock className="h-4.5 w-4.5 text-primary" />
+                  </div>
+                  <p className="text-xs text-muted-foreground">Horário</p>
+                  <p className="font-semibold text-sm">{selectedTime}</p>
+                  <p className="text-xs text-muted-foreground">{totalDuration} min</p>
+                </div>
+              </div>
+
+              <div className="border-t border-border/60" />
+
+              {/* Services list */}
+              <div className="p-4 space-y-3">
+                <div className="flex items-center gap-2 mb-1">
+                  <Scissors className="h-4 w-4 text-primary" />
+                  <p className="text-sm font-medium">Serviços</p>
+                </div>
+                {selectedServices.map((s) => {
+                  const free = s.is_system && escovasDisponiveis > 0;
+                  return (
+                    <div key={s.id} className="flex items-center justify-between">
+                      <div className="flex items-center gap-2">
+                        <div className="h-7 w-7 rounded-lg bg-secondary flex items-center justify-center">
+                          <Scissors className="h-3 w-3 text-muted-foreground" />
+                        </div>
+                        <div>
+                          <p className="text-sm font-medium">{s.name}</p>
+                          <p className="text-xs text-muted-foreground">{s.duration_minutes} min</p>
+                        </div>
+                      </div>
+                      <div className="text-right">
+                        {free ? (
+                          <div>
+                            <p className="text-xs text-muted-foreground line-through">R$ {Number(s.price).toFixed(2)}</p>
+                            <p className="text-sm font-semibold text-primary">Grátis</p>
+                          </div>
+                        ) : (
+                          <p className="text-sm font-semibold">R$ {Number(s.price).toFixed(2)}</p>
+                        )}
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+
+              <div className="border-t border-border/60" />
+
+              {/* Total */}
+              <div className="p-4 flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                  <DollarSign className="h-4 w-4 text-primary" />
+                  <p className="font-semibold">Total</p>
+                </div>
+                <p className="font-serif font-bold text-xl text-primary">R$ {totalPrice.toFixed(2)}</p>
+              </div>
             </CardContent>
           </Card>
-          <Button className="w-full" onClick={handleConfirm} disabled={submitting}>
-            <Check className="mr-2 h-4 w-4" />
-            {submitting ? "Confirmando..." : "Confirmar Agendamento"}
+
+          <Button className="w-full h-12 text-base rounded-xl" onClick={handleConfirm} disabled={submitting}>
+            {submitting ? (
+              <>Confirmando...</>
+            ) : (
+              <>
+                <Check className="mr-2 h-5 w-5" />
+                Confirmar Agendamento
+              </>
+            )}
           </Button>
         </div>
       )}
