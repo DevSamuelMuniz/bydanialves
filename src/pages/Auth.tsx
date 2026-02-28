@@ -7,6 +7,8 @@ import { Label } from "@/components/ui/label";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useToast } from "@/hooks/use-toast";
 import { PasswordInput } from "@/components/PasswordInput";
+import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
+import { Checkbox } from "@/components/ui/checkbox";
 import authBg from "@/assets/auth-bg.jpg";
 import logo from "@/assets/logo-dani-alves.jpg";
 import { AuthImageOverlay } from "@/components/AuthImageOverlay";
@@ -14,7 +16,12 @@ import { AuthImageOverlay } from "@/components/AuthImageOverlay";
 export default function Auth() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [confirmPassword, setConfirmPassword] = useState("");
   const [fullName, setFullName] = useState("");
+  const [phone, setPhone] = useState("");
+  const [city, setCity] = useState("");
+  const [gender, setGender] = useState("male");
+  const [acceptTerms, setAcceptTerms] = useState(false);
   const [loading, setLoading] = useState(false);
   const [showForgot, setShowForgot] = useState(false);
   const navigate = useNavigate();
@@ -30,7 +37,6 @@ export default function Auth() {
       return;
     }
 
-    // Check role and redirect accordingly
     const { data: roleData } = await supabase
       .from("user_roles")
       .select("role")
@@ -44,8 +50,16 @@ export default function Auth() {
 
   const handleSignUp = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (password !== confirmPassword) {
+      toast({ title: "Senhas não coincidem", description: "Verifique e tente novamente.", variant: "destructive" });
+      return;
+    }
+    if (!acceptTerms) {
+      toast({ title: "Aceite os termos", description: "Você precisa aceitar os termos de serviço.", variant: "destructive" });
+      return;
+    }
     setLoading(true);
-    const { error } = await supabase.auth.signUp({
+    const { data: signUpData, error } = await supabase.auth.signUp({
       email,
       password,
       options: {
@@ -56,6 +70,10 @@ export default function Auth() {
     if (error) {
       toast({ title: "Erro ao cadastrar", description: error.message, variant: "destructive" });
     } else {
+      // Update profile with extra fields
+      if (signUpData.user) {
+        await supabase.from("profiles").update({ phone, gender }).eq("user_id", signUpData.user.id);
+      }
       toast({ title: "Cadastro realizado!", description: "Verifique seu e-mail para confirmar a conta." });
     }
     setLoading(false);
@@ -168,6 +186,47 @@ export default function Auth() {
                     placeholder="Digite seu nome completo"
                   />
                 </div>
+
+                <div className="grid grid-cols-2 gap-3">
+                  <div className="space-y-2">
+                    <Label htmlFor="signup-phone">Telefone</Label>
+                    <Input
+                      id="signup-phone"
+                      type="tel"
+                      value={phone}
+                      onChange={(e) => setPhone(e.target.value)}
+                      required
+                      className="h-11"
+                      placeholder="(00) 00000-0000"
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="signup-city">Cidade</Label>
+                    <Input
+                      id="signup-city"
+                      value={city}
+                      onChange={(e) => setCity(e.target.value)}
+                      required
+                      className="h-11"
+                      placeholder="Sua cidade"
+                    />
+                  </div>
+                </div>
+
+                <div className="space-y-2">
+                  <Label>Gênero</Label>
+                  <RadioGroup value={gender} onValueChange={setGender} className="flex gap-6 pt-1">
+                    <div className="flex items-center gap-2">
+                      <RadioGroupItem value="male" id="gender-male" />
+                      <Label htmlFor="gender-male" className="font-normal cursor-pointer">Masculino</Label>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <RadioGroupItem value="female" id="gender-female" />
+                      <Label htmlFor="gender-female" className="font-normal cursor-pointer">Feminino</Label>
+                    </div>
+                  </RadioGroup>
+                </div>
+
                 <div className="space-y-2">
                   <Label htmlFor="signup-email">E-mail</Label>
                   <Input
@@ -180,6 +239,7 @@ export default function Auth() {
                     placeholder="Digite seu e-mail"
                   />
                 </div>
+
                 <div className="space-y-2">
                   <Label htmlFor="signup-password">Senha</Label>
                   <PasswordInput
@@ -188,9 +248,36 @@ export default function Auth() {
                     onChange={(e) => setPassword(e.target.value)}
                     required
                     minLength={6}
-                    placeholder="Crie uma senha"
+                    placeholder="Crie uma senha (mín. 6 caracteres)"
                   />
                 </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="signup-confirm-password">Confirmar senha</Label>
+                  <PasswordInput
+                    id="signup-confirm-password"
+                    value={confirmPassword}
+                    onChange={(e) => setConfirmPassword(e.target.value)}
+                    required
+                    placeholder="Repita sua senha"
+                  />
+                </div>
+
+                <div className="flex items-start gap-3 pt-1">
+                  <Checkbox
+                    id="accept-terms"
+                    checked={acceptTerms}
+                    onCheckedChange={(v) => setAcceptTerms(!!v)}
+                    className="mt-0.5"
+                  />
+                  <Label htmlFor="accept-terms" className="font-normal text-sm leading-snug cursor-pointer text-muted-foreground">
+                    Li e aceito os{" "}
+                    <span className="text-primary underline underline-offset-2">termos de serviço</span>{" "}
+                    e a{" "}
+                    <span className="text-primary underline underline-offset-2">política de privacidade</span>
+                  </Label>
+                </div>
+
                 <Button type="submit" className="w-full h-11" disabled={loading}>
                   {loading ? "Cadastrando..." : "Criar conta"}
                 </Button>
