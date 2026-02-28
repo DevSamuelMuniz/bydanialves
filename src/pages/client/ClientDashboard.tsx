@@ -4,11 +4,13 @@ import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { CalendarPlus, Clock, Crown, Filter, Sparkles, Scissors, CheckCircle2, XCircle, AlertCircle, Timer } from "lucide-react";
+import { CalendarPlus, Clock, Crown, Filter, Sparkles, Scissors, CheckCircle2, XCircle, AlertCircle, Timer, MapPin, Building2, FileText, CalendarDays } from "lucide-react";
 import { Link } from "react-router-dom";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Separator } from "@/components/ui/separator";
 
 const statusLabels: Record<string, string> = {
   pending: "Pendente",
@@ -44,6 +46,7 @@ export default function ClientDashboard() {
   const [escovasUsadas, setEscovasUsadas] = useState(0);
   const [loading, setLoading] = useState(true);
   const [statusFilter, setStatusFilter] = useState("all");
+  const [selectedAppt, setSelectedAppt] = useState<any | null>(null);
 
   useEffect(() => {
     if (!user) return;
@@ -56,7 +59,7 @@ export default function ClientDashboard() {
         supabase.from("profiles").select("*").eq("user_id", user.id).single(),
         supabase
           .from("appointments")
-          .select("*, services(name, price, duration_minutes)")
+          .select("*, services(name, price, duration_minutes, description), branches(name, address)")
           .eq("client_id", user.id)
           .order("appointment_date", { ascending: true })
           .order("appointment_time", { ascending: true }),
@@ -204,7 +207,11 @@ export default function ClientDashboard() {
                 const duration = appt.services?.duration_minutes;
 
                 return (
-                  <Card key={appt.id} className="border-border/60 hover:border-primary/30 transition-all duration-300 overflow-hidden relative flex flex-col">
+                  <Card
+                    key={appt.id}
+                    className="border-border/60 hover:border-primary/30 hover:shadow-md transition-all duration-300 overflow-hidden relative flex flex-col cursor-pointer"
+                    onClick={() => setSelectedAppt(appt)}
+                  >
                     {/* top color bar */}
                     <div className={`absolute top-0 left-0 right-0 h-1 ${statusBarColor[appt.status] ?? "bg-muted"}`} />
 
@@ -260,6 +267,126 @@ export default function ClientDashboard() {
           );
         })()}
       </div>
+
+      {/* Detail Dialog */}
+      {selectedAppt && (() => {
+        const appt = selectedAppt;
+        const dateFormatted = new Date(appt.appointment_date + "T12:00:00").toLocaleDateString("pt-BR", {
+          weekday: "long", day: "2-digit", month: "long", year: "numeric",
+        });
+        const timeFormatted = appt.appointment_time?.slice(0, 5);
+        const price = Number(appt.services?.price ?? 0);
+        const duration = appt.services?.duration_minutes;
+        const statusIcon = {
+          pending: <AlertCircle className="h-4 w-4" />,
+          confirmed: <CheckCircle2 className="h-4 w-4" />,
+          completed: <CheckCircle2 className="h-4 w-4" />,
+          cancelled: <XCircle className="h-4 w-4" />,
+        }[appt.status] ?? <AlertCircle className="h-4 w-4" />;
+
+        return (
+          <Dialog open={!!selectedAppt} onOpenChange={(o) => !o && setSelectedAppt(null)}>
+            <DialogContent className="max-w-md">
+              <DialogHeader>
+                <DialogTitle className="font-serif text-xl flex items-center gap-2">
+                  <div className="h-9 w-9 rounded-lg bg-primary/10 flex items-center justify-center shrink-0">
+                    <Scissors className="h-4 w-4 text-primary" />
+                  </div>
+                  {appt.services?.name ?? "Serviço"}
+                </DialogTitle>
+              </DialogHeader>
+
+              <div className={`h-1 rounded-full ${statusBarColor[appt.status] ?? "bg-muted"}`} />
+
+              <div className="space-y-4 pt-1">
+                {/* Status */}
+                <Badge variant="outline" className={`${statusColors[appt.status]} border rounded-full px-3 py-1 text-sm font-medium flex items-center gap-1.5 w-fit`}>
+                  {statusIcon}
+                  {statusLabels[appt.status]}
+                </Badge>
+
+                <Separator />
+
+                {/* Date & time */}
+                <div className="flex items-start gap-3">
+                  <CalendarDays className="h-4 w-4 text-primary mt-0.5 shrink-0" />
+                  <div>
+                    <p className="text-xs text-muted-foreground">Data e horário</p>
+                    <p className="text-sm font-medium capitalize">{dateFormatted}</p>
+                    <p className="text-lg font-bold font-serif text-primary">{timeFormatted}</p>
+                  </div>
+                </div>
+
+                {/* Branch */}
+                {appt.branches && (
+                  <div className="flex items-start gap-3">
+                    <Building2 className="h-4 w-4 text-primary mt-0.5 shrink-0" />
+                    <div>
+                      <p className="text-xs text-muted-foreground">Filial</p>
+                      <p className="text-sm font-medium">{appt.branches.name}</p>
+                    </div>
+                  </div>
+                )}
+
+                {/* Address */}
+                {appt.branches?.address && (
+                  <div className="flex items-start gap-3">
+                    <MapPin className="h-4 w-4 text-primary mt-0.5 shrink-0" />
+                    <div>
+                      <p className="text-xs text-muted-foreground">Endereço</p>
+                      <p className="text-sm font-medium">{appt.branches.address}</p>
+                    </div>
+                  </div>
+                )}
+
+                {/* Duration + price */}
+                <div className="flex gap-4">
+                  {duration && (
+                    <div className="flex items-start gap-3">
+                      <Timer className="h-4 w-4 text-primary mt-0.5 shrink-0" />
+                      <div>
+                        <p className="text-xs text-muted-foreground">Duração</p>
+                        <p className="text-sm font-medium">{duration} minutos</p>
+                      </div>
+                    </div>
+                  )}
+                  <div className="flex items-start gap-3">
+                    <Clock className="h-4 w-4 text-primary mt-0.5 shrink-0" />
+                    <div>
+                      <p className="text-xs text-muted-foreground">Valor</p>
+                      <p className="text-sm font-medium">
+                        {price > 0 ? `R$ ${price.toFixed(2)}` : "Incluso no plano"}
+                      </p>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Description */}
+                {appt.services?.description && (
+                  <div className="flex items-start gap-3">
+                    <FileText className="h-4 w-4 text-primary mt-0.5 shrink-0" />
+                    <div>
+                      <p className="text-xs text-muted-foreground">Descrição</p>
+                      <p className="text-sm text-muted-foreground">{appt.services.description}</p>
+                    </div>
+                  </div>
+                )}
+
+                {/* Notes */}
+                {appt.notes && (
+                  <div className="flex items-start gap-3">
+                    <FileText className="h-4 w-4 text-primary mt-0.5 shrink-0" />
+                    <div>
+                      <p className="text-xs text-muted-foreground">Observações</p>
+                      <p className="text-sm text-muted-foreground">{appt.notes}</p>
+                    </div>
+                  </div>
+                )}
+              </div>
+            </DialogContent>
+          </Dialog>
+        );
+      })()}
     </div>
   );
 }
