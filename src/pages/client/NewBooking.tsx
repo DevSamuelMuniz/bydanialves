@@ -409,9 +409,9 @@ export default function NewBooking() {
                         <Timer className="h-3 w-3" /> {s.duration_minutes}min
                       </span>
                       {free ? (
-                        <p className="font-serif font-semibold text-primary text-sm">Grátis</p>
+                        <p className="font-serif font-semibold text-primary text-base">Grátis</p>
                       ) : (
-                        <p className="font-serif font-semibold text-foreground text-sm">R$ {Number(s.price).toFixed(2)}</p>
+                        <p className="font-serif font-semibold text-foreground text-base">R$ {Number(s.price).toFixed(2)}</p>
                       )}
                     </div>
                   </div>
