@@ -213,18 +213,18 @@ export default function AdminAgenda() {
                     <Separator />
 
                     {/* Service + time + price */}
-                    <div className="grid grid-cols-2 sm:grid-cols-3 gap-2 text-sm">
-                      <div className="flex items-center gap-2 text-muted-foreground">
-                        <Scissors className="h-3.5 w-3.5 shrink-0" />
-                        <span className="truncate">{a.services?.name || "—"}</span>
+                    <div className="flex flex-wrap gap-4">
+                      <div className="flex items-center gap-2">
+                        <Scissors className="h-4 w-4 text-primary shrink-0" />
+                        <span className="text-base font-bold">{a.services?.name || "—"}</span>
                       </div>
-                      <div className="flex items-center gap-2 text-muted-foreground">
-                        <Clock className="h-3.5 w-3.5 shrink-0" />
-                        <span>{new Date(a.appointment_date).toLocaleDateString("pt-BR")} às {a.appointment_time?.slice(0, 5)}</span>
+                      <div className="flex items-center gap-2">
+                        <Clock className="h-4 w-4 text-primary shrink-0" />
+                        <span className="text-base font-bold">{new Date(a.appointment_date).toLocaleDateString("pt-BR")} às {a.appointment_time?.slice(0, 5)}</span>
                       </div>
-                      <div className="flex items-center gap-2 text-muted-foreground">
-                        <DollarSign className="h-3.5 w-3.5 shrink-0" />
-                        <span className="font-semibold text-foreground">R$ {Number(a.services?.price || 0).toFixed(2)}</span>
+                      <div className="flex items-center gap-2">
+                        <DollarSign className="h-4 w-4 text-primary shrink-0" />
+                        <span className="text-base font-bold">R$ {Number(a.services?.price || 0).toFixed(2)}</span>
                       </div>
                     </div>
 
