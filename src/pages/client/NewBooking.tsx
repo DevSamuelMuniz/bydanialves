@@ -318,43 +318,39 @@ export default function NewBooking() {
               <p>Nenhuma filial disponível no momento.</p>
             </div>
           ) : (
-            <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+            <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
               {branches.map((b) => (
                 <div
                   key={b.id}
                   onClick={() => { setSelectedBranch(b); setStep(2); }}
-                  className={`group relative rounded-2xl overflow-hidden cursor-pointer transition-all duration-300 border-2 flex flex-col
+                  className={`group relative rounded-xl overflow-hidden cursor-pointer transition-all duration-300 border-2 flex flex-col
                     ${selectedBranch?.id === b.id ? "border-primary shadow-elevated" : "border-border/50 hover:border-primary/50 hover:shadow-elegant"}`}
                 >
-                  {/* Branch image */}
-                  <div className="relative h-44 overflow-hidden">
+                  {/* Branch image 16:9 */}
+                  <div className="relative w-full" style={{ paddingBottom: "56.25%" }}>
                     <img
                       src={getBranchImage(b)}
                       alt={b.name}
-                      className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
+                      className="absolute inset-0 w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
                     />
                     <div className="absolute inset-0 bg-gradient-to-t from-black/40 to-transparent" />
                     {selectedBranch?.id === b.id && (
-                      <div className="absolute top-3 right-3 h-7 w-7 rounded-full bg-primary flex items-center justify-center shadow">
-                        <Check className="h-3.5 w-3.5 text-primary-foreground" />
+                      <div className="absolute top-2 right-2 h-5 w-5 rounded-full bg-primary flex items-center justify-center shadow">
+                        <Check className="h-3 w-3 text-primary-foreground" />
                       </div>
                     )}
                   </div>
                   {/* Branch info */}
-                  <div className="p-4 flex flex-col gap-2 bg-card flex-1">
-                    <p className="font-semibold text-base leading-tight">{b.name}</p>
+                  <div className="p-2.5 flex flex-col gap-1 bg-card flex-1">
+                    <p className="font-semibold text-sm leading-tight">{b.name}</p>
                     {b.address ? (
-                      <p className="text-xs text-muted-foreground flex items-start gap-1.5">
-                        <MapPin className="h-3.5 w-3.5 shrink-0 mt-0.5 text-primary" />
-                        <span>{b.address}</span>
+                      <p className="text-xs text-muted-foreground flex items-start gap-1">
+                        <MapPin className="h-3 w-3 shrink-0 mt-0.5 text-primary" />
+                        <span className="line-clamp-1">{b.address}</span>
                       </p>
                     ) : (
                       <p className="text-xs text-muted-foreground">Endereço não informado</p>
                     )}
-                    <div className="mt-auto pt-2 flex items-center justify-between">
-                      <Badge variant="secondary" className="text-xs">Disponível</Badge>
-                      <ChevronRight className="h-4 w-4 text-muted-foreground group-hover:text-primary transition-colors" />
-                    </div>
                   </div>
                 </div>
               ))}
