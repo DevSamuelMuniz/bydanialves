@@ -23,9 +23,9 @@ export function AdminSidebar() {
 
   const items = [
     { title: "Dashboard", url: "/admin", icon: LayoutDashboard, show: perms.canViewDashboard },
-    { title: "Clientes", url: "/admin/clients", icon: Users, show: perms.canViewClients },
     { title: "Agenda", url: "/admin/agenda", icon: Calendar, show: perms.canViewAgenda },
     { title: "Meus Atendimentos", url: "/admin/my-appointments", icon: ClipboardList, show: perms.adminLevel === "professional" },
+    { title: "Clientes", url: "/admin/clients", icon: Users, show: perms.canViewClients },
     { title: "Serviços", url: "/admin/services", icon: Scissors, show: perms.canViewServices },
     { title: "Planos", url: "/admin/plans", icon: Crown, show: perms.canViewPlans },
     { title: "Financeiro", url: "/admin/finance", icon: DollarSign, show: perms.canViewFinance },

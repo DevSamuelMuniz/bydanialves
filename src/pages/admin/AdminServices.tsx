@@ -1,17 +1,19 @@
 import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
+import { useAdminPermissions } from "@/hooks/use-admin-permissions";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { useToast } from "@/hooks/use-toast";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Plus, Pencil } from "lucide-react";
 
 export default function AdminServices() {
   const { toast } = useToast();
+  const { canManageServices } = useAdminPermissions();
   const [services, setServices] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [dialogOpen, setDialogOpen] = useState(false);
@@ -55,7 +57,9 @@ export default function AdminServices() {
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <h1 className="font-serif text-2xl">Gestão de Serviços</h1>
-        <Button onClick={openNew}><Plus className="mr-2 h-4 w-4" />Novo Serviço</Button>
+        {canManageServices && (
+          <Button onClick={openNew}><Plus className="mr-2 h-4 w-4" />Novo Serviço</Button>
+        )}
       </div>
 
       <div className="space-y-3">
@@ -69,12 +73,12 @@ export default function AdminServices() {
               <div className="flex items-center gap-3">
                 {s.is_system ? (
                   <span className="text-xs text-muted-foreground italic">Padrão do sistema</span>
-                ) : (
+                ) : canManageServices ? (
                   <>
                     <Switch checked={s.active} onCheckedChange={(v) => toggleActive(s.id, v)} />
                     <Button variant="ghost" size="icon" onClick={() => openEdit(s)}><Pencil className="h-4 w-4" /></Button>
                   </>
-                )}
+                ) : null}
               </div>
             </CardContent>
           </Card>
