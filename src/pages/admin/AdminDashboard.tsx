@@ -5,7 +5,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
-import { CalendarDays, Users, Clock, AlertCircle, TrendingUp, CheckCircle2, Scissors } from "lucide-react";
+import { CalendarDays, Users, Clock, AlertCircle, TrendingUp, CheckCircle2, Scissors, Building2 } from "lucide-react";
 import {
   AreaChart, Area, BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer,
   CartesianGrid, Cell,
@@ -29,7 +29,7 @@ const statusColors: Record<string, string> = {
 
 export default function AdminDashboard() {
   const navigate = useNavigate();
-  const { canViewDashboard, canViewDashboardFinancials } = useAdminPermissions();
+  const { canViewDashboard, canViewDashboardFinancials, canViewBranchKpis } = useAdminPermissions();
 
   useEffect(() => {
     if (!canViewDashboard) navigate("/admin/agenda", { replace: true });
@@ -48,6 +48,7 @@ export default function AdminDashboard() {
   const [topServices, setTopServices] = useState<{ name: string; count: number }[]>([]);
   const [peakHours, setPeakHours] = useState<{ hour: string; count: number }[]>([]);
   const [completionRate, setCompletionRate] = useState(0);
+  const [branchKpis, setBranchKpis] = useState<{ name: string; count: number; revenue: number }[]>([]);
 
   const [loading, setLoading] = useState(true);
 
@@ -142,6 +143,28 @@ export default function AdminDashboard() {
 
       setLoading(false);
     });
+
+    // Branch KPIs separate async load
+    (async () => {
+      const monthStart2 = startOfMonth(new Date()).toISOString().split("T")[0];
+      const [branchAppts, branchFin, branchListRes] = await Promise.all([
+        supabase.from("appointments").select("branch_id" as any).gte("appointment_date", monthStart2),
+        supabase.from("financial_records").select("branch, amount").eq("type", "income").gte("created_at", monthStart2),
+        (supabase.from("branches" as any) as any).select("id, name").eq("active", true),
+      ]);
+      const branchMap: Record<string, { name: string; count: number; revenue: number }> = {};
+      for (const br of (branchListRes.data || []) as any[]) {
+        branchMap[br.id] = { name: br.name, count: 0, revenue: 0 };
+      }
+      for (const a of ((branchAppts as any).data || []) as any[]) {
+        if (a.branch_id && branchMap[a.branch_id]) branchMap[a.branch_id].count++;
+      }
+      for (const r of ((branchFin as any).data || []) as any[]) {
+        const entry = Object.values(branchMap).find((b) => b.name === r.branch);
+        if (entry) entry.revenue += Number(r.amount);
+      }
+      setBranchKpis(Object.values(branchMap).sort((a, b) => b.count - a.count));
+    })();
   }, []);
 
   if (loading) return (
@@ -369,6 +392,32 @@ export default function AdminDashboard() {
           )}
         </CardContent>
       </Card>
+
+      {/* Row 4: KPIs por Filial (Gerente e CEO) */}
+      {canViewBranchKpis && branchKpis.length > 0 && (
+        <Card className="border-border/60 animate-slide-up" style={{ animationDelay: "0.45s" }}>
+          <CardContent className="pt-6">
+            <h3 className="font-serif text-base font-medium mb-1 tracking-tight">Desempenho por Filial</h3>
+            <p className="text-xs text-muted-foreground mb-4">Agendamentos e receita no mês atual</p>
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+              {branchKpis.map((b) => (
+                <div key={b.name} className="flex items-center gap-4 p-4 rounded-xl bg-muted/30 border border-border/40 hover:border-primary/20 transition-colors">
+                  <div className="h-10 w-10 rounded-xl bg-primary/10 flex items-center justify-center shrink-0">
+                    <Building2 className="h-5 w-5 text-primary" />
+                  </div>
+                  <div className="min-w-0 flex-1">
+                    <p className="text-sm font-medium truncate">{b.name}</p>
+                    <p className="text-xs text-muted-foreground mt-0.5">{b.count} agendamento{b.count !== 1 ? "s" : ""}</p>
+                    {canViewDashboardFinancials && (
+                      <p className="text-xs text-primary font-medium">R$ {b.revenue.toFixed(2)}</p>
+                    )}
+                  </div>
+                </div>
+              ))}
+            </div>
+          </CardContent>
+        </Card>
+      )}
     </div>
   );
 }

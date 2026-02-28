@@ -48,6 +48,7 @@ export type Database = {
         Row: {
           appointment_date: string
           appointment_time: string
+          branch_id: string | null
           client_id: string
           created_at: string
           id: string
@@ -60,6 +61,7 @@ export type Database = {
         Insert: {
           appointment_date: string
           appointment_time: string
+          branch_id?: string | null
           client_id: string
           created_at?: string
           id?: string
@@ -72,6 +74,7 @@ export type Database = {
         Update: {
           appointment_date?: string
           appointment_time?: string
+          branch_id?: string | null
           client_id?: string
           created_at?: string
           id?: string
@@ -82,6 +85,13 @@ export type Database = {
           updated_at?: string
         }
         Relationships: [
+          {
+            foreignKeyName: "appointments_branch_id_fkey"
+            columns: ["branch_id"]
+            isOneToOne: false
+            referencedRelation: "branches"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "appointments_client_profile_fkey"
             columns: ["client_id"]
@@ -97,6 +107,33 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      branches: {
+        Row: {
+          active: boolean
+          address: string | null
+          created_at: string
+          id: string
+          name: string
+          updated_at: string
+        }
+        Insert: {
+          active?: boolean
+          address?: string | null
+          created_at?: string
+          id?: string
+          name: string
+          updated_at?: string
+        }
+        Update: {
+          active?: boolean
+          address?: string | null
+          created_at?: string
+          id?: string
+          name?: string
+          updated_at?: string
+        }
+        Relationships: []
       }
       financial_records: {
         Row: {
@@ -186,6 +223,7 @@ export type Database = {
           avatar_url: string | null
           bio: string | null
           blocked: boolean
+          branch_id: string | null
           created_at: string
           full_name: string
           gender: string | null
@@ -198,6 +236,7 @@ export type Database = {
           avatar_url?: string | null
           bio?: string | null
           blocked?: boolean
+          branch_id?: string | null
           created_at?: string
           full_name?: string
           gender?: string | null
@@ -210,6 +249,7 @@ export type Database = {
           avatar_url?: string | null
           bio?: string | null
           blocked?: boolean
+          branch_id?: string | null
           created_at?: string
           full_name?: string
           gender?: string | null
@@ -218,7 +258,15 @@ export type Database = {
           updated_at?: string
           user_id?: string
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "profiles_branch_id_fkey"
+            columns: ["branch_id"]
+            isOneToOne: false
+            referencedRelation: "branches"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       services: {
         Row: {

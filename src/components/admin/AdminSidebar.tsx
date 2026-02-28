@@ -4,7 +4,7 @@ import { useAuth } from "@/contexts/AuthContext";
 import { Badge } from "@/components/ui/badge";
 import {
   LayoutDashboard, Users, Calendar, Scissors, DollarSign,
-  BarChart3, ShieldCheck, Crown, Activity, ClipboardList,
+  BarChart3, ShieldCheck, Crown, Activity, ClipboardList, Building2,
 } from "lucide-react";
 
 export function AdminSidebar() {
@@ -19,6 +19,7 @@ export function AdminSidebar() {
     { title: "Serviços",           url: "/admin/services",       icon: Scissors },
     { title: "Planos",             url: "/admin/plans",          icon: Crown },
     { title: "Financeiro",         url: "/admin/finance",        icon: DollarSign },
+    { title: "Filiais",            url: "/admin/branches",       icon: Building2 },
     { title: "Usuários",           url: "/admin/users",          icon: ShieldCheck },
     { title: "Logs",               url: "/admin/logs",           icon: Activity },
   ].filter((item) => {
@@ -30,6 +31,7 @@ export function AdminSidebar() {
       "/admin/services":        perms.canViewServices,
       "/admin/plans":           perms.canViewPlans,
       "/admin/finance":         perms.canViewFinance,
+      "/admin/branches":        perms.canViewBranches,
       "/admin/users":           perms.canViewUsers,
       "/admin/logs":            perms.canViewLogs,
     };
