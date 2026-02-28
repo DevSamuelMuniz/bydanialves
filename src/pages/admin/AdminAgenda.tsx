@@ -21,7 +21,7 @@ const PAGE_SIZE = 100; // load more for kanban view
 
 export default function AdminAgenda() {
   const { toast } = useToast();
-  const { user } = useAuth();
+  const { user, adminBranchId } = useAuth();
   const { adminLevel } = useAdminPermissions();
 
   const [appointments, setAppointments] = useState<any[]>([]);
@@ -50,6 +50,9 @@ export default function AdminAgenda() {
       .select("*, services(name, price, duration_minutes), profiles!appointments_client_profile_fkey(full_name, phone)")
       .in("status", ["pending", "confirmed", "cancelled"]);
 
+    // Staff with a branch only see their branch's appointments
+    if (adminBranchId) query = query.eq("branch_id", adminBranchId);
+
     if (dateFrom) query = query.gte("appointment_date", format(dateFrom, "yyyy-MM-dd"));
     if (dateTo) query = query.lte("appointment_date", format(dateTo, "yyyy-MM-dd"));
     if (serviceFilter !== "all") query = query.eq("service_id", serviceFilter);
@@ -61,7 +64,7 @@ export default function AdminAgenda() {
 
     setAppointments(data || []);
     setLoading(false);
-  }, [dateFrom, dateTo, serviceFilter]);
+  }, [dateFrom, dateTo, serviceFilter, adminBranchId]);
 
   useEffect(() => { fetchServices(); }, []);
   useEffect(() => { fetchAppointments(); }, [fetchAppointments]);

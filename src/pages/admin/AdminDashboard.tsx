@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAdminPermissions } from "@/hooks/use-admin-permissions";
+import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -30,6 +31,7 @@ const statusColors: Record<string, string> = {
 export default function AdminDashboard() {
   const navigate = useNavigate();
   const { canViewDashboard, canViewDashboardFinancials, canViewBranchKpis } = useAdminPermissions();
+  const { adminBranchId } = useAuth();
 
   useEffect(() => {
     if (!canViewDashboard) navigate("/admin/agenda", { replace: true });
@@ -58,32 +60,41 @@ export default function AdminDashboard() {
     const weekStart = format(subDays(new Date(), 6), "yyyy-MM-dd");
     const last30Start = format(subDays(new Date(), 29), "yyyy-MM-dd");
 
+    // Build queries — staff with a branch see only their branch data
+    const apptBase = supabase.from("appointments");
+    const todayQ = adminBranchId
+      ? apptBase.select("*, services(name), profiles!appointments_client_profile_fkey(full_name)").eq("appointment_date", today).eq("branch_id", adminBranchId).order("appointment_time")
+      : apptBase.select("*, services(name), profiles!appointments_client_profile_fkey(full_name)").eq("appointment_date", today).order("appointment_time");
+    const pendingQ = adminBranchId
+      ? supabase.from("appointments").select("id", { count: "exact", head: true }).eq("status", "pending").eq("branch_id", adminBranchId)
+      : supabase.from("appointments").select("id", { count: "exact", head: true }).eq("status", "pending");
+    const weekQ = adminBranchId
+      ? supabase.from("appointments").select("id", { count: "exact", head: true }).gte("appointment_date", weekStart).lte("appointment_date", today).eq("branch_id", adminBranchId)
+      : supabase.from("appointments").select("id", { count: "exact", head: true }).gte("appointment_date", weekStart).lte("appointment_date", today);
+    const completedQ = adminBranchId
+      ? supabase.from("appointments").select("id", { count: "exact", head: true }).eq("status", "completed").eq("branch_id", adminBranchId)
+      : supabase.from("appointments").select("id", { count: "exact", head: true }).eq("status", "completed");
+    const servicesQ = adminBranchId
+      ? supabase.from("appointments").select("service_id, services(name)").gte("appointment_date", last30Start).neq("status", "cancelled").eq("branch_id", adminBranchId)
+      : supabase.from("appointments").select("service_id, services(name)").gte("appointment_date", last30Start).neq("status", "cancelled");
+    const hoursQ = adminBranchId
+      ? supabase.from("appointments").select("appointment_time").eq("status", "completed").eq("branch_id", adminBranchId).limit(500)
+      : supabase.from("appointments").select("appointment_time").eq("status", "completed").limit(500);
+    const rateQ = adminBranchId
+      ? supabase.from("appointments").select("status").gte("appointment_date", last30Start).eq("branch_id", adminBranchId)
+      : supabase.from("appointments").select("status").gte("appointment_date", last30Start);
+
     Promise.all([
-      // Today appointments with service + profile
-      supabase
-        .from("appointments")
-        .select("*, services(name), profiles!appointments_client_profile_fkey(full_name)")
-        .eq("appointment_date", today)
-        .order("appointment_time"),
-      // Month income
+      todayQ,
       supabase.from("financial_records").select("amount, created_at").eq("type", "income").gte("created_at", monthStart),
-      // Total clients
       supabase.from("profiles").select("id", { count: "exact", head: true }),
-      // Pending count
-      supabase.from("appointments").select("id", { count: "exact", head: true }).eq("status", "pending"),
-      // Week count
-      supabase.from("appointments").select("id", { count: "exact", head: true })
-        .gte("appointment_date", weekStart).lte("appointment_date", today),
-      // Completed count
-      supabase.from("appointments").select("id", { count: "exact", head: true }).eq("status", "completed"),
-      // Recent clients
+      pendingQ,
+      weekQ,
+      completedQ,
       supabase.from("profiles").select("full_name, created_at").order("created_at", { ascending: false }).limit(5),
-      // Top services (last 30 days)
-      supabase.from("appointments").select("service_id, services(name)").gte("appointment_date", last30Start).neq("status", "cancelled"),
-      // Peak hours (all time)
-      supabase.from("appointments").select("appointment_time").eq("status", "completed").limit(500),
-      // Completion rate data (last 30 days)
-      supabase.from("appointments").select("status").gte("appointment_date", last30Start),
+      servicesQ,
+      hoursQ,
+      rateQ,
     ]).then(([apptRes, finRes, clientRes, pendingRes, weekRes, completedRes, recentRes, servicesRes, hoursRes, rateRes]) => {
       setTodayAppointments(apptRes.data || []);
       setTotalClients(clientRes.count || 0);
@@ -144,7 +155,7 @@ export default function AdminDashboard() {
       setLoading(false);
     });
 
-    // Branch KPIs separate async load
+    // Branch KPIs separate async load (global only — no branch filter here)
     (async () => {
       const monthStart2 = startOfMonth(new Date()).toISOString().split("T")[0];
       const [branchAppts, branchFin, branchListRes] = await Promise.all([
@@ -165,7 +176,7 @@ export default function AdminDashboard() {
       }
       setBranchKpis(Object.values(branchMap).sort((a, b) => b.count - a.count));
     })();
-  }, []);
+  }, [adminBranchId]);
 
   if (loading) return (
     <div className="space-y-6">

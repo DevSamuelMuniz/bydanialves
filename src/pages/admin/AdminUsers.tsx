@@ -10,13 +10,15 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useToast } from "@/hooks/use-toast";
-import { Shield, ShieldOff, Mail, CheckCircle, UserCog } from "lucide-react";
+import { Shield, ShieldOff, Mail, CheckCircle, UserCog, Building2 } from "lucide-react";
 
 interface UserInfo {
   user_id: string;
   full_name: string;
   roles: string[];
   admin_level: AdminLevel;
+  branch_id: string | null;
+  branch_name: string | null;
   email: string;
   email_confirmed: boolean;
 }
@@ -35,12 +37,15 @@ export default function AdminUsers() {
   const [users, setUsers] = useState<UserInfo[]>([]);
   const [loading, setLoading] = useState(true);
   const [changingLevel, setChangingLevel] = useState<string | null>(null);
+  const [branches, setBranches] = useState<{ id: string; name: string }[]>([]);
+  const [assigningBranch, setAssigningBranch] = useState<string | null>(null);
 
   const fetchAll = async () => {
     setLoading(true);
-    const [profilesRes, rolesRes] = await Promise.all([
+    const [profilesRes, rolesRes, branchesRes] = await Promise.all([
       supabase.from("profiles").select("user_id, full_name"),
-      supabase.from("user_roles").select("user_id, role, admin_level"),
+      (supabase.from("user_roles") as any).select("user_id, role, admin_level, branch_id"),
+      (supabase.from("branches" as any) as any).select("id, name").eq("active", true).order("name"),
     ]);
 
     let emailsMap: Record<string, { email: string; email_confirmed_at: string | null }> = {};
@@ -51,12 +56,19 @@ export default function AdminUsers() {
 
     const profiles = profilesRes.data || [];
     const roles = rolesRes.data || [];
+    const branchList = branchesRes.data || [];
+    setBranches(branchList as { id: string; name: string }[]);
+    const branchMap: Record<string, string> = {};
+    for (const b of branchList as any[]) branchMap[b.id] = b.name;
 
-    const rolesMap: Record<string, { roles: string[]; admin_level: AdminLevel }> = {};
+    const rolesMap: Record<string, { roles: string[]; admin_level: AdminLevel; branch_id: string | null }> = {};
     for (const r of roles) {
-      if (!rolesMap[r.user_id]) rolesMap[r.user_id] = { roles: [], admin_level: null };
+      if (!rolesMap[r.user_id]) rolesMap[r.user_id] = { roles: [], admin_level: null, branch_id: null };
       rolesMap[r.user_id].roles.push(r.role);
-      if (r.role === "admin") rolesMap[r.user_id].admin_level = (r.admin_level as AdminLevel) ?? "ceo";
+      if (r.role === "admin") {
+        rolesMap[r.user_id].admin_level = (r.admin_level as AdminLevel) ?? "ceo";
+        rolesMap[r.user_id].branch_id = r.branch_id ?? null;
+      }
     }
 
     const result: UserInfo[] = profiles.map((p) => ({
@@ -64,6 +76,8 @@ export default function AdminUsers() {
       full_name: p.full_name || "Sem nome",
       roles: rolesMap[p.user_id]?.roles || ["client"],
       admin_level: rolesMap[p.user_id]?.admin_level ?? null,
+      branch_id: rolesMap[p.user_id]?.branch_id ?? null,
+      branch_name: rolesMap[p.user_id]?.branch_id ? (branchMap[rolesMap[p.user_id].branch_id!] ?? null) : null,
       email: emailsMap[p.user_id]?.email || "",
       email_confirmed: !!emailsMap[p.user_id]?.email_confirmed_at,
     }));
@@ -109,6 +123,21 @@ export default function AdminUsers() {
     }
   };
 
+  const assignBranch = async (userId: string, branchId: string) => {
+    setAssigningBranch(userId);
+    const { error } = await (supabase.from("user_roles") as any)
+      .update({ branch_id: branchId === "none" ? null : branchId })
+      .eq("user_id", userId)
+      .eq("role", "admin");
+    setAssigningBranch(null);
+    if (error) {
+      toast({ title: "Erro", description: error.message, variant: "destructive" });
+    } else {
+      toast({ title: "Filial atualizada!" });
+      fetchAll();
+    }
+  };
+
   if (!perms.canManageUsers) {
     return (
       <div className="flex flex-col items-center justify-center py-24 gap-3 text-center">
@@ -148,6 +177,12 @@ export default function AdminUsers() {
                           {ADMIN_LEVEL_LABELS[lvl]}
                         </Badge>
                       )}
+                      {u.branch_name && (
+                        <Badge variant="outline" className="text-xs gap-1">
+                          <Building2 className="h-2.5 w-2.5" />
+                          {u.branch_name}
+                        </Badge>
+                      )}
                     </div>
                     <div className="flex items-center gap-2 text-sm text-muted-foreground">
                       <Mail className="h-3 w-3" />
@@ -157,6 +192,26 @@ export default function AdminUsers() {
                   </div>
 
                   <div className="flex items-center gap-2 flex-wrap">
+                    {/* Branch assignment */}
+                    {!isSelf && branches.length > 0 && (
+                      <Select
+                        value={u.branch_id ?? "none"}
+                        onValueChange={(v) => assignBranch(u.user_id, v)}
+                        disabled={assigningBranch === u.user_id}
+                      >
+                        <SelectTrigger className="w-36 h-8 text-xs">
+                          <Building2 className="h-3 w-3 mr-1.5 shrink-0" />
+                          <SelectValue placeholder="Filial" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="none" className="text-xs">Todas (global)</SelectItem>
+                          {branches.map((b) => (
+                            <SelectItem key={b.id} value={b.id} className="text-xs">{b.name}</SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    )}
+
                     {/* Change level */}
                     {!isSelf && (
                       <Select

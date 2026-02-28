@@ -11,6 +11,7 @@ interface AuthContextType {
   loading: boolean;
   userRole: UserRole | null;
   adminLevel: AdminLevel;
+  adminBranchId: string | null;
   signOut: () => Promise<void>;
 }
 
@@ -20,6 +21,7 @@ const AuthContext = createContext<AuthContextType>({
   loading: true,
   userRole: null,
   adminLevel: null,
+  adminBranchId: null,
   signOut: async () => {},
 });
 
@@ -31,11 +33,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [loading, setLoading] = useState(true);
   const [userRole, setUserRole] = useState<UserRole | null>(null);
   const [adminLevel, setAdminLevel] = useState<AdminLevel>(null);
+  const [adminBranchId, setAdminBranchId] = useState<string | null>(null);
 
   const fetchUserRole = async (userId: string) => {
     const { data } = await supabase
       .from("user_roles")
-      .select("role, admin_level")
+      .select("role, admin_level, branch_id")
       .eq("user_id", userId);
     if (data && data.length > 0) {
       const isAdmin = data.some((r) => r.role === "admin");
@@ -43,8 +46,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       if (isAdmin) {
         const adminRow = data.find((r) => r.role === "admin");
         setAdminLevel((adminRow?.admin_level as AdminLevel) ?? "ceo");
+        setAdminBranchId((adminRow as any)?.branch_id ?? null);
       } else {
         setAdminLevel(null);
+        setAdminBranchId(null);
       }
     }
   };
@@ -59,6 +64,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         } else {
           setUserRole(null);
           setAdminLevel(null);
+          setAdminBranchId(null);
         }
         setLoading(false);
       }
@@ -82,10 +88,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     setSession(null);
     setUserRole(null);
     setAdminLevel(null);
+    setAdminBranchId(null);
   };
 
   return (
-    <AuthContext.Provider value={{ user, session, loading, userRole, adminLevel, signOut }}>
+    <AuthContext.Provider value={{ user, session, loading, userRole, adminLevel, adminBranchId, signOut }}>
       {children}
     </AuthContext.Provider>
   );

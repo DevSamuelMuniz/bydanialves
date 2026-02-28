@@ -19,6 +19,7 @@ interface Branch {
   address: string | null;
   active: boolean;
   created_at: string;
+  staffCount?: number;
 }
 
 export default function AdminBranches() {
@@ -33,11 +34,17 @@ export default function AdminBranches() {
   const [saving, setSaving] = useState(false);
 
   const fetchBranches = async () => {
-    const { data } = await supabase
-      .from("branches" as any)
-      .select("*")
-      .order("created_at");
-    setBranches((data as unknown as Branch[]) || []);
+    const [branchesRes, rolesRes] = await Promise.all([
+      (supabase.from("branches" as any) as any).select("*").order("created_at"),
+      (supabase.from("user_roles") as any).select("branch_id").eq("role", "admin").not("branch_id", "is", null),
+    ]);
+    const rawBranches = (branchesRes.data as unknown as Branch[]) || [];
+    const roles = (rolesRes.data || []) as { branch_id: string }[];
+    const countMap: Record<string, number> = {};
+    for (const r of roles) {
+      if (r.branch_id) countMap[r.branch_id] = (countMap[r.branch_id] || 0) + 1;
+    }
+    setBranches(rawBranches.map((b) => ({ ...b, staffCount: countMap[b.id] || 0 })));
     setLoading(false);
   };
 
@@ -136,6 +143,9 @@ export default function AdminBranches() {
                           {b.address}
                         </p>
                       )}
+                      <p className="text-xs text-muted-foreground mt-0.5">
+                        👤 {b.staffCount ?? 0} funcionário{(b.staffCount ?? 0) !== 1 ? "s" : ""}
+                      </p>
                     </div>
                   </div>
                   <Badge variant="outline" className={b.active
