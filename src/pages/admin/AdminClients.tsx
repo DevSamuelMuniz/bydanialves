@@ -8,8 +8,9 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Label } from "@/components/ui/label";
 import { useToast } from "@/hooks/use-toast";
-import { Search, Ban, CheckCircle, Calendar, DollarSign, Edit2, Save, X } from "lucide-react";
+import { Search, Ban, CheckCircle, Calendar, DollarSign, Edit2, Save, X, Star, MessageCircle, UserPlus } from "lucide-react";
 import { useAdminPermissions } from "@/hooks/use-admin-permissions";
+import { cn } from "@/lib/utils";
 
 interface ClientProfile {
   id: string;
@@ -129,6 +130,7 @@ export default function AdminClients() {
     .filter((a) => a.status === "completed")
     .reduce((sum, a) => sum + Number(a.services?.price || 0), 0);
 
+
   if (loading)
     return (
       <div className="space-y-3">
@@ -154,54 +156,16 @@ export default function AdminClients() {
       {filtered.length === 0 ? (
         <p className="text-muted-foreground text-center py-8">Nenhum cliente encontrado.</p>
       ) : (
-        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3">
+        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4">
           {filtered.map((c) => (
-            <Card
+            <ClientProfileCard
               key={c.id}
-              className="cursor-pointer hover:shadow-md transition-shadow border-border"
+              client={c}
+              email={emails[c.user_id]?.email}
+              isProfessional={isProfessional}
               onClick={() => openDetail(c)}
-            >
-              <CardContent className="p-4 flex flex-col items-center text-center gap-2">
-                {/* Avatar */}
-                <div className="h-12 w-12 rounded-full bg-primary/10 flex items-center justify-center shrink-0">
-                  <span className="text-lg font-bold text-primary">
-                    {(c.full_name || "?")[0].toUpperCase()}
-                  </span>
-                </div>
-
-                <div className="w-full min-w-0">
-                  <div className="flex items-center justify-center gap-1 flex-wrap">
-                    <p className="font-medium text-sm truncate">{c.full_name || "Sem nome"}</p>
-                    {c.blocked && (
-                      <Badge variant="destructive" className="text-xs">Bloqueado</Badge>
-                    )}
-                  </div>
-                  <p className="text-xs text-muted-foreground truncate">{c.phone || "Sem telefone"}</p>
-                  {emails[c.user_id] && (
-                    <p className="text-xs text-muted-foreground truncate">{emails[c.user_id].email}</p>
-                  )}
-                </div>
-
-                {!isProfessional && (
-                  <Button
-                    variant="ghost"
-                    size="icon"
-                    className="h-7 w-7 shrink-0"
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      toggleBlock(c);
-                    }}
-                    title={c.blocked ? "Desbloquear" : "Bloquear"}
-                  >
-                    {c.blocked ? (
-                      <CheckCircle className="h-4 w-4 text-green-600" />
-                    ) : (
-                      <Ban className="h-4 w-4 text-destructive" />
-                    )}
-                  </Button>
-                )}
-              </CardContent>
-            </Card>
+              onToggleBlock={(e) => { e.stopPropagation(); toggleBlock(c); }}
+            />
           ))}
         </div>
       )}
@@ -327,6 +291,116 @@ export default function AdminClients() {
           )}
         </DialogContent>
       </Dialog>
+    </div>
+  );
+}
+
+// ─── Animated Profile Card ───────────────────────────────────────────────────
+
+interface ClientProfileCardProps {
+  client: ClientProfile;
+  email?: string;
+  isProfessional: boolean;
+  onClick: () => void;
+  onToggleBlock: (e: React.MouseEvent) => void;
+}
+
+function ClientProfileCard({ client, email, isProfessional, onClick, onToggleBlock }: ClientProfileCardProps) {
+  const initials = (client.full_name || "?")[0].toUpperCase();
+
+  return (
+    <div
+      className="relative flex flex-col items-center gap-3 rounded-2xl border border-border bg-card p-5 cursor-pointer group transition-all duration-300 hover:shadow-elevated hover:border-primary/30 overflow-hidden"
+      onClick={onClick}
+    >
+      {/* Animated grid bg */}
+      <div className="absolute inset-0 overflow-hidden opacity-[0.04] pointer-events-none">
+        <div
+          className="absolute inset-0"
+          style={{
+            backgroundImage: "linear-gradient(hsl(var(--primary)) 1px, transparent 1px), linear-gradient(90deg, hsl(var(--primary)) 1px, transparent 1px)",
+            backgroundSize: "32px 32px",
+            animation: "gridMove 4s linear infinite",
+          }}
+        />
+      </div>
+
+      <style>{`
+        @keyframes gridMove {
+          0% { transform: translate(0,0); }
+          100% { transform: translate(32px,32px); }
+        }
+        @keyframes pulseRing {
+          0%,100% { opacity:1; transform:scale(1); }
+          50% { opacity:0.4; transform:scale(1.5); }
+        }
+      `}</style>
+
+      {/* Status dot */}
+      <div className="absolute top-3 right-3 flex items-center gap-1">
+        <div className="relative">
+          <span className={cn("h-2 w-2 rounded-full block", client.blocked ? "bg-destructive" : "bg-green-500")} />
+          {!client.blocked && (
+            <span
+              className="absolute inset-0 rounded-full bg-green-500"
+              style={{ animation: "pulseRing 1.8s ease-in-out infinite" }}
+            />
+          )}
+        </div>
+      </div>
+
+      {/* Blocked badge top-left */}
+      {client.blocked && (
+        <div className="absolute top-3 left-3">
+          <Badge variant="destructive" className="text-[10px] px-1.5 py-0">Bloqueado</Badge>
+        </div>
+      )}
+
+      {/* Avatar */}
+      <div className="relative mt-2">
+        <div className="h-16 w-16 rounded-full bg-primary/10 border-2 border-primary/20 flex items-center justify-center transition-transform duration-300 group-hover:scale-105 overflow-hidden">
+          <span className="text-2xl font-bold text-primary">{initials}</span>
+        </div>
+        <div className="absolute inset-0 rounded-full ring-2 ring-primary/0 transition-all duration-300 group-hover:ring-primary/40 group-hover:ring-offset-2" />
+      </div>
+
+      {/* Info */}
+      <div className="flex flex-col items-center text-center w-full min-w-0 gap-0.5">
+        <p className="font-semibold text-sm text-foreground truncate w-full">{client.full_name || "Sem nome"}</p>
+        <p className="text-xs text-muted-foreground truncate w-full">{client.phone || "Sem telefone"}</p>
+        {email && <p className="text-xs text-muted-foreground truncate w-full">{email}</p>}
+      </div>
+
+      {/* Action buttons */}
+      <div className="flex gap-1.5 mt-1" onClick={(e) => e.stopPropagation()}>
+        <button
+          className="flex items-center gap-1 rounded-full bg-primary/10 hover:bg-primary/20 border border-primary/20 px-3 py-1 text-xs font-medium text-primary transition-all duration-200 hover:scale-105"
+          onClick={onClick}
+        >
+          <MessageCircle className="h-3 w-3" />
+          Ver
+        </button>
+        {!isProfessional && (
+          <button
+            className={cn(
+              "flex items-center justify-center h-6 w-6 rounded-full border transition-all duration-200 hover:scale-105",
+              client.blocked
+                ? "bg-green-500/10 hover:bg-green-500/20 border-green-500/20 text-green-600"
+                : "bg-destructive/10 hover:bg-destructive/20 border-destructive/20 text-destructive"
+            )}
+            onClick={onToggleBlock}
+            title={client.blocked ? "Desbloquear" : "Bloquear"}
+          >
+            {client.blocked
+              ? <CheckCircle className="h-3 w-3" />
+              : <Ban className="h-3 w-3" />
+            }
+          </button>
+        )}
+      </div>
+
+      {/* Hover border glow */}
+      <div className="absolute inset-0 rounded-2xl ring-1 ring-primary/0 transition-all duration-500 group-hover:ring-primary/20 pointer-events-none" />
     </div>
   );
 }
