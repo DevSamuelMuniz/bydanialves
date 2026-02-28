@@ -12,7 +12,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { useToast } from "@/hooks/use-toast";
 import { useAdminPermissions } from "@/hooks/use-admin-permissions";
 import { Navigate } from "react-router-dom";
-import { Plus, Edit2, Trash2, Tag, Percent, DollarSign, Calendar, Hash, ToggleLeft } from "lucide-react";
+import { Plus, Edit2, Trash2, Tag, Percent, DollarSign, Calendar, Hash, ToggleLeft, Copy, Check } from "lucide-react";
 
 type Coupon = {
   id: string;
@@ -48,6 +48,14 @@ export default function AdminCoupons() {
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editing, setEditing] = useState<Coupon | null>(null);
   const [form, setForm] = useState(emptyForm);
+
+  const [copiedId, setCopiedId] = useState<string | null>(null);
+
+  const copyCode = (id: string, code: string) => {
+    navigator.clipboard.writeText(code);
+    setCopiedId(id);
+    setTimeout(() => setCopiedId(null), 2000);
+  };
 
   const fetchData = async () => {
     setLoading(true);
@@ -183,8 +191,18 @@ export default function AdminCoupons() {
                     <tr key={c.id} className="hover:bg-muted/20 transition-colors">
                       <td className="px-4 py-3">
                         <div className="flex items-center gap-2">
-                          <span className="font-mono font-bold text-primary tracking-widest text-sm">{c.code}</span>
-                        </div>
+                           <span className="font-mono font-bold text-primary tracking-widest text-sm">{c.code}</span>
+                           <button
+                             onClick={() => copyCode(c.id, c.code)}
+                             className="text-muted-foreground hover:text-primary transition-colors"
+                             title="Copiar código"
+                           >
+                             {copiedId === c.id
+                               ? <Check className="h-3.5 w-3.5 text-primary" />
+                               : <Copy className="h-3.5 w-3.5" />
+                             }
+                           </button>
+                         </div>
                         {c.description && <p className="text-xs text-muted-foreground mt-0.5">{c.description}</p>}
                       </td>
                       <td className="px-4 py-3">
