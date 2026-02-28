@@ -133,7 +133,7 @@ export default function AdminMyAppointments() {
               <div className="flex gap-1.5 pt-0.5">
                 <Button
                   size="sm"
-                  className="flex-1 h-7 text-xs gap-1 bg-green-600 hover:bg-green-700 text-white"
+                  className="flex-1 h-7 text-xs gap-1 bg-success hover:bg-success/90 text-success-foreground"
                   onClick={() => markComplete(a.id)}
                 >
                   <CheckCircle2 className="h-3 w-3" />
