@@ -17,7 +17,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import {
   Plus, ArrowUpCircle, ArrowDownCircle, Filter, CalendarDays, Edit2, Trash2,
   TrendingUp, TrendingDown, Wallet, Scissors, ShoppingBag, Users, Building2,
-  CreditCard, Banknote, QrCode, BarChart3, Target, DollarSign
+  CreditCard, Banknote, QrCode, BarChart3, Target, DollarSign, FileText, Upload
 } from "lucide-react";
 import { format, startOfMonth, endOfMonth, subMonths } from "date-fns";
 import { ptBR } from "date-fns/locale";
@@ -77,6 +77,8 @@ export default function AdminFinance() {
   const [loading, setLoading]           = useState(true);
   const [dialogOpen, setDialogOpen]     = useState(false);
   const [editingRecord, setEditingRecord] = useState<any | null>(null);
+  const [receiptFile, setReceiptFile]   = useState<File | null>(null);
+  const [uploadingReceipt, setUploadingReceipt] = useState(false);
   const [form, setForm] = useState({
     type: "expense" as string,
     amount: "",
@@ -84,6 +86,7 @@ export default function AdminFinance() {
     category: "other",
     payment_method: "other",
     branch: "Principal",
+    receipt_url: "" as string,
   });
 
   // Filters
@@ -248,12 +251,14 @@ export default function AdminFinance() {
   // ─── CRUD ───────────────────────────────────────────────
   const openAdd = () => {
     setEditingRecord(null);
-    setForm({ type: "expense", amount: "", description: "", category: "other", payment_method: "other", branch: "Principal" });
+    setReceiptFile(null);
+    setForm({ type: "expense", amount: "", description: "", category: "other", payment_method: "other", branch: "Principal", receipt_url: "" });
     setDialogOpen(true);
   };
 
   const openEdit = (r: any) => {
     setEditingRecord(r);
+    setReceiptFile(null);
     setForm({
       type: r.type,
       amount: String(r.amount),
@@ -261,13 +266,36 @@ export default function AdminFinance() {
       category: r.category || "other",
       payment_method: r.payment_method || "other",
       branch: r.branch || "Principal",
+      receipt_url: r.receipt_url || "",
     });
     setDialogOpen(true);
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    const payload = {
+    setUploadingReceipt(true);
+
+    let receipt_url = form.receipt_url;
+
+    // Upload do comprovante se houver arquivo selecionado
+    if (receiptFile && form.type === "expense") {
+      const ext = receiptFile.name.split(".").pop();
+      const path = `receipts/${Date.now()}.${ext}`;
+      const { error: uploadError } = await supabase.storage
+        .from("avatars")
+        .upload(path, receiptFile, { upsert: true });
+      if (uploadError) {
+        toast({ title: "Erro ao enviar comprovante", description: uploadError.message, variant: "destructive" });
+        setUploadingReceipt(false);
+        return;
+      }
+      const { data: urlData } = supabase.storage.from("avatars").getPublicUrl(path);
+      receipt_url = urlData.publicUrl;
+    }
+
+    setUploadingReceipt(false);
+
+    const payload: any = {
       type: form.type as "income" | "expense",
       amount: Number(form.amount),
       description: form.description,
@@ -275,6 +303,8 @@ export default function AdminFinance() {
       payment_method: form.payment_method,
       branch: form.branch,
     };
+    if (receipt_url) payload.receipt_url = receipt_url;
+
     if (editingRecord) {
       const { error } = await supabase.from("financial_records").update(payload).eq("id", editingRecord.id);
       if (error) { toast({ title: "Erro", description: error.message, variant: "destructive" }); return; }
@@ -698,7 +728,45 @@ export default function AdminFinance() {
               <Label>Filial</Label>
               <Input value={form.branch} onChange={(e) => setForm({ ...form, branch: e.target.value })} placeholder="Principal" />
             </div>
-            <Button type="submit" className="w-full">{editingRecord ? "Salvar" : "Registrar"}</Button>
+
+            {/* Comprovante — apenas para saídas */}
+            {form.type === "expense" && (
+              <div className="space-y-2">
+                <Label className="flex items-center gap-1">
+                  Nota Fiscal / Comprovante
+                  <span className="text-xs text-muted-foreground">(opcional)</span>
+                </Label>
+                <div className="border-2 border-dashed border-border rounded-lg p-3 text-center cursor-pointer hover:border-primary transition-colors"
+                  onClick={() => document.getElementById("receipt-input")?.click()}>
+                  {receiptFile ? (
+                    <div className="flex items-center justify-center gap-2 text-sm">
+                      <FileText className="h-4 w-4 text-primary" />
+                      <span className="font-medium truncate max-w-[180px]">{receiptFile.name}</span>
+                      <button type="button" onClick={(ev) => { ev.stopPropagation(); setReceiptFile(null); }}
+                        className="text-muted-foreground hover:text-destructive">✕</button>
+                    </div>
+                  ) : form.receipt_url ? (
+                    <div className="flex items-center justify-center gap-2 text-sm">
+                      <FileText className="h-4 w-4 text-primary" />
+                      <a href={form.receipt_url} target="_blank" rel="noreferrer" className="text-primary underline" onClick={(ev) => ev.stopPropagation()}>
+                        Ver comprovante atual
+                      </a>
+                    </div>
+                  ) : (
+                    <div className="text-muted-foreground text-sm">
+                      <Upload className="h-5 w-5 mx-auto mb-1" />
+                      Clique para anexar NF ou comprovante (PDF, imagem)
+                    </div>
+                  )}
+                  <input id="receipt-input" type="file" accept="image/*,.pdf" className="hidden"
+                    onChange={(e) => setReceiptFile(e.target.files?.[0] || null)} />
+                </div>
+              </div>
+            )}
+
+            <Button type="submit" className="w-full" disabled={uploadingReceipt}>
+              {uploadingReceipt ? "Enviando..." : editingRecord ? "Salvar" : "Registrar"}
+            </Button>
           </form>
         </DialogContent>
       </Dialog>
