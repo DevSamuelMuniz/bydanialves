@@ -3,6 +3,7 @@ import { SidebarProvider } from "@/components/ui/sidebar";
 import { ClientSidebar } from "@/components/client/ClientSidebar";
 import { ClientHeader } from "@/components/client/ClientHeader";
 import { WhatsAppButton } from "@/components/WhatsAppButton";
+import { WelcomeModal } from "@/components/client/WelcomeModal";
 
 export default function ClientLayout() {
   return (
@@ -17,6 +18,7 @@ export default function ClientLayout() {
         </main>
       </div>
       <WhatsAppButton />
+      <WelcomeModal />
     </SidebarProvider>
   );
 }
