@@ -72,9 +72,10 @@ export default function AdminFinance() {
   const { toast } = useToast();
   const perms = useAdminPermissions();
 
-  const [records, setRecords]       = useState<any[]>([]);
-  const [loading, setLoading]       = useState(true);
-  const [dialogOpen, setDialogOpen] = useState(false);
+  const [records, setRecords]           = useState<any[]>([]);
+  const [completedAppointments, setCompletedAppointments] = useState<any[]>([]);
+  const [loading, setLoading]           = useState(true);
+  const [dialogOpen, setDialogOpen]     = useState(false);
   const [editingRecord, setEditingRecord] = useState<any | null>(null);
   const [form, setForm] = useState({
     type: "expense" as string,
@@ -94,6 +95,8 @@ export default function AdminFinance() {
   // ─── Fetch ──────────────────────────────────────────────
   const fetchRecords = useCallback(async () => {
     setLoading(true);
+
+    // Fetch manual financial records
     let query = supabase
       .from("financial_records")
       .select("*")
@@ -104,6 +107,19 @@ export default function AdminFinance() {
     if (typeFilter !== "all") query = query.eq("type", typeFilter as any);
     const { data } = await query;
     setRecords(data || []);
+
+    // Fetch completed appointments with service prices and client profiles
+    let apptQuery = supabase
+      .from("appointments")
+      .select("id, appointment_date, appointment_time, created_at, notes, client_id, profiles(full_name), services(name, price, is_system)")
+      .eq("status", "completed")
+      .order("appointment_date", { ascending: false })
+      .limit(500);
+    if (dateFrom) apptQuery = apptQuery.gte("appointment_date", format(dateFrom, "yyyy-MM-dd"));
+    if (dateTo)   apptQuery = apptQuery.lte("appointment_date", format(dateTo, "yyyy-MM-dd"));
+    const { data: apptData } = await apptQuery;
+    setCompletedAppointments(apptData || []);
+
     setLoading(false);
   }, [dateFrom, dateTo, typeFilter]);
 
@@ -113,23 +129,32 @@ export default function AdminFinance() {
   const income  = records.filter((r) => r.type === "income");
   const expense = records.filter((r) => r.type === "expense");
 
-  const totalIncome  = income.reduce((s, r) => s + Number(r.amount), 0);
-  const totalExpense = expense.reduce((s, r) => s + Number(r.amount), 0);
-  const balance      = totalIncome - totalExpense;
+  // Receita real de agendamentos concluídos (automática)
+  const appointmentServiceRevenue = useMemo(() =>
+    completedAppointments.reduce((s, a) => s + Number((a.services as any)?.price || 0), 0),
+  [completedAppointments]);
 
-  // Receita por categoria
+  const totalManualIncome  = income.reduce((s, r) => s + Number(r.amount), 0);
+  const totalIncome  = totalManualIncome + appointmentServiceRevenue;
+  const totalExpense = expense.reduce((s, r) => s + Number(r.amount), 0);
+
+  // Receita por categoria (inclui agendamentos concluídos como "services")
   const incomeByCategory = useMemo(() => {
     const map: Record<string, number> = {};
     for (const r of income) {
       const cat = r.category || "other";
       map[cat] = (map[cat] || 0) + Number(r.amount);
     }
+    // Adiciona receita dos agendamentos concluídos como "services"
+    if (appointmentServiceRevenue > 0) {
+      map["services"] = (map["services"] || 0) + appointmentServiceRevenue;
+    }
     return Object.entries(map).map(([cat, val]) => ({
       name: CATEGORIES.find((c) => c.value === cat)?.label ?? cat,
       value: val,
       fill: CATEGORY_COLORS[cat] ?? CATEGORY_COLORS.other,
     }));
-  }, [income]);
+  }, [income, appointmentServiceRevenue]);
 
   // Despesa por categoria
   const expenseByCategory = useMemo(() => {
@@ -145,7 +170,7 @@ export default function AdminFinance() {
     }));
   }, [expense]);
 
-  // Métodos de pagamento (apenas entradas)
+  // Métodos de pagamento (apenas entradas manuais)
   const byPayment = useMemo(() => {
     const map: Record<string, number> = {};
     for (const r of income) {
@@ -160,7 +185,7 @@ export default function AdminFinance() {
   }, [income]);
 
   // KPIs financeiros
-  const serviceRevenue    = income.filter((r) => r.category === "services").reduce((s, r) => s + Number(r.amount), 0);
+  const serviceRevenue    = income.filter((r) => r.category === "services").reduce((s, r) => s + Number(r.amount), 0) + appointmentServiceRevenue;
   const productRevenue    = income.filter((r) => r.category === "products").reduce((s, r) => s + Number(r.amount), 0);
   const totalCommissions  = expense.filter((r) => r.category === "commission").reduce((s, r) => s + Number(r.amount), 0);
   const totalCMV          = expense.filter((r) => r.category === "cmv").reduce((s, r) => s + Number(r.amount), 0);
@@ -169,6 +194,9 @@ export default function AdminFinance() {
   const contributionMargin = totalIncome - totalVariableCosts;
   const netProfit          = totalIncome - totalExpense;
   const grossMarginPct     = pct(netProfit, totalIncome);
+  const avgTicket          = completedAppointments.length > 0
+    ? appointmentServiceRevenue / completedAppointments.length
+    : 0;
 
   // Faturamento por filial
   const byBranch = useMemo(() => {
@@ -344,6 +372,7 @@ export default function AdminFinance() {
           <TabsTrigger value="payments">Métodos Pgto</TabsTrigger>
           <TabsTrigger value="branches">Por Filial</TabsTrigger>
           <TabsTrigger value="records">Registros</TabsTrigger>
+          <TabsTrigger value="appointments">Atendimentos</TabsTrigger>
         </TabsList>
 
         {/* ── Overview ── */}
@@ -380,9 +409,10 @@ export default function AdminFinance() {
 
           {/* Resumo rápido */}
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-            <SummaryRow label="Custos Fixos"           value={fmt(totalFixedCosts)} />
+          <SummaryRow label="Custos Fixos"           value={fmt(totalFixedCosts)} />
             <SummaryRow label="CMV"                    value={fmt(totalCMV)} />
-            <SummaryRow label="Ticket Médio Serviços"  value={serviceRevenue > 0 ? fmt(serviceRevenue / Math.max(income.filter(r=>r.category==='services').length, 1)) : "—"} />
+            <SummaryRow label="Ticket Médio Serviços"  value={avgTicket > 0 ? fmt(avgTicket) : "—"} />
+            <SummaryRow label="Atendimentos Concluídos" value={`${completedAppointments.length} serviços`} />
           </div>
         </TabsContent>
 
@@ -565,6 +595,49 @@ export default function AdminFinance() {
               </Card>
             );
           })}
+        </TabsContent>
+
+        {/* ── Appointments ── */}
+        <TabsContent value="appointments" className="mt-4 space-y-3">
+          <Card>
+            <CardHeader className="pb-2">
+              <CardTitle className="text-sm font-medium text-muted-foreground flex items-center gap-2">
+                <Scissors className="h-4 w-4" />
+                Atendimentos Concluídos · Receita Contabilizada
+                <span className="ml-auto font-bold text-foreground">{fmt(appointmentServiceRevenue)}</span>
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              {completedAppointments.length === 0 ? (
+                <p className="text-center text-muted-foreground py-8 text-sm">
+                  Nenhum atendimento concluído no período.
+                </p>
+              ) : (
+                <div className="space-y-2">
+                  {completedAppointments.map((a) => {
+                    const svc = a.services as any;
+                    const profile = a.profiles as any;
+                    return (
+                      <div key={a.id} className="flex items-center justify-between rounded-lg border border-border px-4 py-3">
+                        <div className="flex items-center gap-3">
+                          <ArrowUpCircle className="h-4 w-4 text-green-600 shrink-0" />
+                          <div>
+                            <p className="text-sm font-medium">{svc?.name ?? "Serviço"}</p>
+                            <p className="text-xs text-muted-foreground">
+                              {profile?.full_name ?? "—"} · {new Date(a.appointment_date).toLocaleDateString("pt-BR")} às {a.appointment_time?.slice(0, 5)}
+                            </p>
+                          </div>
+                        </div>
+                        <span className="text-sm font-bold text-green-700">
+                          + {fmt(Number(svc?.price || 0))}
+                        </span>
+                      </div>
+                    );
+                  })}
+                </div>
+              )}
+            </CardContent>
+          </Card>
         </TabsContent>
       </Tabs>
 
