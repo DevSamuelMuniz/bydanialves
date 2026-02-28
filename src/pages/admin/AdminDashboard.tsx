@@ -1,4 +1,6 @@
 import { useEffect, useState } from "react";
+import { useNavigate } from "react-router-dom";
+import { useAdminPermissions } from "@/hooks/use-admin-permissions";
 import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -23,6 +25,13 @@ const statusColors: Record<string, string> = {
 };
 
 export default function AdminDashboard() {
+  const navigate = useNavigate();
+  const { canViewDashboard } = useAdminPermissions();
+
+  useEffect(() => {
+    if (!canViewDashboard) navigate("/admin/agenda", { replace: true });
+  }, [canViewDashboard]);
+
   const [todayAppointments, setTodayAppointments] = useState<any[]>([]);
   const [monthRevenue, setMonthRevenue] = useState(0);
   const [totalClients, setTotalClients] = useState(0);

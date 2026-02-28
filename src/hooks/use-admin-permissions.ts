@@ -66,7 +66,7 @@ export function useAdminPermissions() {
     canManageSystemSettings: r >= 4,
 
     // ── Dashboard ──────────────────────────────────────
-    canViewDashboard: r >= 1,
+    canViewDashboard: r >= 1 && adminLevel !== "professional",
     /** Só CEO vê métricas financeiras no dashboard */
     canViewDashboardFinancials: r >= 4,
   };
