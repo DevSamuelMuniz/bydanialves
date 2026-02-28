@@ -102,25 +102,34 @@ export type Database = {
         Row: {
           amount: number
           appointment_id: string | null
+          branch: string | null
+          category: string | null
           created_at: string
           description: string
           id: string
+          payment_method: string | null
           type: Database["public"]["Enums"]["financial_type"]
         }
         Insert: {
           amount: number
           appointment_id?: string | null
+          branch?: string | null
+          category?: string | null
           created_at?: string
           description: string
           id?: string
+          payment_method?: string | null
           type: Database["public"]["Enums"]["financial_type"]
         }
         Update: {
           amount?: number
           appointment_id?: string | null
+          branch?: string | null
+          category?: string | null
           created_at?: string
           description?: string
           id?: string
+          payment_method?: string | null
           type?: Database["public"]["Enums"]["financial_type"]
         }
         Relationships: [
