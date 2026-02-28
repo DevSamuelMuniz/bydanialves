@@ -19,7 +19,6 @@ export function AdminSidebar() {
     { title: "Serviços",           url: "/admin/services",       icon: Scissors },
     { title: "Planos",             url: "/admin/plans",          icon: Crown },
     { title: "Financeiro",         url: "/admin/finance",        icon: DollarSign },
-    { title: "Relatórios",         url: "/admin/reports",        icon: BarChart3 },
     { title: "Usuários",           url: "/admin/users",          icon: ShieldCheck },
     { title: "Logs",               url: "/admin/logs",           icon: Activity },
   ].filter((item) => {
@@ -31,7 +30,6 @@ export function AdminSidebar() {
       "/admin/services":        perms.canViewServices,
       "/admin/plans":           perms.canViewPlans,
       "/admin/finance":         perms.canViewFinance,
-      "/admin/reports":         perms.canViewReports,
       "/admin/users":           perms.canViewUsers,
       "/admin/logs":            perms.canViewLogs,
     };
