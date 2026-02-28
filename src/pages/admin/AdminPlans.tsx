@@ -268,28 +268,54 @@ export default function AdminPlans() {
         {subscriptions.filter((s) => s.status === "active").length === 0 ? (
           <p className="text-sm text-muted-foreground">Nenhuma assinatura ativa.</p>
         ) : (
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
             {subscriptions.filter((s) => s.status === "active").map((s) => (
-              <div key={s.id} className="flex items-center justify-between gap-3 rounded-xl border border-border/40 bg-card px-4 py-3 hover:border-primary/20 transition-colors">
-                <div className="min-w-0">
-                  <p className="font-medium text-sm truncate">{(s as any).profiles?.full_name || "Cliente"}</p>
-                  <p className="text-xs text-muted-foreground truncate">{(s as any).plans?.name} · desde {new Date(s.started_at).toLocaleDateString("pt-BR")}</p>
+              <div key={s.id} className="group relative rounded-2xl border border-border/40 bg-card overflow-hidden hover:shadow-elevated hover:-translate-y-0.5 transition-all duration-300">
+                {/* Top accent bar */}
+                <div className="h-1 w-full bg-gradient-to-r from-[#e8dcc8] to-[#d4c4a8]" />
+
+                <div className="px-5 py-4 flex flex-col gap-3">
+                  {/* Avatar + name */}
+                  <div className="flex items-center gap-3">
+                    <div className="h-10 w-10 rounded-full bg-gradient-to-br from-[#e8dcc8] to-[#d4c4a8] flex items-center justify-center shrink-0 text-sm font-bold text-foreground/80 uppercase">
+                      {((s as any).profiles?.full_name || "C").charAt(0)}
+                    </div>
+                    <div className="min-w-0">
+                      <p className="font-semibold text-sm leading-tight truncate">{(s as any).profiles?.full_name || "Cliente"}</p>
+                      <p className="text-[11px] text-muted-foreground truncate uppercase tracking-wider font-medium">{(s as any).plans?.name}</p>
+                    </div>
+                  </div>
+
+                  {/* Divider */}
+                  <div className="border-t border-border/40" />
+
+                  {/* Meta info */}
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
+                      <UserPlus className="h-3.5 w-3.5" />
+                      <span>desde {new Date(s.started_at).toLocaleDateString("pt-BR")}</span>
+                    </div>
+
+                    <AlertDialog>
+                      <AlertDialogTrigger asChild>
+                        <Button variant="ghost" size="sm" className="h-7 px-3 text-xs border border-border/40 hover:bg-destructive/10 hover:text-destructive hover:border-destructive/30">
+                          <Trash2 className="h-3 w-3 mr-1" />
+                          Cancelar
+                        </Button>
+                      </AlertDialogTrigger>
+                      <AlertDialogContent>
+                        <AlertDialogHeader>
+                          <AlertDialogTitle>Cancelar assinatura?</AlertDialogTitle>
+                          <AlertDialogDescription>O cliente perderá acesso ao plano.</AlertDialogDescription>
+                        </AlertDialogHeader>
+                        <AlertDialogFooter>
+                          <AlertDialogCancel>Voltar</AlertDialogCancel>
+                          <AlertDialogAction onClick={() => cancelSubscription(s.id)}>Confirmar</AlertDialogAction>
+                        </AlertDialogFooter>
+                      </AlertDialogContent>
+                    </AlertDialog>
+                  </div>
                 </div>
-                <AlertDialog>
-                  <AlertDialogTrigger asChild>
-                    <Button variant="ghost" size="sm" className="shrink-0 h-7 px-2 text-xs hover:bg-destructive/10 hover:text-destructive border border-border/40">Cancelar</Button>
-                  </AlertDialogTrigger>
-                  <AlertDialogContent>
-                    <AlertDialogHeader>
-                      <AlertDialogTitle>Cancelar assinatura?</AlertDialogTitle>
-                      <AlertDialogDescription>O cliente perderá acesso ao plano.</AlertDialogDescription>
-                    </AlertDialogHeader>
-                    <AlertDialogFooter>
-                      <AlertDialogCancel>Voltar</AlertDialogCancel>
-                      <AlertDialogAction onClick={() => cancelSubscription(s.id)}>Confirmar</AlertDialogAction>
-                    </AlertDialogFooter>
-                  </AlertDialogContent>
-                </AlertDialog>
               </div>
             ))}
           </div>
