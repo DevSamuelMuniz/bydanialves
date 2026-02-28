@@ -14,7 +14,9 @@ import {
 "@/components/ui/sidebar";
 import { LogOut, LucideIcon } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import logoImg from "@/assets/logo-dani-alves.jpg";
+import { useTheme } from "next-themes";
+import logoLight from "@/assets/logo_light.png";
+import logoDark from "@/assets/logo_dark.png";
 
 export interface NavItem {
   title: string;
@@ -31,15 +33,17 @@ interface AppSidebarProps {
 
 export function AppSidebar({ items, groupLabel, topBadge, bottomSlot }: AppSidebarProps) {
   const { signOut } = useAuth();
+  const { resolvedTheme } = useTheme();
+  const logoSrc = resolvedTheme === "dark" ? logoDark : logoLight;
 
   return (
     <Sidebar className="border-r border-sidebar-border/60">
       {/* Logo */}
       <div className="p-4 pb-3 flex items-center justify-center border-b border-sidebar-border/40">
         <img
-          src={logoImg}
+          src={logoSrc}
           alt="Dani Alves Esmalteria"
-          className="w-28 h-auto object-contain" />
+          className="w-32 h-auto object-contain" />
 
       </div>
 
