@@ -226,6 +226,7 @@ export default function AdminFinance() {
         expense: 0,
       };
     });
+    // Registros manuais
     for (const r of records) {
       const key = r.created_at?.slice(0, 7);
       const m = months.find((m) => m.key === key);
@@ -233,11 +234,20 @@ export default function AdminFinance() {
       if (r.type === "income")  m.income  += Number(r.amount);
       if (r.type === "expense") m.expense += Number(r.amount);
     }
+    // Agendamentos concluídos (receita automática)
+    for (const a of completedAppointments) {
+      const key = a.appointment_date?.slice(0, 7);
+      const m = months.find((m) => m.key === key);
+      if (!m) continue;
+      m.income += Number((a.services as any)?.price || 0);
+    }
     return months.map((m) => ({
-      ...m,
-      "Lucro": m.income - m.expense,
+      name: m.label,
+      Receita: m.income,
+      Despesas: m.expense,
+      Lucro: m.income - m.expense,
     }));
-  }, [records]);
+  }, [records, completedAppointments]);
 
   // ─── CRUD ───────────────────────────────────────────────
   const openAdd = () => {
@@ -395,13 +405,13 @@ export default function AdminFinance() {
                     </linearGradient>
                   </defs>
                   <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
-                  <XAxis dataKey="label" tick={{ fontSize: 12 }} />
+                  <XAxis dataKey="name" tick={{ fontSize: 12 }} />
                   <YAxis tick={{ fontSize: 11 }} tickFormatter={(v) => `R$${(v/1000).toFixed(0)}k`} />
                   <Tooltip formatter={(v: number) => fmt(v)} />
                   <Legend />
-                  <Area type="monotone" dataKey="income"  name="Receita"  stroke="hsl(142,60%,50%)" fill="url(#gIncome)"  />
-                  <Area type="monotone" dataKey="expense" name="Despesas" stroke="hsl(0,70%,55%)"   fill="url(#gExpense)" />
-                  <Area type="monotone" dataKey="Lucro"   stroke="hsl(40,65%,48%)" fill="none" strokeDasharray="5 3" />
+                  <Area type="monotone" dataKey="Receita"  stroke="hsl(142,60%,50%)" fill="url(#gIncome)"  />
+                  <Area type="monotone" dataKey="Despesas" stroke="hsl(0,70%,55%)"   fill="url(#gExpense)" />
+                  <Area type="monotone" dataKey="Lucro"    stroke="hsl(40,65%,48%)" fill="none" strokeDasharray="5 3" />
                 </AreaChart>
               </ResponsiveContainer>
             </CardContent>
