@@ -193,26 +193,8 @@ export default function AdminMyAppointments() {
           ))}
         </div>
       ) : (
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 items-start">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 items-start">
 
-          {/* Coluna 1: A Confirmar */}
-          <div className="space-y-3">
-            <Card className="border-amber-400/30 bg-amber-500/5">
-              <CardHeader className="py-3 px-4">
-                <CardTitle className="text-sm flex items-center gap-2">
-                  <AlertCircle className="h-4 w-4 text-amber-500" />
-                  A Confirmar
-                  <Badge variant="outline" className="ml-auto bg-amber-500/15 text-amber-600 border-amber-400/30 text-xs">
-                    {pending.length}
-                  </Badge>
-                </CardTitle>
-              </CardHeader>
-            </Card>
-            {pending.length === 0
-              ? <EmptyCol icon={AlertCircle} text="Sem pendências" />
-              : pending.map((a) => <AppointmentCard key={a.id} a={a} showActions />)
-            }
-          </div>
 
           {/* Coluna 2: Em Atendimento */}
           <div className="space-y-3">
