@@ -272,9 +272,9 @@ export default function Auth() {
                   />
                   <Label htmlFor="accept-terms" className="font-normal text-sm leading-snug cursor-pointer text-muted-foreground">
                     Li e aceito os{" "}
-                    <span className="text-primary underline underline-offset-2">termos de serviço</span>{" "}
+                    <a href="/termosdeservico" target="_blank" className="text-primary underline underline-offset-2 hover:opacity-80">termos de serviço</a>{" "}
                     e a{" "}
-                    <span className="text-primary underline underline-offset-2">política de privacidade</span>
+                    <a href="/politicadeprivacidade" target="_blank" className="text-primary underline underline-offset-2 hover:opacity-80">política de privacidade</a>
                   </Label>
                 </div>
 
