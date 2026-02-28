@@ -213,6 +213,18 @@ export default function AdminPlans() {
                 key={p.id}
                 className={`relative flex flex-col rounded-2xl border bg-card overflow-hidden transition-all duration-300 hover:-translate-y-1 ${tier.border} ${tier.glow} ${!p.active ? "opacity-50" : ""}`}
               >
+                {/* Animated grid bg */}
+                <div className="absolute inset-0 overflow-hidden opacity-[0.05] dark:opacity-[0.04] pointer-events-none">
+                  <div
+                    className="absolute inset-0"
+                    style={{
+                      backgroundImage: "linear-gradient(hsl(var(--primary)) 1px, transparent 1px), linear-gradient(90deg, hsl(var(--primary)) 1px, transparent 1px)",
+                      backgroundSize: "32px 32px",
+                      animation: "gridMove 4s linear infinite",
+                    }}
+                  />
+                </div>
+
                 {/* Top accent bar */}
                 <div className={`h-1 w-full bg-gradient-to-r ${tier.topBar}`} />
 
