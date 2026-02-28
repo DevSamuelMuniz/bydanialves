@@ -28,6 +28,7 @@ import AdminLogs from "./pages/admin/AdminLogs";
 import AdminBranches from "./pages/admin/AdminBranches";
 import TermosDeServico from "./pages/TermosDeServico";
 import PoliticaDePrivacidade from "./pages/PoliticaDePrivacidade";
+import PoliticaETermos from "./pages/PoliticaETermos";
 const queryClient = new QueryClient();
 
 function AuthRedirect() {
@@ -51,6 +52,7 @@ const App = () => (
             <Route path="/reset-password" element={<ResetPassword />} />
             <Route path="/termosdeservico" element={<TermosDeServico />} />
             <Route path="/politicadeprivacidade" element={<PoliticaDePrivacidade />} />
+            <Route path="/politica-e-termos" element={<PoliticaETermos />} />
 
             {/* Client routes */}
             <Route path="/client" element={<ProtectedRoute requiredRole="client"><ClientLayout /></ProtectedRoute>}>
