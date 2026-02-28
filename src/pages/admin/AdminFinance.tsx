@@ -1,5 +1,7 @@
 import { useEffect, useState, useCallback } from "react";
 import { supabase } from "@/integrations/supabase/client";
+import { useAdminPermissions } from "@/hooks/use-admin-permissions";
+import { AccessDenied } from "@/components/admin/AccessDenied";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -17,6 +19,7 @@ import { ptBR } from "date-fns/locale";
 
 export default function AdminFinance() {
   const { toast } = useToast();
+  const perms = useAdminPermissions();
   const [records, setRecords] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [dialogOpen, setDialogOpen] = useState(false);
@@ -103,6 +106,8 @@ export default function AdminFinance() {
   };
 
   if (loading) return <Skeleton className="h-64 w-full" />;
+
+  if (!perms.canViewFinance) return <AccessDenied />;
 
   return (
     <div className="space-y-6">

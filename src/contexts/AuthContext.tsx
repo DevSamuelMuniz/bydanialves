@@ -3,12 +3,14 @@ import { User, Session } from "@supabase/supabase-js";
 import { supabase } from "@/integrations/supabase/client";
 
 type UserRole = "admin" | "client";
+export type AdminLevel = "attendant" | "professional" | "manager" | "ceo" | null;
 
 interface AuthContextType {
   user: User | null;
   session: Session | null;
   loading: boolean;
   userRole: UserRole | null;
+  adminLevel: AdminLevel;
   signOut: () => Promise<void>;
 }
 
@@ -17,6 +19,7 @@ const AuthContext = createContext<AuthContextType>({
   session: null,
   loading: true,
   userRole: null,
+  adminLevel: null,
   signOut: async () => {},
 });
 
@@ -27,16 +30,22 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [session, setSession] = useState<Session | null>(null);
   const [loading, setLoading] = useState(true);
   const [userRole, setUserRole] = useState<UserRole | null>(null);
+  const [adminLevel, setAdminLevel] = useState<AdminLevel>(null);
 
   const fetchUserRole = async (userId: string) => {
     const { data } = await supabase
       .from("user_roles")
-      .select("role")
+      .select("role, admin_level")
       .eq("user_id", userId);
     if (data && data.length > 0) {
-      // Prioritize admin role
       const isAdmin = data.some((r) => r.role === "admin");
       setUserRole(isAdmin ? "admin" : (data[0].role as UserRole));
+      if (isAdmin) {
+        const adminRow = data.find((r) => r.role === "admin");
+        setAdminLevel((adminRow?.admin_level as AdminLevel) ?? "ceo");
+      } else {
+        setAdminLevel(null);
+      }
     }
   };
 
@@ -49,6 +58,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           setTimeout(() => fetchUserRole(session.user.id), 0);
         } else {
           setUserRole(null);
+          setAdminLevel(null);
         }
         setLoading(false);
       }
@@ -71,10 +81,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     setUser(null);
     setSession(null);
     setUserRole(null);
+    setAdminLevel(null);
   };
 
   return (
-    <AuthContext.Provider value={{ user, session, loading, userRole, signOut }}>
+    <AuthContext.Provider value={{ user, session, loading, userRole, adminLevel, signOut }}>
       {children}
     </AuthContext.Provider>
   );

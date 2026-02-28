@@ -1,31 +1,46 @@
 import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
+import { useAuth } from "@/contexts/AuthContext";
+import { useAdminPermissions, ADMIN_LEVEL_LABELS, ADMIN_LEVEL_COLORS } from "@/hooks/use-admin-permissions";
+import { AdminLevel } from "@/contexts/AuthContext";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useToast } from "@/hooks/use-toast";
-import { Shield, ShieldOff, Mail, CheckCircle } from "lucide-react";
+import { Shield, ShieldOff, Mail, CheckCircle, UserCog } from "lucide-react";
 
 interface UserInfo {
   user_id: string;
   full_name: string;
   roles: string[];
+  admin_level: AdminLevel;
   email: string;
   email_confirmed: boolean;
 }
 
+const LEVEL_OPTIONS: { value: NonNullable<AdminLevel>; label: string }[] = [
+  { value: "attendant", label: "Atendente" },
+  { value: "professional", label: "Profissional" },
+  { value: "manager", label: "Gerente" },
+  { value: "ceo", label: "CEO" },
+];
+
 export default function AdminUsers() {
   const { toast } = useToast();
+  const { user: currentUser } = useAuth();
+  const perms = useAdminPermissions();
   const [users, setUsers] = useState<UserInfo[]>([]);
   const [loading, setLoading] = useState(true);
+  const [changingLevel, setChangingLevel] = useState<string | null>(null);
 
   const fetchAll = async () => {
     setLoading(true);
     const [profilesRes, rolesRes] = await Promise.all([
       supabase.from("profiles").select("user_id, full_name"),
-      supabase.from("user_roles").select("user_id, role"),
+      supabase.from("user_roles").select("user_id, role, admin_level"),
     ]);
 
     let emailsMap: Record<string, { email: string; email_confirmed_at: string | null }> = {};
@@ -37,16 +52,18 @@ export default function AdminUsers() {
     const profiles = profilesRes.data || [];
     const roles = rolesRes.data || [];
 
-    const rolesMap: Record<string, string[]> = {};
+    const rolesMap: Record<string, { roles: string[]; admin_level: AdminLevel }> = {};
     for (const r of roles) {
-      if (!rolesMap[r.user_id]) rolesMap[r.user_id] = [];
-      rolesMap[r.user_id].push(r.role);
+      if (!rolesMap[r.user_id]) rolesMap[r.user_id] = { roles: [], admin_level: null };
+      rolesMap[r.user_id].roles.push(r.role);
+      if (r.role === "admin") rolesMap[r.user_id].admin_level = (r.admin_level as AdminLevel) ?? "ceo";
     }
 
     const result: UserInfo[] = profiles.map((p) => ({
       user_id: p.user_id,
       full_name: p.full_name || "Sem nome",
-      roles: rolesMap[p.user_id] || ["client"],
+      roles: rolesMap[p.user_id]?.roles || ["client"],
+      admin_level: rolesMap[p.user_id]?.admin_level ?? null,
       email: emailsMap[p.user_id]?.email || "",
       email_confirmed: !!emailsMap[p.user_id]?.email_confirmed_at,
     }));
@@ -55,16 +72,14 @@ export default function AdminUsers() {
     setLoading(false);
   };
 
-  useEffect(() => {
-    fetchAll();
-  }, []);
+  useEffect(() => { fetchAll(); }, []);
 
   const promoteToAdmin = async (userId: string) => {
-    const { error } = await supabase.from("user_roles").insert({ user_id: userId, role: "admin" });
+    const { error } = await supabase.from("user_roles").insert({ user_id: userId, role: "admin", admin_level: "attendant" } as any);
     if (error) {
       toast({ title: "Erro", description: error.message, variant: "destructive" });
     } else {
-      toast({ title: "Usuário promovido a admin!" });
+      toast({ title: "Usuário adicionado como Atendente!" });
       fetchAll();
     }
   };
@@ -74,85 +89,166 @@ export default function AdminUsers() {
     if (error) {
       toast({ title: "Erro", description: error.message, variant: "destructive" });
     } else {
-      toast({ title: "Permissão admin removida!" });
+      toast({ title: "Acesso admin removido!" });
       fetchAll();
     }
   };
 
+  const changeLevel = async (userId: string, level: NonNullable<AdminLevel>) => {
+    setChangingLevel(userId);
+    const { error } = await (supabase.from("user_roles") as any)
+      .update({ admin_level: level })
+      .eq("user_id", userId)
+      .eq("role", "admin");
+    setChangingLevel(null);
+    if (error) {
+      toast({ title: "Erro", description: error.message, variant: "destructive" });
+    } else {
+      toast({ title: `Nível atualizado para ${ADMIN_LEVEL_LABELS[level]}!` });
+      fetchAll();
+    }
+  };
+
+  if (!perms.canManageUsers) {
+    return (
+      <div className="flex flex-col items-center justify-center py-24 gap-3 text-center">
+        <ShieldOff className="h-10 w-10 text-muted-foreground" />
+        <p className="font-medium">Acesso restrito</p>
+        <p className="text-sm text-muted-foreground">Você não tem permissão para acessar esta página.</p>
+      </div>
+    );
+  }
+
   if (loading) return <div className="space-y-3"><Skeleton className="h-10 w-full" /><Skeleton className="h-16 w-full" /><Skeleton className="h-16 w-full" /></div>;
+
+  const adminUsers = users.filter((u) => u.roles.includes("admin"));
+  const clientUsers = users.filter((u) => !u.roles.includes("admin"));
 
   return (
     <div className="space-y-6">
       <h1 className="font-serif text-2xl">Gestão de Usuários</h1>
       <p className="text-sm text-muted-foreground">{users.length} usuário(s) cadastrado(s)</p>
 
-      <div className="space-y-2">
-        {users.map((u) => {
-          const isAdmin = u.roles.includes("admin");
-          return (
+      {/* Admins */}
+      {adminUsers.length > 0 && (
+        <div className="space-y-3">
+          <h2 className="text-sm font-medium text-muted-foreground uppercase tracking-wide">Equipe Interna ({adminUsers.length})</h2>
+          {adminUsers.map((u) => {
+            const lvl = u.admin_level;
+            const isSelf = u.user_id === currentUser?.id;
+            return (
+              <Card key={u.user_id} className="border-primary/20">
+                <CardContent className="py-4 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                  <div className="space-y-1">
+                    <div className="flex items-center gap-2 flex-wrap">
+                      <p className="font-medium">{u.full_name}</p>
+                      {isSelf && <Badge variant="outline" className="text-xs">Você</Badge>}
+                      {lvl && (
+                        <Badge variant="outline" className={`text-xs ${ADMIN_LEVEL_COLORS[lvl]}`}>
+                          {ADMIN_LEVEL_LABELS[lvl]}
+                        </Badge>
+                      )}
+                    </div>
+                    <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                      <Mail className="h-3 w-3" />
+                      {u.email || "Email não disponível"}
+                      {u.email_confirmed && <CheckCircle className="h-3 w-3 text-green-600" />}
+                    </div>
+                  </div>
+
+                  <div className="flex items-center gap-2 flex-wrap">
+                    {/* Change level */}
+                    {!isSelf && (
+                      <Select
+                        value={lvl ?? "ceo"}
+                        onValueChange={(v) => changeLevel(u.user_id, v as NonNullable<AdminLevel>)}
+                        disabled={changingLevel === u.user_id}
+                      >
+                        <SelectTrigger className="w-36 h-8 text-xs">
+                          <UserCog className="h-3 w-3 mr-1.5" />
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {LEVEL_OPTIONS.map((opt) => (
+                            <SelectItem key={opt.value} value={opt.value} className="text-xs">
+                              {opt.label}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    )}
+
+                    {/* Remove admin */}
+                    {!isSelf && (
+                      <AlertDialog>
+                        <AlertDialogTrigger asChild>
+                          <Button variant="outline" size="sm" className="h-8 text-xs">
+                            <ShieldOff className="mr-1 h-3 w-3" />
+                            Remover
+                          </Button>
+                        </AlertDialogTrigger>
+                        <AlertDialogContent>
+                          <AlertDialogHeader>
+                            <AlertDialogTitle>Remover acesso?</AlertDialogTitle>
+                            <AlertDialogDescription>
+                              {u.full_name} perderá o acesso ao painel administrativo.
+                            </AlertDialogDescription>
+                          </AlertDialogHeader>
+                          <AlertDialogFooter>
+                            <AlertDialogCancel>Cancelar</AlertDialogCancel>
+                            <AlertDialogAction onClick={() => removeAdmin(u.user_id)}>Confirmar</AlertDialogAction>
+                          </AlertDialogFooter>
+                        </AlertDialogContent>
+                      </AlertDialog>
+                    )}
+                  </div>
+                </CardContent>
+              </Card>
+            );
+          })}
+        </div>
+      )}
+
+      {/* Clients */}
+      {clientUsers.length > 0 && (
+        <div className="space-y-3">
+          <h2 className="text-sm font-medium text-muted-foreground uppercase tracking-wide">Clientes ({clientUsers.length})</h2>
+          {clientUsers.map((u) => (
             <Card key={u.user_id} className="border-border">
               <CardContent className="py-4 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-                <div>
-                  <div className="flex items-center gap-2">
-                    <p className="font-medium">{u.full_name}</p>
-                    {isAdmin && <Badge className="bg-primary/20 text-primary text-xs">Admin</Badge>}
-                  </div>
+                <div className="space-y-1">
+                  <p className="font-medium">{u.full_name}</p>
                   <div className="flex items-center gap-2 text-sm text-muted-foreground">
                     <Mail className="h-3 w-3" />
                     {u.email || "Email não disponível"}
                     {u.email_confirmed && <CheckCircle className="h-3 w-3 text-green-600" />}
                   </div>
                 </div>
-                <div>
-                  {isAdmin ? (
-                    <AlertDialog>
-                      <AlertDialogTrigger asChild>
-                        <Button variant="outline" size="sm">
-                          <ShieldOff className="mr-1 h-3 w-3" />
-                          Remover Admin
-                        </Button>
-                      </AlertDialogTrigger>
-                      <AlertDialogContent>
-                        <AlertDialogHeader>
-                          <AlertDialogTitle>Remover permissão admin?</AlertDialogTitle>
-                          <AlertDialogDescription>
-                            {u.full_name} perderá acesso ao painel administrativo.
-                          </AlertDialogDescription>
-                        </AlertDialogHeader>
-                        <AlertDialogFooter>
-                          <AlertDialogCancel>Cancelar</AlertDialogCancel>
-                          <AlertDialogAction onClick={() => removeAdmin(u.user_id)}>Confirmar</AlertDialogAction>
-                        </AlertDialogFooter>
-                      </AlertDialogContent>
-                    </AlertDialog>
-                  ) : (
-                    <AlertDialog>
-                      <AlertDialogTrigger asChild>
-                        <Button variant="outline" size="sm">
-                          <Shield className="mr-1 h-3 w-3" />
-                          Promover Admin
-                        </Button>
-                      </AlertDialogTrigger>
-                      <AlertDialogContent>
-                        <AlertDialogHeader>
-                          <AlertDialogTitle>Promover a admin?</AlertDialogTitle>
-                          <AlertDialogDescription>
-                            {u.full_name} terá acesso completo ao painel administrativo.
-                          </AlertDialogDescription>
-                        </AlertDialogHeader>
-                        <AlertDialogFooter>
-                          <AlertDialogCancel>Cancelar</AlertDialogCancel>
-                          <AlertDialogAction onClick={() => promoteToAdmin(u.user_id)}>Confirmar</AlertDialogAction>
-                        </AlertDialogFooter>
-                      </AlertDialogContent>
-                    </AlertDialog>
-                  )}
-                </div>
+                <AlertDialog>
+                  <AlertDialogTrigger asChild>
+                    <Button variant="outline" size="sm" className="h-8 text-xs">
+                      <Shield className="mr-1 h-3 w-3" />
+                      Dar acesso interno
+                    </Button>
+                  </AlertDialogTrigger>
+                  <AlertDialogContent>
+                    <AlertDialogHeader>
+                      <AlertDialogTitle>Adicionar à equipe interna?</AlertDialogTitle>
+                      <AlertDialogDescription>
+                        {u.full_name} receberá acesso ao painel como Atendente. Você pode ajustar o nível depois.
+                      </AlertDialogDescription>
+                    </AlertDialogHeader>
+                    <AlertDialogFooter>
+                      <AlertDialogCancel>Cancelar</AlertDialogCancel>
+                      <AlertDialogAction onClick={() => promoteToAdmin(u.user_id)}>Confirmar</AlertDialogAction>
+                    </AlertDialogFooter>
+                  </AlertDialogContent>
+                </AlertDialog>
               </CardContent>
             </Card>
-          );
-        })}
-      </div>
+          ))}
+        </div>
+      )}
     </div>
   );
 }

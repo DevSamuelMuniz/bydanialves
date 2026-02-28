@@ -1,10 +1,13 @@
 import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
+import { useAdminPermissions } from "@/hooks/use-admin-permissions";
+import { AccessDenied } from "@/components/admin/AccessDenied";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, LineChart, Line } from "recharts";
 
 export default function AdminReports() {
+  const perms = useAdminPermissions();
   const [serviceData, setServiceData] = useState<any[]>([]);
   const [revenueData, setRevenueData] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
@@ -36,6 +39,8 @@ export default function AdminReports() {
   }, []);
 
   if (loading) return <div className="space-y-4"><Skeleton className="h-64 w-full" /><Skeleton className="h-64 w-full" /></div>;
+
+  if (!perms.canViewReports) return <AccessDenied />;
 
   return (
     <div className="space-y-6">
