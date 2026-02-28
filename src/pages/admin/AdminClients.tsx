@@ -176,6 +176,7 @@ export default function AdminClients() {
                     <p className="text-sm text-muted-foreground">{emails[c.user_id].email}</p>
                   )}
                 </div>
+                {!isProfessional && (
                 <Button
                   variant="ghost"
                   size="icon"
@@ -191,6 +192,7 @@ export default function AdminClients() {
                     <Ban className="h-4 w-4 text-destructive" />
                   )}
                 </Button>
+                )}
               </CardContent>
             </Card>
           ))}
