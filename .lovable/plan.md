@@ -1,108 +1,97 @@
 
-# Implementação de Filiais (Multi-Branch)
+# Filiais como Sistemas Independentes
 
-## Visão Geral
+## Objetivo
 
-Adicionar suporte a filiais no sistema, com seleção obrigatória no cadastro e no agendamento, e visualização restrita a CEO e Gerente no dashboard.
+Cada funcionário (Atendente, Profissional) deve ver somente os dados da filial onde trabalha. Gerente e CEO têm visão global de todas as filiais.
 
 ---
 
-## 1. Banco de Dados
+## 1. Banco de Dados — Vincular Funcionários a Filiais
 
-### Nova tabela: `branches`
-Armazena as filiais cadastradas pela empresa.
+Hoje, `profiles` já tem `branch_id` (filial do cliente). Precisamos associar também os **funcionários** admin a uma filial.
 
-```text
-branches
-├── id         uuid (PK)
-├── name       text (ex: "Centro", "Jardins")
-├── address    text (nullable)
-├── active     boolean default true
-├── created_at timestamptz
-└── updated_at timestamptz
+A tabela `user_roles` é o lugar correto para isso (é a tabela de papéis admin). Adicionaremos uma coluna `branch_id` nela:
+
+```sql
+ALTER TABLE public.user_roles ADD COLUMN branch_id uuid REFERENCES public.branches(id);
 ```
 
-**RLS:**
-- Qualquer usuário autenticado pode **ler** filiais ativas (necessário para o select no cadastro e agendamento)
-- Somente admins podem **gerenciar** (INSERT/UPDATE/DELETE)
-
-### Alterações em tabelas existentes
-
-| Tabela | Coluna adicionada | Tipo | Notas |
-|---|---|---|---|
-| `profiles` | `branch_id` | uuid (FK → branches) | Filial preferida do cliente |
-| `appointments` | `branch_id` | uuid (FK → branches) | Filial do agendamento |
+O CEO e Gerente ficarão com `branch_id = null` (acesso global).  
+Atendentes e Profissionais terão um `branch_id` definido.
 
 ---
 
-## 2. Fluxo do Cliente — Cadastro (`/auth`)
+## 2. AuthContext — Expor a Filial do Funcionário
 
-Adicionar um campo **"Selecione a filial"** (Select) no formulário de cadastro, logo após cidade/telefone. A filial escolhida será salva em `profiles.branch_id` junto com `phone` e `gender`.
+O `AuthContext` já carrega `adminLevel`. Vamos adicionar `adminBranchId` ao contexto, lido de `user_roles.branch_id`.
 
-A lista de filiais será carregada do banco ao montar a aba de cadastro.
-
----
-
-## 3. Fluxo do Cliente — Agendamento (`/client/booking`)
-
-Adicionar um **Step 0** antes da seleção de serviço: o cliente escolhe a filial. O fluxo passa de 4 para 5 etapas:
-
-```text
-Passo 1 → Filial
-Passo 2 → Serviço
-Passo 3 → Data
-Passo 4 → Horário
-Passo 5 → Confirmação
+```tsx
+// AuthContext.tsx
+adminBranchId: string | null;
 ```
 
-- A filial selecionada aparece no card de confirmação
-- O campo `branch_id` é salvo em `appointments` no momento da criação
+Assim, qualquer componente pode chamar `useAuth().adminBranchId` para saber a filial do funcionário logado.
 
 ---
 
-## 4. Dashboard Administrativo — Visualização por Filial
+## 3. Agenda Admin — Filtrar por Filial
 
-Na página `AdminDashboard.tsx`, adicionar uma seção de **KPIs por Filial** visível somente para **CEO (r >= 4)** e **Gerente (r >= 3)**.
+Atendentes/Profissionais (`r < 3`) verão **somente** agendamentos da sua filial.  
+Gerentes/CEO (`r >= 3`) verão todos, com um **seletor de filial** opcional para filtrar.
 
-Será exibido um conjunto de cards e/ou um gráfico de barras com:
-- Total de agendamentos por filial (no período)
-- Receita por filial (quando o usuário tiver permissão financeira)
-
-A permissão de visualização seguirá a constante já existente no hook:
-- `canViewFinance: r >= 3` (Gerente e CEO)
-
----
-
-## 5. Gestão de Filiais — Admin
-
-Criar uma nova página `AdminBranches.tsx` acessível via menu lateral somente para CEO e Gerente, com operações de:
-- Listar filiais
-- Criar filial (nome + endereço)
-- Ativar / desativar filial
-
-Adicionar item "Filiais" ao `AdminSidebar.tsx` com permissão `canViewFinance` (r >= 3).
+Mudança em `AdminAgenda.tsx`:
+```ts
+// Se adminBranchId existe, filtra automaticamente
+if (adminBranchId) query = query.eq("branch_id", adminBranchId);
+```
 
 ---
 
-## Arquivos Modificados / Criados
+## 4. Meus Atendimentos — Filtrar por Filial
 
-| Arquivo | Operação | Motivo |
-|---|---|---|
-| Migration SQL | Criado | Tabela `branches`, colunas em `profiles` e `appointments` |
-| `src/pages/Auth.tsx` | Editado | Select de filial no cadastro |
-| `src/pages/client/NewBooking.tsx` | Editado | Passo 1 de seleção de filial |
-| `src/pages/admin/AdminDashboard.tsx` | Editado | Seção de KPIs por filial (CEO/Gerente) |
-| `src/pages/admin/AdminBranches.tsx` | Criado | CRUD de filiais |
-| `src/components/admin/AdminSidebar.tsx` | Editado | Link "Filiais" no menu |
-| `src/hooks/use-admin-permissions.ts` | Editado | Permissão `canViewBranches` |
+Mesma lógica em `AdminMyAppointments.tsx`: se o funcionário tem filial, só carrega atendimentos daquela filial.
 
 ---
 
-## Controle de Acesso
+## 5. Dashboard — KPIs Isolados por Filial
 
-| Ação | Nível mínimo |
+- **Atendente/Profissional**: vê KPIs apenas da sua filial (total de agendamentos do dia/semana).
+- **Gerente/CEO**: vê KPIs globais + seção comparativa por filial já implementada.
+
+---
+
+## 6. Gestão de Usuários — Atribuir Filial ao Funcionário
+
+Na página `AdminUsers.tsx`, ao criar ou editar um funcionário admin, o Gerente/CEO poderá definir a filial dele no campo de edição de perfil.
+
+---
+
+## 7. Gestão de Filiais — Exibir Funcionários por Filial
+
+Em `AdminBranches.tsx`, adicionar uma listagem de quantos funcionários estão associados a cada filial.
+
+---
+
+## Arquivos Modificados
+
+| Arquivo | O que muda |
 |---|---|
-| Ver filiais (select público) | Qualquer usuário autenticado |
-| Ver KPIs de filiais no Dashboard | Gerente (r >= 3) |
-| Gerenciar filiais (CRUD) | Gerente (r >= 3) |
-| Ver receita por filial | CEO (r >= 4) |
+| Migration SQL | `ALTER TABLE user_roles ADD COLUMN branch_id` |
+| `src/contexts/AuthContext.tsx` | Expõe `adminBranchId` |
+| `src/pages/admin/AdminAgenda.tsx` | Filtra por filial automaticamente |
+| `src/pages/admin/AdminMyAppointments.tsx` | Filtra por filial automaticamente |
+| `src/pages/admin/AdminDashboard.tsx` | KPIs filtrados por filial |
+| `src/pages/admin/AdminUsers.tsx` | Campo de filial ao editar funcionário |
+| `src/pages/admin/AdminBranches.tsx` | Contagem de funcionários por filial |
+
+---
+
+## Regras de Acesso Resumidas
+
+| Nível | Vê agendamentos de | Vê financeiro de |
+|---|---|---|
+| Atendente | Só sua filial | Não tem acesso |
+| Profissional | Só sua filial | Não tem acesso |
+| Gerente | Todas as filiais | Sua filial |
+| CEO | Todas as filiais | Todas |
