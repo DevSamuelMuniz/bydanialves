@@ -9,8 +9,9 @@ import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Skeleton } from "@/components/ui/skeleton";
+import { Textarea } from "@/components/ui/textarea";
 import { useToast } from "@/hooks/use-toast";
-import { Mail, Phone, Calendar, Edit3, Save, Star, Camera, Loader2, Crown, Clock } from "lucide-react";
+import { Mail, Phone, Calendar, Edit3, Save, Star, Camera, Loader2, Crown, Clock, User, Info } from "lucide-react";
 
 export default function ClientProfile() {
   const { user } = useAuth();
@@ -24,7 +25,7 @@ export default function ClientProfile() {
   const [uploading, setUploading] = useState(false);
   const [editing, setEditing] = useState(false);
   const [avatarUrl, setAvatarUrl] = useState<string | null>(null);
-  const [form, setForm] = useState({ full_name: "", phone: "" });
+  const [form, setForm] = useState({ full_name: "", phone: "", bio: "" });
 
   useEffect(() => {
     if (!user) return;
@@ -41,7 +42,7 @@ export default function ClientProfile() {
     ]).then(([{ data: profileData }, { data: subData }]) => {
       if (profileData) {
         setProfile(profileData);
-        setForm({ full_name: profileData.full_name || "", phone: profileData.phone || "" });
+        setForm({ full_name: profileData.full_name || "", phone: profileData.phone || "", bio: (profileData as any).bio || "" });
         if (profileData.avatar_url) {
           const { data: urlData } = supabase.storage.from("avatars").getPublicUrl(profileData.avatar_url);
           setAvatarUrl(urlData.publicUrl);
@@ -87,7 +88,8 @@ export default function ClientProfile() {
     const { error } = await supabase.from("profiles").update({
       full_name: form.full_name,
       phone: form.phone,
-    }).eq("user_id", user.id);
+      bio: form.bio,
+    } as any).eq("user_id", user.id);
     setSaving(false);
     if (error) {
       toast({ title: "Erro", description: error.message, variant: "destructive" });
@@ -100,7 +102,7 @@ export default function ClientProfile() {
 
   if (loading) return (
     <div className="space-y-4 w-full">
-      <Skeleton className="h-48 w-full rounded-xl" />
+      <Skeleton className="h-52 w-full rounded-xl" />
       <div className="grid grid-cols-3 gap-4">
         <Skeleton className="h-20 rounded-xl" />
         <Skeleton className="h-20 rounded-xl" />
@@ -130,11 +132,22 @@ export default function ClientProfile() {
 
   return (
     <div className="w-full space-y-6">
-      <h1 className="font-serif text-2xl">Meu Perfil</h1>
+      <div className="flex items-center justify-between">
+        <h1 className="font-serif text-2xl">Meu Perfil</h1>
+        <Button
+          variant={editing ? "outline" : "default"}
+          size="sm"
+          className="gap-1.5"
+          onClick={() => setEditing(!editing)}
+        >
+          <Edit3 className="h-3.5 w-3.5" />
+          {editing ? "Cancelar" : "Editar perfil"}
+        </Button>
+      </div>
 
       {/* Banner + Avatar card */}
       <Card className="overflow-hidden border-border/60">
-        <div className="relative h-36 gradient-gold">
+        <div className="relative h-40 gradient-gold">
           <div className="absolute inset-0 opacity-20"
             style={{ backgroundImage: "repeating-linear-gradient(45deg, transparent, transparent 20px, rgba(255,255,255,0.05) 20px, rgba(255,255,255,0.05) 40px)" }}
           />
@@ -147,9 +160,9 @@ export default function ClientProfile() {
         </div>
 
         <div className="px-6 pb-6">
-          <div className="flex items-end justify-between -mt-12 mb-4">
+          <div className="flex items-end gap-4 -mt-12 mb-5">
             {/* Avatar with upload */}
-            <div className="relative group">
+            <div className="relative group shrink-0">
               <Avatar className="h-24 w-24 ring-4 ring-background shadow-elevated">
                 <AvatarImage src={avatarUrl || undefined} />
                 <AvatarFallback className="gradient-gold text-primary-foreground text-3xl font-serif">
@@ -174,22 +187,22 @@ export default function ClientProfile() {
                 onChange={handleAvatarUpload}
               />
             </div>
-
-            <Button
-              variant="outline"
-              size="sm"
-              className="gap-1.5 border-border/60"
-              onClick={() => setEditing(!editing)}
-            >
-              <Edit3 className="h-3.5 w-3.5" />
-              {editing ? "Cancelar" : "Editar perfil"}
-            </Button>
+            <div className="mt-12">
+              <h2 className="font-serif text-xl font-semibold">{profile?.full_name || "Cliente"}</h2>
+              <p className="text-sm text-muted-foreground">{user?.email}</p>
+            </div>
           </div>
 
-          <div>
-            <h2 className="font-serif text-xl font-semibold">{profile?.full_name || "Cliente"}</h2>
-            <p className="text-sm text-muted-foreground">{user?.email}</p>
-          </div>
+          {/* Bio display */}
+          {profile?.bio && !editing && (
+            <div className="mt-1">
+              <Separator className="mb-4" />
+              <div className="flex gap-2">
+                <Info className="h-4 w-4 text-muted-foreground mt-0.5 shrink-0" />
+                <p className="text-sm text-muted-foreground leading-relaxed">{profile.bio}</p>
+              </div>
+            </div>
+          )}
         </div>
       </Card>
 
@@ -290,7 +303,10 @@ export default function ClientProfile() {
             <form onSubmit={handleSave} className="space-y-4">
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div className="space-y-2">
-                  <Label>Nome completo</Label>
+                  <Label className="flex items-center gap-1.5">
+                    <User className="h-3.5 w-3.5 text-muted-foreground" />
+                    Nome completo
+                  </Label>
                   <Input
                     value={form.full_name}
                     onChange={(e) => setForm({ ...form, full_name: e.target.value })}
@@ -298,7 +314,10 @@ export default function ClientProfile() {
                   />
                 </div>
                 <div className="space-y-2">
-                  <Label>Telefone</Label>
+                  <Label className="flex items-center gap-1.5">
+                    <Phone className="h-3.5 w-3.5 text-muted-foreground" />
+                    Telefone
+                  </Label>
                   <Input
                     value={form.phone}
                     onChange={(e) => setForm({ ...form, phone: e.target.value })}
@@ -307,9 +326,26 @@ export default function ClientProfile() {
                 </div>
               </div>
               <div className="space-y-2">
-                <Label>E-mail</Label>
+                <Label className="flex items-center gap-1.5">
+                  <Mail className="h-3.5 w-3.5 text-muted-foreground" />
+                  E-mail
+                </Label>
                 <Input value={user?.email || ""} disabled className="opacity-60" />
                 <p className="text-xs text-muted-foreground">O e-mail não pode ser alterado por aqui.</p>
+              </div>
+              <div className="space-y-2">
+                <Label className="flex items-center gap-1.5">
+                  <Info className="h-3.5 w-3.5 text-muted-foreground" />
+                  Sobre mim
+                </Label>
+                <Textarea
+                  value={form.bio}
+                  onChange={(e) => setForm({ ...form, bio: e.target.value })}
+                  placeholder="Uma breve descrição sobre você..."
+                  className="resize-none min-h-[100px]"
+                  maxLength={300}
+                />
+                <p className="text-xs text-muted-foreground text-right">{form.bio.length}/300</p>
               </div>
               <div className="flex gap-3 pt-1">
                 <Button type="submit" className="gap-2" disabled={saving}>
