@@ -1,8 +1,9 @@
 import { useEffect, useState, useCallback } from "react";
 import { supabase } from "@/integrations/supabase/client";
+import { useAuth } from "@/contexts/AuthContext";
+import { useAdminPermissions } from "@/hooks/use-admin-permissions";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
@@ -10,8 +11,9 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { Calendar } from "@/components/ui/calendar";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { useToast } from "@/hooks/use-toast";
-import { Clock, CalendarDays, Filter, ChevronLeft, ChevronRight, StickyNote, Trash2, DollarSign } from "lucide-react";
+import { Clock, CalendarDays, Filter, ChevronLeft, ChevronRight, StickyNote, Trash2, DollarSign, Handshake, UserCheck } from "lucide-react";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
 
@@ -26,11 +28,21 @@ const PAGE_SIZE = 20;
 
 export default function AdminAgenda() {
   const { toast } = useToast();
+  const { user } = useAuth();
+  const { adminLevel } = useAdminPermissions();
+  const isProfessional = adminLevel === "professional";
+
   const [appointments, setAppointments] = useState<any[]>([]);
   const [services, setServices] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [page, setPage] = useState(0);
   const [totalCount, setTotalCount] = useState(0);
+
+  // Queue modal
+  const [queueOpen, setQueueOpen] = useState(false);
+  const [queue, setQueue] = useState<any[]>([]);
+  const [queueLoading, setQueueLoading] = useState(false);
+  const [takingId, setTakingId] = useState<string | null>(null);
 
   // Filters
   const [dateFrom, setDateFrom] = useState<Date | undefined>();
@@ -101,6 +113,44 @@ export default function AdminAgenda() {
     await updateStatus(id, "cancelled");
   };
 
+  const fetchQueue = async () => {
+    setQueueLoading(true);
+    const { data } = await supabase
+      .from("appointments")
+      .select("*, services(name, price), profiles!appointments_client_profile_fkey(full_name, phone)")
+      .in("status", ["pending", "confirmed"])
+      .order("appointment_date", { ascending: true })
+      .order("appointment_time", { ascending: true });
+    setQueue(data || []);
+    setQueueLoading(false);
+  };
+
+  const takeAppointment = async (a: any) => {
+    if (!user) return;
+    setTakingId(a.id);
+    // Get professional's profile name
+    const { data: profile } = await supabase
+      .from("profiles")
+      .select("full_name")
+      .eq("user_id", user.id)
+      .maybeSingle();
+    const profName = profile?.full_name || "Profissional";
+    const noteTag = `[Atendido por: ${profName}]`;
+    const newNotes = a.notes ? `${a.notes}\n${noteTag}` : noteTag;
+    const { error } = await supabase
+      .from("appointments")
+      .update({ status: "confirmed", notes: newNotes })
+      .eq("id", a.id);
+    setTakingId(null);
+    if (error) {
+      toast({ title: "Erro", description: error.message, variant: "destructive" });
+    } else {
+      toast({ title: "Agendamento pego!", description: `Você confirmou o atendimento de ${a.profiles?.full_name}.` });
+      fetchQueue();
+      fetchAppointments();
+    }
+  };
+
   const totalPages = Math.ceil(totalCount / PAGE_SIZE);
 
   const resetFilters = () => {
@@ -113,7 +163,78 @@ export default function AdminAgenda() {
 
   return (
     <div className="space-y-6">
-      <h1 className="font-serif text-2xl">Controle de Agenda</h1>
+      <div className="flex items-center justify-between">
+        <h1 className="font-serif text-2xl">Controle de Agenda</h1>
+        {isProfessional && (
+          <Button
+            onClick={() => { setQueueOpen(true); fetchQueue(); }}
+            className="gap-2"
+          >
+            <Handshake className="h-4 w-4" />
+            Pegar Agendamento
+          </Button>
+        )}
+      </div>
+
+      {/* Queue Modal for Professionals */}
+      <Dialog open={queueOpen} onOpenChange={setQueueOpen}>
+        <DialogContent className="max-w-2xl max-h-[80vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <UserCheck className="h-5 w-5 text-primary" />
+              Fila de Agendamentos
+            </DialogTitle>
+          </DialogHeader>
+          {queueLoading ? (
+            <div className="space-y-3 py-4">
+              <Skeleton className="h-16 w-full" />
+              <Skeleton className="h-16 w-full" />
+            </div>
+          ) : queue.length === 0 ? (
+            <p className="text-center text-muted-foreground py-8">Nenhum agendamento pendente na fila.</p>
+          ) : (
+            <div className="space-y-3 py-2">
+              {queue.map((a, i) => (
+                <Card key={a.id} className="border-border">
+                  <CardContent className="py-3">
+                    <div className="flex items-center justify-between gap-3">
+                      <div className="flex items-center gap-3">
+                        <span className="text-2xl font-bold text-muted-foreground/40 w-6 text-center">{i + 1}</span>
+                        <div>
+                          <p className="font-medium">{a.profiles?.full_name || "Cliente"}</p>
+                          <p className="text-sm text-muted-foreground">{a.services?.name}</p>
+                          <div className="flex items-center gap-3 text-xs text-muted-foreground">
+                            <span className="flex items-center gap-1">
+                              <Clock className="h-3 w-3" />
+                              {new Date(a.appointment_date).toLocaleDateString("pt-BR")} às {a.appointment_time?.slice(0, 5)}
+                            </span>
+                            <span className="flex items-center gap-1">
+                              <DollarSign className="h-3 w-3" />
+                              R$ {Number(a.services?.price || 0).toFixed(2)}
+                            </span>
+                          </div>
+                          {a.profiles?.phone && (
+                            <p className="text-xs text-muted-foreground mt-0.5">📱 {a.profiles.phone}</p>
+                          )}
+                        </div>
+                      </div>
+                      <Button
+                        size="sm"
+                        onClick={() => takeAppointment(a)}
+                        disabled={takingId === a.id}
+                        className="gap-1 shrink-0"
+                      >
+                        <UserCheck className="h-3 w-3" />
+                        {takingId === a.id ? "Pegando..." : "Pegar"}
+                      </Button>
+                    </div>
+                  </CardContent>
+                </Card>
+              ))}
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
 
       {/* Filters */}
       <Card className="border-border">
