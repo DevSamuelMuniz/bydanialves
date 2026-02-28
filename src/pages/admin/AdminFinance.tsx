@@ -282,14 +282,14 @@ export default function AdminFinance() {
       const ext = receiptFile.name.split(".").pop();
       const path = `receipts/${Date.now()}.${ext}`;
       const { error: uploadError } = await supabase.storage
-        .from("avatars")
+        .from("receipts")
         .upload(path, receiptFile, { upsert: true });
       if (uploadError) {
         toast({ title: "Erro ao enviar comprovante", description: uploadError.message, variant: "destructive" });
         setUploadingReceipt(false);
         return;
       }
-      const { data: urlData } = supabase.storage.from("avatars").getPublicUrl(path);
+      const { data: urlData } = supabase.storage.from("receipts").getPublicUrl(path);
       receipt_url = urlData.publicUrl;
     }
 
