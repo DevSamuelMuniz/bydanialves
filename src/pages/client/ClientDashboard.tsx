@@ -186,7 +186,7 @@ export default function ClientDashboard() {
               </CardContent>
             </Card>
           ) : (
-            <div className="space-y-3">
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
               {filtered.map((appt) => {
                 const statusIcon = {
                   pending: <AlertCircle className="h-3.5 w-3.5" />,
@@ -204,47 +204,51 @@ export default function ClientDashboard() {
                 const duration = appt.services?.duration_minutes;
 
                 return (
-                  <Card key={appt.id} className="border-border/60 hover:border-primary/30 transition-all duration-300 overflow-hidden relative">
-                    {/* left color bar */}
-                    <div className={`absolute top-0 left-0 bottom-0 w-1 ${statusBarColor[appt.status] ?? "bg-muted"}`} />
+                  <Card key={appt.id} className="border-border/60 hover:border-primary/30 transition-all duration-300 overflow-hidden relative flex flex-col">
+                    {/* top color bar */}
+                    <div className={`absolute top-0 left-0 right-0 h-1 ${statusBarColor[appt.status] ?? "bg-muted"}`} />
 
-                    <CardContent className="pl-5 pr-4 py-4 flex items-center gap-4">
-                      {/* Icon */}
-                      <div className="h-11 w-11 rounded-xl bg-primary/10 flex items-center justify-center shrink-0">
-                        <Scissors className="h-5 w-5 text-primary" />
-                      </div>
-
-                      {/* Main info */}
-                      <div className="flex-1 min-w-0 space-y-1">
-                        <p className="font-serif font-semibold text-sm leading-tight truncate">
+                    <CardContent className="p-4 pt-5 flex flex-col gap-3 h-full">
+                      {/* Icon + service name */}
+                      <div className="flex items-center gap-2">
+                        <div className="h-8 w-8 rounded-lg bg-primary/10 flex items-center justify-center shrink-0">
+                          <Scissors className="h-4 w-4 text-primary" />
+                        </div>
+                        <p className="font-serif font-semibold text-sm leading-tight line-clamp-2">
                           {appt.services?.name ?? "Serviço"}
                         </p>
-                        <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
-                          <Clock className="h-3 w-3 text-primary/50 shrink-0" />
-                          <span className="capitalize">{weekday}, {dateFormatted}</span>
-                          <span className="font-bold text-foreground">· {timeFormatted}</span>
-                        </div>
-                        <div className="flex items-center gap-1.5 flex-wrap pt-0.5">
-                          {duration && (
-                            <span className="flex items-center gap-1 text-xs bg-muted rounded-full px-2 py-0.5">
-                              <Timer className="h-2.5 w-2.5 text-muted-foreground" />
-                              {duration}min
-                            </span>
-                          )}
-                          {price > 0 ? (
-                            <span className="text-xs bg-primary/10 text-primary rounded-full px-2 py-0.5 font-semibold">
-                              R$ {price.toFixed(2)}
-                            </span>
-                          ) : (
-                            <span className="text-xs bg-success/10 text-success rounded-full px-2 py-0.5 font-semibold">
-                              Incluso no plano
-                            </span>
-                          )}
-                        </div>
                       </div>
 
-                      {/* Status badge */}
-                      <Badge variant="outline" className={`${statusColors[appt.status]} border rounded-full px-2.5 py-1 text-xs font-medium flex items-center gap-1 shrink-0`}>
+                      {/* Date + time */}
+                      <div>
+                        <div className="flex items-center gap-1 text-xs text-muted-foreground">
+                          <Clock className="h-3 w-3 text-primary/50 shrink-0" />
+                          <span className="capitalize">{weekday}, {dateFormatted}</span>
+                        </div>
+                        <p className="text-lg font-bold font-serif text-primary leading-tight mt-0.5">{timeFormatted}</p>
+                      </div>
+
+                      {/* Duration + price */}
+                      <div className="flex flex-wrap gap-1.5">
+                        {duration && (
+                          <span className="flex items-center gap-1 text-xs bg-muted rounded-full px-2 py-0.5">
+                            <Timer className="h-2.5 w-2.5 text-muted-foreground" />
+                            {duration}min
+                          </span>
+                        )}
+                        {price > 0 ? (
+                          <span className="text-xs bg-primary/10 text-primary rounded-full px-2 py-0.5 font-semibold">
+                            R$ {price.toFixed(2)}
+                          </span>
+                        ) : (
+                          <span className="text-xs bg-success/10 text-success rounded-full px-2 py-0.5 font-semibold">
+                            Incluso
+                          </span>
+                        )}
+                      </div>
+
+                      {/* Status */}
+                      <Badge variant="outline" className={`${statusColors[appt.status]} border rounded-full px-2 py-0.5 text-xs font-medium flex items-center gap-1 w-fit mt-auto`}>
                         {statusIcon}
                         {statusLabels[appt.status]}
                       </Badge>
