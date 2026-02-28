@@ -371,7 +371,7 @@ export default function NewBooking() {
             )}
           </div>
 
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-2.5">
             {services.map((s) => {
               const free = s.is_system && escovasDisponiveis > 0;
               const isSelected = selectedServices.some((x) => x.id === s.id);
@@ -381,7 +381,7 @@ export default function NewBooking() {
                 <div
                   key={s.id}
                   onClick={() => toggleService(s)}
-                  className={`relative overflow-hidden rounded-xl cursor-pointer transition-all duration-300 border-2
+                  className={`relative overflow-hidden rounded-lg cursor-pointer transition-all duration-300 border-2
                     ${isSelected ? "border-primary shadow-elevated" : "border-transparent hover:border-primary/40"}`}
                 >
                   {/* 16:9 image */}
@@ -389,39 +389,29 @@ export default function NewBooking() {
                     <img src={imgUrl} alt={s.name} className="absolute inset-0 w-full h-full object-cover" />
                     <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/20 to-transparent" />
                     {isSelected && (
-                      <div className="absolute top-3 right-3 h-7 w-7 rounded-full bg-primary flex items-center justify-center shadow-lg">
-                        <Check className="h-3.5 w-3.5 text-primary-foreground" />
+                      <div className="absolute top-1.5 right-1.5 h-5 w-5 rounded-full bg-primary flex items-center justify-center shadow-lg">
+                        <Check className="h-3 w-3 text-primary-foreground" />
                       </div>
                     )}
                     {free && (
-                      <div className="absolute top-3 left-3">
-                        <Badge className="bg-primary/90 text-primary-foreground border-0 text-xs">
-                          <Star className="h-3 w-3 mr-1" /> Incluso no plano
+                      <div className="absolute top-1.5 left-1.5">
+                        <Badge className="bg-primary/90 text-primary-foreground border-0 text-[10px] px-1.5 py-0">
+                          <Star className="h-2.5 w-2.5 mr-0.5" /> Incluso
                         </Badge>
                       </div>
                     )}
                   </div>
                   {/* Info below image */}
-                  <div className="p-3 bg-card flex items-center justify-between">
-                    <div>
-                      <p className="font-semibold text-sm">{s.name}</p>
-                      <div className="flex items-center gap-3 mt-1">
-                        <span className="text-xs text-muted-foreground flex items-center gap-1">
-                          <Timer className="h-3 w-3" /> {s.duration_minutes} min
-                        </span>
-                        {s.description && (
-                          <span className="text-xs text-muted-foreground truncate max-w-[120px]">{s.description}</span>
-                        )}
-                      </div>
-                    </div>
-                    <div className="text-right shrink-0 ml-2">
+                  <div className="p-2 bg-card">
+                    <p className="font-semibold text-xs leading-tight">{s.name}</p>
+                    <div className="flex items-center justify-between mt-0.5">
+                      <span className="text-[10px] text-muted-foreground flex items-center gap-0.5">
+                        <Timer className="h-2.5 w-2.5" /> {s.duration_minutes}min
+                      </span>
                       {free ? (
-                        <div>
-                          <p className="text-xs text-muted-foreground line-through">R$ {Number(s.price).toFixed(2)}</p>
-                          <p className="font-serif font-semibold text-primary text-sm">Grátis</p>
-                        </div>
+                        <p className="font-serif font-semibold text-primary text-xs">Grátis</p>
                       ) : (
-                        <p className="font-serif font-semibold text-foreground text-sm">R$ {Number(s.price).toFixed(2)}</p>
+                        <p className="font-serif font-semibold text-foreground text-xs">R$ {Number(s.price).toFixed(2)}</p>
                       )}
                     </div>
                   </div>
