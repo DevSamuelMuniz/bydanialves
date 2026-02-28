@@ -16,9 +16,9 @@ import { Plus, Edit2, Trash2, Users, UserPlus, CheckCircle2, AlertCircle, Sparkl
 
 // Medal colors per plan rank
 const PLAN_ACCENTS = [
-  { from: "from-amber-400", to: "to-yellow-500", ring: "ring-amber-400/30", badge: "bg-amber-400/20 text-amber-600" },
-  { from: "from-slate-300", to: "to-slate-400", ring: "ring-slate-300/30", badge: "bg-slate-300/20 text-slate-500" },
-  { from: "from-orange-400", to: "to-amber-600", ring: "ring-orange-400/30", badge: "bg-orange-400/20 text-orange-600" },
+  { from: "from-[#e8dcc8]", to: "to-[#d4c4a8]", ring: "ring-[#d4c4a8]/40", badge: "bg-[#d4c4a8]/30 text-[#8a7560]" },
+  { from: "from-[#e8dcc8]", to: "to-[#d4c4a8]", ring: "ring-[#d4c4a8]/40", badge: "bg-[#d4c4a8]/30 text-[#8a7560]" },
+  { from: "from-[#e8dcc8]", to: "to-[#d4c4a8]", ring: "ring-[#d4c4a8]/40", badge: "bg-[#d4c4a8]/30 text-[#8a7560]" },
 ];
 
 
