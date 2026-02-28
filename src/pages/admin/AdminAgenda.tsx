@@ -78,6 +78,17 @@ export default function AdminAgenda() {
   useEffect(() => { fetchServices(); }, []);
   useEffect(() => { fetchAppointments(); }, [fetchAppointments]);
 
+  // Realtime: re-fetch whenever appointments table changes
+  useEffect(() => {
+    const channel = supabase
+      .channel("agenda-realtime")
+      .on("postgres_changes", { event: "*", schema: "public", table: "appointments" }, () => {
+        fetchAppointments();
+      })
+      .subscribe();
+    return () => { supabase.removeChannel(channel); };
+  }, [fetchAppointments]);
+
   const updateStatus = async (id: string, status: "pending" | "confirmed" | "completed" | "cancelled") => {
     const { error } = await supabase.from("appointments").update({ status }).eq("id", id);
     if (error) toast({ title: "Erro", description: error.message, variant: "destructive" });
