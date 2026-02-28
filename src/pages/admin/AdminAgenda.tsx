@@ -13,7 +13,7 @@ import { Calendar } from "@/components/ui/calendar";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
 import { useToast } from "@/hooks/use-toast";
-import { Clock, CalendarDays, Filter, ChevronLeft, ChevronRight, StickyNote, Trash2, DollarSign, Handshake, CheckCircle2, User, Scissors } from "lucide-react";
+import { Clock, CalendarDays, Filter, ChevronLeft, ChevronRight, StickyNote, Trash2, DollarSign, Handshake, CheckCircle2, User, Scissors, RefreshCw } from "lucide-react";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
 
@@ -116,9 +116,15 @@ export default function AdminAgenda() {
   return (
     <div className="space-y-6">
       {/* Header */}
-      <div>
-        <h1 className="font-serif text-2xl">Controle de Agenda</h1>
-        <p className="text-sm text-muted-foreground mt-0.5">{totalCount} agendamento(s) encontrado(s)</p>
+      <div className="flex items-center justify-between">
+        <div>
+          <h1 className="font-serif text-2xl">Controle de Agenda</h1>
+          <p className="text-sm text-muted-foreground mt-0.5">{totalCount} agendamento(s) encontrado(s)</p>
+        </div>
+        <Button variant="outline" size="sm" className="gap-2" onClick={() => fetchAppointments()} disabled={loading}>
+          <RefreshCw className={`h-4 w-4 ${loading ? "animate-spin" : ""}`} />
+          Atualizar
+        </Button>
       </div>
 
       {/* Filters */}
