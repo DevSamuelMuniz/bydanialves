@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
@@ -9,12 +9,9 @@ import { useToast } from "@/hooks/use-toast";
 import { PasswordInput } from "@/components/PasswordInput";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Checkbox } from "@/components/ui/checkbox";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import authBg from "@/assets/auth-bg.jpg";
 import logo from "@/assets/logo-dani-alves.jpg";
 import { AuthImageOverlay } from "@/components/AuthImageOverlay";
-
-interface Branch { id: string; name: string; address: string | null; }
 
 export default function Auth() {
   const [email, setEmail] = useState("");
@@ -25,15 +22,9 @@ export default function Auth() {
   const [city, setCity] = useState("");
   const [gender, setGender] = useState("male");
   const [branchId, setBranchId] = useState("");
-  const [branches, setBranches] = useState<Branch[]>([]);
   const [acceptTerms, setAcceptTerms] = useState(false);
   const [loading, setLoading] = useState(false);
   const [showForgot, setShowForgot] = useState(false);
-
-  useEffect(() => {
-    supabase.from("branches" as any).select("id, name, address").eq("active", true).order("name")
-      .then(({ data }) => setBranches((data as unknown as Branch[]) || []));
-  }, []);
   const navigate = useNavigate();
   const { toast } = useToast();
 
@@ -82,7 +73,7 @@ export default function Auth() {
     } else {
       // Update profile with extra fields
       if (signUpData.user) {
-        await supabase.from("profiles").update({ phone, gender, branch_id: branchId || null } as any).eq("user_id", signUpData.user.id);
+        await supabase.from("profiles").update({ phone, gender } as any).eq("user_id", signUpData.user.id);
       }
       toast({ title: "Cadastro realizado!", description: "Verifique seu e-mail para confirmar a conta." });
     }
@@ -221,22 +212,6 @@ export default function Auth() {
                       placeholder="Sua cidade"
                     />
                 </div>
-                </div>
-
-                <div className="space-y-2">
-                  <Label htmlFor="signup-branch">Filial de interesse</Label>
-                  <Select value={branchId} onValueChange={setBranchId} required>
-                    <SelectTrigger id="signup-branch" className="h-11">
-                      <SelectValue placeholder="Selecione a filial" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {branches.map((b) => (
-                        <SelectItem key={b.id} value={b.id}>
-                          {b.name}{b.address ? ` — ${b.address}` : ""}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
                 </div>
 
                 <div className="space-y-2">
