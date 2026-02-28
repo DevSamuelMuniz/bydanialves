@@ -455,39 +455,41 @@ export default function NewBooking() {
           <p className="text-muted-foreground text-sm">Escolha a data do atendimento</p>
 
           <div className="flex justify-center">
-            <div className="border border-border/60 rounded-2xl overflow-hidden shadow-elegant bg-card w-full max-w-md">
-              <Calendar
-                mode="single"
-                selected={selectedDate}
-                onSelect={(d) => { setSelectedDate(d); if (d) setStep(4); }}
-                disabled={(date) => {
-                  const today = new Date();
-                  today.setHours(0, 0, 0, 0);
-                  return date < today || date.getDay() === 0;
-                }}
-                locale={ptBR}
-                className="p-4 pointer-events-auto w-full"
-                classNames={{
-                  months: "flex flex-col",
-                  month: "space-y-4",
-                  caption: "flex justify-center pt-1 relative items-center mb-2",
-                  caption_label: "text-base font-semibold font-serif capitalize",
-                  nav: "space-x-1 flex items-center",
-                  nav_button: "h-8 w-8 bg-transparent p-0 hover:bg-accent rounded-lg transition-colors",
-                  nav_button_previous: "absolute left-1",
-                  nav_button_next: "absolute right-1",
-                  table: "w-full border-collapse",
-                  head_row: "flex",
-                  head_cell: "text-muted-foreground rounded-md flex-1 font-medium text-xs uppercase tracking-wide text-center py-2",
-                  row: "flex w-full mt-1",
-                  cell: "flex-1 text-center text-sm p-0 relative",
-                  day: "h-10 w-10 mx-auto p-0 font-normal rounded-lg hover:bg-accent transition-colors aria-selected:opacity-100",
-                  day_selected: "bg-primary text-primary-foreground hover:bg-primary font-semibold rounded-lg",
-                  day_today: "bg-accent text-accent-foreground font-semibold",
-                  day_outside: "text-muted-foreground opacity-40",
-                  day_disabled: "text-muted-foreground opacity-30 cursor-not-allowed",
-                }}
-              />
+            <div className="border border-border/60 rounded-2xl overflow-hidden shadow-elevated bg-card w-full">
+              <div className="px-2 pt-4 pb-2">
+                <Calendar
+                  mode="single"
+                  selected={selectedDate}
+                  onSelect={(d) => { setSelectedDate(d); if (d) setStep(4); }}
+                  disabled={(date) => {
+                    const today = new Date();
+                    today.setHours(0, 0, 0, 0);
+                    return date < today || date.getDay() === 0;
+                  }}
+                  locale={ptBR}
+                  className="pointer-events-auto w-full"
+                  classNames={{
+                    months: "flex flex-col w-full",
+                    month: "space-y-3 w-full",
+                    caption: "flex justify-center pt-1 pb-3 relative items-center border-b border-border/40 mb-2",
+                    caption_label: "text-lg font-bold font-serif capitalize tracking-wide text-foreground",
+                    nav: "space-x-1 flex items-center",
+                    nav_button: "h-9 w-9 bg-transparent p-0 hover:bg-primary/10 rounded-xl transition-colors flex items-center justify-center text-muted-foreground hover:text-primary",
+                    nav_button_previous: "absolute left-2",
+                    nav_button_next: "absolute right-2",
+                    table: "w-full border-collapse",
+                    head_row: "flex w-full",
+                    head_cell: "text-muted-foreground flex-1 font-semibold text-xs uppercase tracking-widest text-center py-2",
+                    row: "flex w-full mt-1 gap-0.5",
+                    cell: "flex-1 text-center p-0 relative",
+                    day: "h-11 w-full mx-auto p-0 font-medium text-sm rounded-xl hover:bg-primary/10 hover:text-primary transition-all aria-selected:opacity-100 flex items-center justify-center",
+                    day_selected: "bg-primary text-primary-foreground hover:bg-primary hover:text-primary-foreground font-bold rounded-xl shadow-md",
+                    day_today: "ring-1 ring-primary/50 text-primary font-bold",
+                    day_outside: "text-muted-foreground opacity-30",
+                    day_disabled: "text-muted-foreground opacity-20 cursor-not-allowed hover:bg-transparent hover:text-muted-foreground",
+                  }}
+                />
+              </div>
             </div>
           </div>
 
