@@ -167,7 +167,7 @@ export default function AdminServices() {
         {services.map((s) => (
           <Card key={s.id} className={`border-border/40 hover:border-primary/30 transition-all duration-200 overflow-hidden ${!s.active ? "opacity-50" : ""}`}>
             {/* Cover image */}
-            <div className="relative h-40 bg-muted overflow-hidden">
+            <div className="relative aspect-video bg-muted overflow-hidden">
               {s.image_url ? (
                 <img src={s.image_url} alt={s.name} className="w-full h-full object-cover" />
               ) : (
