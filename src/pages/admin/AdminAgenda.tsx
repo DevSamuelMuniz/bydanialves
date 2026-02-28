@@ -376,7 +376,7 @@ export default function AdminAgenda() {
                   <p className="text-xs">{col.emptyMsg}</p>
                 </div>
               ) : (
-                <div className="space-y-2.5">
+                <div className="space-y-2.5 max-h-[70vh] overflow-y-auto pr-1">
                   {col.items.map((a) => (
                     <AppointmentCard key={a.id} a={a} col={col} />
                   ))}
