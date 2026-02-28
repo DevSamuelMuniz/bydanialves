@@ -129,25 +129,21 @@ export default function AdminFinance() {
   const income  = records.filter((r) => r.type === "income");
   const expense = records.filter((r) => r.type === "expense");
 
-  // Receita real de agendamentos concluídos (automática)
+  // Receita de agendamentos concluídos (usada para ticket médio e gráfico separado)
   const appointmentServiceRevenue = useMemo(() =>
     completedAppointments.reduce((s, a) => s + Number((a.services as any)?.price || 0), 0),
   [completedAppointments]);
 
-  const totalManualIncome  = income.reduce((s, r) => s + Number(r.amount), 0);
-  const totalIncome  = totalManualIncome + appointmentServiceRevenue;
+  // Faturamento bruto = soma de todos os registros de entrada (já inclui atendimentos concluídos via trigger)
+  const totalIncome  = income.reduce((s, r) => s + Number(r.amount), 0);
   const totalExpense = expense.reduce((s, r) => s + Number(r.amount), 0);
 
-  // Receita por categoria (inclui agendamentos concluídos como "services")
+  // Receita por categoria (direto dos registros financeiros)
   const incomeByCategory = useMemo(() => {
     const map: Record<string, number> = {};
     for (const r of income) {
       const cat = r.category || "other";
       map[cat] = (map[cat] || 0) + Number(r.amount);
-    }
-    // Adiciona receita dos agendamentos concluídos como "services"
-    if (appointmentServiceRevenue > 0) {
-      map["services"] = (map["services"] || 0) + appointmentServiceRevenue;
     }
     return Object.entries(map).map(([cat, val]) => ({
       name: CATEGORIES.find((c) => c.value === cat)?.label ?? cat,
@@ -185,7 +181,7 @@ export default function AdminFinance() {
   }, [income]);
 
   // KPIs financeiros
-  const serviceRevenue    = income.filter((r) => r.category === "services").reduce((s, r) => s + Number(r.amount), 0) + appointmentServiceRevenue;
+  const serviceRevenue    = income.filter((r) => r.category === "services").reduce((s, r) => s + Number(r.amount), 0);
   const productRevenue    = income.filter((r) => r.category === "products").reduce((s, r) => s + Number(r.amount), 0);
   const totalCommissions  = expense.filter((r) => r.category === "commission").reduce((s, r) => s + Number(r.amount), 0);
   const totalCMV          = expense.filter((r) => r.category === "cmv").reduce((s, r) => s + Number(r.amount), 0);
