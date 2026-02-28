@@ -25,21 +25,16 @@ export function useAdminPermissions() {
     adminLevel,
 
     // ── Agenda ─────────────────────────────────────────
-    /** Pode ver a agenda (todos os níveis) */
     canViewAgenda: r >= 1,
-    /** Atendente e acima podem criar/editar agendamentos */
     canManageAgenda: r >= 1,
-    /** Só gerente e CEO veem agenda de todos os profissionais */
     canViewAllProfessionalsAgenda: r >= 3,
 
     // ── Clientes ───────────────────────────────────────
-    /** Atendente e acima podem ver e cadastrar clientes */
     canViewClients: r >= 1,
     canManageClients: r >= 1,
 
     // ── Serviços ───────────────────────────────────────
     canViewServices: r >= 1,
-    /** Só gerente e CEO podem criar/editar serviços */
     canManageServices: r >= 3,
 
     // ── Planos ─────────────────────────────────────────
@@ -47,27 +42,23 @@ export function useAdminPermissions() {
     canManagePlans: r >= 4,
 
     // ── Financeiro ─────────────────────────────────────
-    /** Profissional e acima veem comissão (só a própria) */
     canViewOwnCommission: r >= 2,
-    /** Gerente vê relatórios de produtividade, mas não lucro líquido */
     canViewFinance: r >= 3,
-    /** Apenas CEO vê faturamento total / lucro líquido */
     canViewFullFinance: r >= 4,
     canDeleteFinancialRecords: r >= 4,
 
     // ── Relatórios ─────────────────────────────────────
-    canViewReports: r >= 3,
+    canViewReports: r >= 4,
     canExportData: r >= 4,
 
     // ── Usuários / Configurações ───────────────────────
     canViewUsers: r >= 4,
     canManageUsers: r >= 4,
-    canViewLogs: r >= 3,
+    canViewLogs: r >= 4,
     canManageSystemSettings: r >= 4,
 
     // ── Dashboard ──────────────────────────────────────
     canViewDashboard: r >= 1 && adminLevel !== "professional",
-    /** Só CEO vê métricas financeiras no dashboard */
     canViewDashboardFinancials: r >= 4,
   };
 }
