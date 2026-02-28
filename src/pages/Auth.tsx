@@ -95,9 +95,9 @@ export default function Auth() {
 
   if (showForgot) {
     return (
-      <div className="min-h-screen flex">
+      <div className="h-screen flex overflow-hidden">
         <AuthImageOverlay imageSrc={authBg} />
-        <div className="w-full lg:w-1/2 flex items-center justify-center bg-background px-6 py-12">
+        <div className="w-full lg:w-1/2 flex items-center justify-center bg-background px-6 py-12 overflow-y-auto">
           <div className="w-full max-w-md space-y-6">
             <div className="text-center">
               <img src={logo} alt="Dani Alves" className="mx-auto h-16 w-16 rounded-full object-cover border-2 border-primary/20 shadow-lg mb-4" />
@@ -123,10 +123,10 @@ export default function Auth() {
   }
 
   return (
-    <div className="min-h-screen flex">
+    <div className="h-screen flex overflow-hidden">
       <AuthImageOverlay imageSrc={authBg} />
 
-      <div className="w-full lg:w-1/2 flex items-center justify-center bg-background px-6 py-12">
+      <div className="w-full lg:w-1/2 flex items-center justify-center bg-background px-6 py-12 overflow-y-auto">
         <div className="w-full max-w-md space-y-6">
           <div className="text-center">
             <img src={logo} alt="Dani Alves" className="mx-auto h-16 w-16 rounded-full object-cover border-2 border-primary/20 shadow-lg mb-4" />
