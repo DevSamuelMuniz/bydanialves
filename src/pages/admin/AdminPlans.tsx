@@ -1,6 +1,5 @@
 import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -12,15 +11,37 @@ import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, 
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useToast } from "@/hooks/use-toast";
-import { Plus, Edit2, Trash2, Users, UserPlus, CheckCircle2, AlertCircle, Sparkles } from "lucide-react";
+import { Plus, Edit2, Trash2, Users, UserPlus, CheckCircle2, AlertCircle, Zap, Crown, Star } from "lucide-react";
 
-// Medal colors per plan rank
-const PLAN_ACCENTS = [
-  { from: "from-[#e8dcc8]", to: "to-[#d4c4a8]", ring: "ring-[#d4c4a8]/40", badge: "bg-[#d4c4a8]/30 text-[#8a7560]" },
-  { from: "from-[#e8dcc8]", to: "to-[#d4c4a8]", ring: "ring-[#d4c4a8]/40", badge: "bg-[#d4c4a8]/30 text-[#8a7560]" },
-  { from: "from-[#e8dcc8]", to: "to-[#d4c4a8]", ring: "ring-[#d4c4a8]/40", badge: "bg-[#d4c4a8]/30 text-[#8a7560]" },
+const PLAN_TIERS = [
+  {
+    Icon: Star,
+    topBar: "from-muted-foreground/40 to-muted-foreground/20",
+    badge: "Essencial",
+    badgeClass: "bg-muted/60 text-muted-foreground border border-border",
+    border: "border-border/60",
+    glow: "",
+    iconColor: "text-muted-foreground",
+  },
+  {
+    Icon: Zap,
+    topBar: "from-primary to-primary/60",
+    badge: "Popular",
+    badgeClass: "bg-primary/20 text-primary border border-primary/40",
+    border: "border-primary/50",
+    glow: "shadow-[0_6px_32px_hsl(40,65%,52%,0.20)]",
+    iconColor: "text-primary",
+  },
+  {
+    Icon: Crown,
+    topBar: "from-purple-500 to-purple-400/60",
+    badge: "Premium",
+    badgeClass: "bg-purple-500/20 text-purple-300 border border-purple-500/40",
+    border: "border-purple-500/40",
+    glow: "shadow-[0_6px_32px_hsl(280,50%,65%,0.18)]",
+    iconColor: "text-purple-400",
+  },
 ];
-
 
 export default function AdminPlans() {
   const { toast } = useToast();
@@ -31,7 +52,6 @@ export default function AdminPlans() {
   const [editing, setEditing] = useState<any | null>(null);
   const [form, setForm] = useState({ name: "", description: "", includes: "", restriction: "", price: "", active: true });
 
-  // Link client state
   const [linkDialogOpen, setLinkDialogOpen] = useState(false);
   const [clients, setClients] = useState<any[]>([]);
   const [selectedClientId, setSelectedClientId] = useState("");
@@ -85,16 +105,15 @@ export default function AdminPlans() {
       planId = data.id;
     }
 
-    // Sync with Stripe
     toast({ title: "Sincronizando com Stripe..." });
     const { data: syncData, error: syncError } = await supabase.functions.invoke("sync-plan-stripe", {
       body: { planId, name: form.name, price: Number(form.price) },
     });
 
     if (syncError || syncData?.error) {
-      toast({ title: "Aviso", description: `Plano salvo, mas erro ao sincronizar com Stripe: ${syncData?.error || syncError?.message}`, variant: "destructive" });
+      toast({ title: "Aviso", description: `Plano salvo, mas erro ao sincronizar: ${syncData?.error || syncError?.message}`, variant: "destructive" });
     } else {
-      toast({ title: editing ? "Plano atualizado e sincronizado!" : "Plano criado e sincronizado!" });
+      toast({ title: editing ? "Plano atualizado!" : "Plano criado!" });
     }
 
     setDialogOpen(false);
@@ -128,7 +147,6 @@ export default function AdminPlans() {
 
   const handleLinkClient = async () => {
     if (!selectedClientId || !selectedPlanId) return;
-    // Check if client already has active subscription
     const { data: existing } = await supabase.from("subscriptions").select("id").eq("client_id", selectedClientId).eq("status", "active").maybeSingle();
     if (existing) {
       toast({ title: "Erro", description: "Este cliente já possui uma assinatura ativa.", variant: "destructive" });
@@ -148,173 +166,185 @@ export default function AdminPlans() {
     fetchData();
   };
 
-  if (loading) return <div className="space-y-3"><Skeleton className="h-10 w-full" /><Skeleton className="h-32 w-full" /></div>;
+  if (loading) return (
+    <div className="space-y-4">
+      <Skeleton className="h-10 w-48" />
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+        {[...Array(3)].map((_, i) => <Skeleton key={i} className="h-72 rounded-2xl" />)}
+      </div>
+    </div>
+  );
 
   return (
-    <div className="space-y-6">
-      <div className="flex items-center justify-between flex-wrap gap-2">
-        <h1 className="font-serif text-2xl">Planos & Assinaturas</h1>
+    <div className="space-y-8">
+      {/* Header */}
+      <div className="flex items-center justify-between flex-wrap gap-3">
+        <div>
+          <h1 className="font-serif text-2xl">Planos & Assinaturas</h1>
+          <p className="text-sm text-muted-foreground mt-0.5">{plans.length} plano{plans.length !== 1 ? "s" : ""} cadastrado{plans.length !== 1 ? "s" : ""}</p>
+        </div>
         <div className="flex gap-2">
-          <Button variant="outline" onClick={openLinkDialog}><UserPlus className="mr-2 h-4 w-4" />Vincular Cliente</Button>
-          <Button onClick={openAdd}><Plus className="mr-2 h-4 w-4" />Novo Plano</Button>
+          <Button variant="outline" onClick={openLinkDialog}>
+            <UserPlus className="mr-2 h-4 w-4" />Vincular Cliente
+          </Button>
+          <Button onClick={openAdd}>
+            <Plus className="mr-2 h-4 w-4" />Novo Plano
+          </Button>
         </div>
       </div>
 
-      {/* Plans */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-        {plans.map((p, idx) => {
-          const accent = PLAN_ACCENTS[idx % PLAN_ACCENTS.length];
-          const subCount = subsCountByPlan(p.id);
-          return (
-            <div
-              key={p.id}
-              className={`relative rounded-2xl overflow-hidden border border-border/40 flex flex-col transition-all duration-300 hover:shadow-elevated hover:-translate-y-0.5 ${!p.active ? "opacity-60" : ""}`}
-            >
-              {/* Gradient header */}
-              <div className={`relative bg-gradient-to-br ${accent.from} ${accent.to} px-6 pt-6 pb-8`}>
-                {/* Decorative circle */}
-                <div className="absolute -top-4 -right-4 h-24 w-24 rounded-full bg-white/10 blur-xl" />
-                <div className="absolute bottom-0 left-0 right-0 h-6 bg-card [clip-path:ellipse(55%_100%_at_50%_100%)]" />
+      {/* Plans Grid */}
+      {plans.length === 0 ? (
+        <div className="text-center py-16 text-muted-foreground">
+          <Star className="h-10 w-10 mx-auto mb-3 opacity-30" />
+          <p className="font-medium">Nenhum plano cadastrado ainda.</p>
+          <p className="text-sm mt-1">Crie o primeiro plano clicando em "Novo Plano".</p>
+        </div>
+      ) : (
+        <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
+          {plans.map((p, idx) => {
+            const tier = PLAN_TIERS[idx % PLAN_TIERS.length];
+            const { Icon } = tier;
+            const subCount = subsCountByPlan(p.id);
+            const includeLines = p.includes.split("\n").filter(Boolean);
 
-                <div className="flex items-start justify-between mb-4">
-                  <div className="flex items-center gap-1.5 rounded-full px-3 py-1.5 text-[10px] font-bold uppercase tracking-widest bg-foreground/90 text-background shadow-md">
-                    <Sparkles className="h-3 w-3" />
-                    Plano
-                  </div>
-                  {!p.active && <Badge variant="secondary" className="text-[10px]">Inativo</Badge>}
-                </div>
-
-                <h3 className="font-serif text-2xl font-bold text-foreground leading-tight">{p.name}</h3>
-                {p.description && (
-                  <p className="text-xs text-foreground/70 mt-1">{p.description}</p>
-                )}
-
-                <div className="mt-4 flex items-end gap-1">
-                  <span className="text-4xl font-bold font-serif tracking-tight text-foreground">
-                    R$ {Number(p.price).toFixed(2)}
-                  </span>
-                  <span className="text-sm text-foreground/60 mb-1">/mês</span>
-                </div>
-              </div>
-
-              {/* Body */}
-              <div className="bg-card flex flex-col flex-1 px-6 py-5 gap-4">
-                {/* Includes */}
-                <div className="space-y-2">
-                  {p.includes.split("\n").filter(Boolean).map((line: string, i: number) => (
-                    <div key={i} className="flex items-start gap-2.5">
-                      <CheckCircle2 className="h-4 w-4 text-primary shrink-0 mt-0.5" />
-                      <span className="text-sm text-foreground/80 leading-snug">{line}</span>
-                    </div>
-                  ))}
-                  {!p.includes.includes("\n") && (
-                    <div className="flex items-start gap-2.5">
-                      <CheckCircle2 className="h-4 w-4 text-primary shrink-0 mt-0.5" />
-                      <span className="text-sm text-foreground/80 leading-snug">{p.includes}</span>
-                    </div>
-                  )}
-                </div>
-
-                {/* Restriction */}
-                {p.restriction && (
-                  <div className="flex items-start gap-2 rounded-lg bg-muted/50 border border-border/40 px-3 py-2">
-                    <AlertCircle className="h-3.5 w-3.5 text-muted-foreground shrink-0 mt-0.5" />
-                    <p className="text-xs text-muted-foreground italic leading-snug">{p.restriction}</p>
-                  </div>
-                )}
-
-                {/* Footer */}
-                <div className="mt-auto pt-3 border-t border-border/40 flex items-center justify-between gap-2">
-                  <div className={`flex items-center gap-1.5 rounded-full px-3 py-1.5 text-xs font-medium ring-1 ${accent.ring} bg-muted/40`}>
-                    <Users className="h-3.5 w-3.5" />
-                    <span>{subCount} assinante{subCount !== 1 ? "s" : ""}</span>
-                  </div>
-
-                  <div className="flex gap-1.5">
-                    <Button variant="outline" size="sm" className="h-8 px-3 text-xs" onClick={() => openEdit(p)}>
-                      <Edit2 className="mr-1 h-3 w-3" />Editar
-                    </Button>
-                    <AlertDialog>
-                      <AlertDialogTrigger asChild>
-                        <Button variant="ghost" size="icon" className="h-8 w-8 hover:bg-destructive/10 hover:text-destructive border border-border/40">
-                          <Trash2 className="h-3.5 w-3.5" />
-                        </Button>
-                      </AlertDialogTrigger>
-                      <AlertDialogContent>
-                        <AlertDialogHeader>
-                          <AlertDialogTitle>Excluir plano?</AlertDialogTitle>
-                          <AlertDialogDescription>Esta ação não pode ser desfeita.</AlertDialogDescription>
-                        </AlertDialogHeader>
-                        <AlertDialogFooter>
-                          <AlertDialogCancel>Cancelar</AlertDialogCancel>
-                          <AlertDialogAction onClick={() => handleDelete(p.id)}>Excluir</AlertDialogAction>
-                        </AlertDialogFooter>
-                      </AlertDialogContent>
-                    </AlertDialog>
-                  </div>
-                </div>
-              </div>
-            </div>
-          );
-        })}
-      </div>
-
-      {/* Active subscriptions */}
-      <div>
-        <h2 className="font-serif text-lg mb-3 flex items-center gap-2">
-          <Users className="h-4 w-4 text-primary" />
-          Assinaturas Ativas
-        </h2>
-        {subscriptions.filter((s) => s.status === "active").length === 0 ? (
-          <p className="text-sm text-muted-foreground">Nenhuma assinatura ativa.</p>
-        ) : (
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-            {subscriptions.filter((s) => s.status === "active").map((s) => (
-              <div key={s.id} className="group relative rounded-2xl border border-border/40 bg-card overflow-hidden hover:shadow-elevated hover:-translate-y-0.5 transition-all duration-300">
+            return (
+              <div
+                key={p.id}
+                className={`relative flex flex-col rounded-2xl border bg-card overflow-hidden transition-all duration-300 hover:-translate-y-1 ${tier.border} ${tier.glow} ${!p.active ? "opacity-50" : ""}`}
+              >
                 {/* Top accent bar */}
-                <div className="h-1 w-full bg-gradient-to-r from-[#e8dcc8] to-[#d4c4a8]" />
+                <div className={`h-1 w-full bg-gradient-to-r ${tier.topBar}`} />
 
-                <div className="px-5 py-4 flex flex-col gap-3">
-                  {/* Avatar + name */}
-                  <div className="flex items-center gap-3">
-                    <div className="h-10 w-10 rounded-full bg-gradient-to-br from-[#e8dcc8] to-[#d4c4a8] flex items-center justify-center shrink-0 text-sm font-bold text-foreground/80 uppercase">
-                      {((s as any).profiles?.full_name || "C").charAt(0)}
-                    </div>
-                    <div className="min-w-0">
-                      <p className="font-semibold text-sm leading-tight truncate">{(s as any).profiles?.full_name || "Cliente"}</p>
-                      <p className="text-[11px] text-muted-foreground truncate uppercase tracking-wider font-medium">{(s as any).plans?.name}</p>
-                    </div>
+                {/* Card body */}
+                <div className="flex flex-col flex-1 p-6 gap-5">
+
+                  {/* Tier badge + inactive */}
+                  <div className="flex items-center justify-between">
+                    <span className={`inline-flex items-center gap-1.5 text-[11px] font-semibold uppercase tracking-widest px-2.5 py-1 rounded-full ${tier.badgeClass}`}>
+                      <Icon className={`h-3 w-3 ${tier.iconColor}`} />
+                      {tier.badge}
+                    </span>
+                    {!p.active && <Badge variant="secondary" className="text-[10px]">Inativo</Badge>}
+                  </div>
+
+                  {/* Name + description */}
+                  <div>
+                    <h3 className="font-serif text-xl font-bold leading-tight">{p.name}</h3>
+                    {p.description && (
+                      <p className="text-sm text-muted-foreground mt-1 leading-snug">{p.description}</p>
+                    )}
+                  </div>
+
+                  {/* Price */}
+                  <div className="flex items-end gap-1">
+                    <span className="text-3xl font-bold font-serif tracking-tight">
+                      R$ {Number(p.price).toFixed(2).replace(".", ",")}
+                    </span>
+                    <span className="text-sm text-muted-foreground mb-0.5">/mês</span>
                   </div>
 
                   {/* Divider */}
                   <div className="border-t border-border/40" />
 
-                  {/* Meta info */}
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
-                      <UserPlus className="h-3.5 w-3.5" />
-                      <span>desde {new Date(s.started_at).toLocaleDateString("pt-BR")}</span>
-                    </div>
-
-                    <AlertDialog>
-                      <AlertDialogTrigger asChild>
-                        <Button variant="ghost" size="sm" className="h-7 px-3 text-xs border border-border/40 hover:bg-destructive/10 hover:text-destructive hover:border-destructive/30">
-                          <Trash2 className="h-3 w-3 mr-1" />
-                          Cancelar
-                        </Button>
-                      </AlertDialogTrigger>
-                      <AlertDialogContent>
-                        <AlertDialogHeader>
-                          <AlertDialogTitle>Cancelar assinatura?</AlertDialogTitle>
-                          <AlertDialogDescription>O cliente perderá acesso ao plano.</AlertDialogDescription>
-                        </AlertDialogHeader>
-                        <AlertDialogFooter>
-                          <AlertDialogCancel>Voltar</AlertDialogCancel>
-                          <AlertDialogAction onClick={() => cancelSubscription(s.id)}>Confirmar</AlertDialogAction>
-                        </AlertDialogFooter>
-                      </AlertDialogContent>
-                    </AlertDialog>
+                  {/* Includes */}
+                  <div className="space-y-2 flex-1">
+                    {includeLines.map((line: string, i: number) => (
+                      <div key={i} className="flex items-start gap-2.5">
+                        <CheckCircle2 className={`h-4 w-4 shrink-0 mt-0.5 ${tier.iconColor}`} />
+                        <span className="text-sm text-foreground/80 leading-snug">{line}</span>
+                      </div>
+                    ))}
                   </div>
+
+                  {/* Restriction */}
+                  {p.restriction && (
+                    <div className="flex items-start gap-2 rounded-lg bg-muted/50 border border-border/40 px-3 py-2">
+                      <AlertCircle className="h-3.5 w-3.5 text-muted-foreground shrink-0 mt-0.5" />
+                      <p className="text-xs text-muted-foreground italic leading-snug">{p.restriction}</p>
+                    </div>
+                  )}
+
+                  {/* Footer */}
+                  <div className="flex items-center justify-between pt-1 border-t border-border/40 gap-2">
+                    <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
+                      <Users className="h-3.5 w-3.5" />
+                      <span>{subCount} assinante{subCount !== 1 ? "s" : ""}</span>
+                    </div>
+                    <div className="flex gap-1.5">
+                      <Button variant="outline" size="sm" className="h-8 px-3 text-xs" onClick={() => openEdit(p)}>
+                        <Edit2 className="mr-1 h-3 w-3" />Editar
+                      </Button>
+                      <AlertDialog>
+                        <AlertDialogTrigger asChild>
+                          <Button variant="ghost" size="icon" className="h-8 w-8 hover:bg-destructive/10 hover:text-destructive border border-border/40">
+                            <Trash2 className="h-3.5 w-3.5" />
+                          </Button>
+                        </AlertDialogTrigger>
+                        <AlertDialogContent>
+                          <AlertDialogHeader>
+                            <AlertDialogTitle>Excluir plano?</AlertDialogTitle>
+                            <AlertDialogDescription>Esta ação não pode ser desfeita.</AlertDialogDescription>
+                          </AlertDialogHeader>
+                          <AlertDialogFooter>
+                            <AlertDialogCancel>Cancelar</AlertDialogCancel>
+                            <AlertDialogAction onClick={() => handleDelete(p.id)}>Excluir</AlertDialogAction>
+                          </AlertDialogFooter>
+                        </AlertDialogContent>
+                      </AlertDialog>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            );
+          })}
+        </div>
+      )}
+
+      {/* Active subscriptions */}
+      <div>
+        <h2 className="font-serif text-lg mb-4 flex items-center gap-2">
+          <Users className="h-4 w-4 text-primary" />
+          Assinaturas Ativas
+          <span className="ml-1 text-sm text-muted-foreground font-normal">
+            ({subscriptions.filter((s) => s.status === "active").length})
+          </span>
+        </h2>
+        {subscriptions.filter((s) => s.status === "active").length === 0 ? (
+          <p className="text-sm text-muted-foreground py-4">Nenhuma assinatura ativa.</p>
+        ) : (
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+            {subscriptions.filter((s) => s.status === "active").map((s) => (
+              <div key={s.id} className="group relative rounded-xl border border-border/50 bg-card overflow-hidden hover:border-primary/30 hover:shadow-md transition-all duration-200">
+                <div className="h-0.5 w-full bg-gradient-to-r from-primary/60 to-primary/20" />
+                <div className="px-4 py-4 flex items-center justify-between gap-3">
+                  <div className="flex items-center gap-3 min-w-0">
+                    <div className="h-9 w-9 rounded-full bg-primary/10 border border-primary/20 flex items-center justify-center shrink-0 text-sm font-bold text-primary uppercase">
+                      {((s as any).profiles?.full_name || "C").charAt(0)}
+                    </div>
+                    <div className="min-w-0">
+                      <p className="font-semibold text-sm leading-tight truncate">{(s as any).profiles?.full_name || "Cliente"}</p>
+                      <p className="text-[11px] text-muted-foreground truncate font-medium">{(s as any).plans?.name}</p>
+                      <p className="text-[10px] text-muted-foreground/60 mt-0.5">desde {new Date(s.started_at).toLocaleDateString("pt-BR")}</p>
+                    </div>
+                  </div>
+                  <AlertDialog>
+                    <AlertDialogTrigger asChild>
+                      <Button variant="ghost" size="icon" className="h-7 w-7 shrink-0 hover:bg-destructive/10 hover:text-destructive border border-border/40">
+                        <Trash2 className="h-3.5 w-3.5" />
+                      </Button>
+                    </AlertDialogTrigger>
+                    <AlertDialogContent>
+                      <AlertDialogHeader>
+                        <AlertDialogTitle>Cancelar assinatura?</AlertDialogTitle>
+                        <AlertDialogDescription>O cliente perderá acesso ao plano.</AlertDialogDescription>
+                      </AlertDialogHeader>
+                      <AlertDialogFooter>
+                        <AlertDialogCancel>Voltar</AlertDialogCancel>
+                        <AlertDialogAction onClick={() => cancelSubscription(s.id)}>Confirmar</AlertDialogAction>
+                      </AlertDialogFooter>
+                    </AlertDialogContent>
+                  </AlertDialog>
                 </div>
               </div>
             ))}
@@ -331,14 +361,17 @@ export default function AdminPlans() {
           <form onSubmit={handleSubmit} className="space-y-4">
             <div className="space-y-2"><Label>Nome</Label><Input value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} required /></div>
             <div className="space-y-2"><Label>Descrição</Label><Input value={form.description} onChange={(e) => setForm({ ...form, description: e.target.value })} /></div>
-            <div className="space-y-2"><Label>O que inclui</Label><Textarea value={form.includes} onChange={(e) => setForm({ ...form, includes: e.target.value })} required /></div>
+            <div className="space-y-2">
+              <Label>O que inclui <span className="text-muted-foreground text-xs">(uma linha por item)</span></Label>
+              <Textarea rows={4} value={form.includes} onChange={(e) => setForm({ ...form, includes: e.target.value })} required />
+            </div>
             <div className="space-y-2"><Label>Restrição</Label><Input value={form.restriction} onChange={(e) => setForm({ ...form, restriction: e.target.value })} /></div>
             <div className="space-y-2"><Label>Preço mensal (R$)</Label><Input type="number" step="0.01" value={form.price} onChange={(e) => setForm({ ...form, price: e.target.value })} required /></div>
             <div className="flex items-center gap-2">
               <Switch checked={form.active} onCheckedChange={(v) => setForm({ ...form, active: v })} />
               <Label>Ativo</Label>
             </div>
-            <Button type="submit" className="w-full">{editing ? "Salvar" : "Criar Plano"}</Button>
+            <Button type="submit" className="w-full">{editing ? "Salvar alterações" : "Criar Plano"}</Button>
           </form>
         </DialogContent>
       </Dialog>
@@ -356,7 +389,7 @@ export default function AdminPlans() {
                 <SelectTrigger><SelectValue placeholder="Selecione um cliente" /></SelectTrigger>
                 <SelectContent>
                   {clients.map((c) => (
-                    <SelectItem key={c.user_id} value={c.user_id}>{c.full_name || "Sem nome"}</SelectItem>
+                    <SelectItem key={c.user_id} value={c.user_id}>{c.full_name}</SelectItem>
                   ))}
                 </SelectContent>
               </Select>
@@ -373,7 +406,7 @@ export default function AdminPlans() {
               </Select>
             </div>
             <Button className="w-full" onClick={handleLinkClient} disabled={!selectedClientId || !selectedPlanId}>
-              Vincular
+              <UserPlus className="mr-2 h-4 w-4" />Vincular
             </Button>
           </div>
         </DialogContent>
