@@ -5,13 +5,14 @@ import { useAuth } from "@/contexts/AuthContext";
 import { SidebarTrigger } from "@/components/ui/sidebar";
 import { Input } from "@/components/ui/input";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { Search, User, Settings, LogOut } from "lucide-react";
+import { Search, User, Settings, LogOut, Bell } from "lucide-react";
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuSeparator,
   DropdownMenuTrigger,
+  DropdownMenuLabel,
 } from "@/components/ui/dropdown-menu";
 
 interface AppHeaderProps {
@@ -24,11 +25,13 @@ export function AppHeader({ title, profilePath, onSearch }: AppHeaderProps) {
   const { user, signOut } = useAuth();
   const navigate = useNavigate();
   const [profileName, setProfileName] = useState("");
+  const [profileEmail, setProfileEmail] = useState("");
   const [avatarUrl, setAvatarUrl] = useState<string | null>(null);
   const [search, setSearch] = useState("");
 
   useEffect(() => {
     if (!user) return;
+    setProfileEmail(user.email || "");
     supabase
       .from("profiles")
       .select("full_name, avatar_url")
@@ -54,12 +57,9 @@ export function AppHeader({ title, profilePath, onSearch }: AppHeaderProps) {
   return (
     <header className="h-14 flex items-center gap-3 border-b border-border/60 px-4 md:px-6 glass-strong sticky top-0 z-30">
       <SidebarTrigger />
-      <h1 className="font-serif text-base text-foreground tracking-tight hidden md:block shrink-0">
-        {title}
-      </h1>
 
       {/* Search bar */}
-      <div className="w-48 md:w-64 ml-2">
+      <div className="flex-1 max-w-xs">
         <div className="relative">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
           <Input
@@ -74,37 +74,46 @@ export function AppHeader({ title, profilePath, onSearch }: AppHeaderProps) {
         </div>
       </div>
 
-      {/* Avatar dropdown */}
-      <DropdownMenu>
-        <DropdownMenuTrigger asChild>
-          <button className="flex items-center gap-2 rounded-lg p-1 hover:bg-secondary/60 transition-colors shrink-0">
-            <Avatar className="h-8 w-8">
-              <AvatarImage src={avatarUrl || undefined} />
-              <AvatarFallback className="bg-primary text-primary-foreground text-xs font-serif">
-                {initials}
-              </AvatarFallback>
-            </Avatar>
-            <span className="text-sm font-medium text-foreground hidden md:block max-w-[120px] truncate">
-              {profileName || "—"}
-            </span>
-          </button>
-        </DropdownMenuTrigger>
-        <DropdownMenuContent align="end" className="w-48">
-          <DropdownMenuItem onClick={() => navigate(profilePath)}>
-            <User className="h-4 w-4 mr-2" />
-            Ver perfil
-          </DropdownMenuItem>
-          <DropdownMenuItem onClick={() => navigate(profilePath)}>
-            <Settings className="h-4 w-4 mr-2" />
-            Configurações
-          </DropdownMenuItem>
-          <DropdownMenuSeparator />
-          <DropdownMenuItem onClick={signOut} className="text-destructive focus:text-destructive">
-            <LogOut className="h-4 w-4 mr-2" />
-            Sair da conta
-          </DropdownMenuItem>
-        </DropdownMenuContent>
-      </DropdownMenu>
+      <div className="ml-auto flex items-center gap-1">
+        {/* Notification bell */}
+        <button className="h-9 w-9 flex items-center justify-center rounded-lg hover:bg-secondary/60 transition-colors text-muted-foreground hover:text-foreground">
+          <Bell className="h-4 w-4" />
+        </button>
+
+        {/* Avatar dropdown */}
+        <DropdownMenu>
+          <DropdownMenuTrigger asChild>
+            <button className="rounded-full p-0.5 hover:ring-2 hover:ring-primary/40 transition-all ml-1">
+              <Avatar className="h-8 w-8">
+                <AvatarImage src={avatarUrl || undefined} />
+                <AvatarFallback className="bg-primary text-primary-foreground text-xs font-serif">
+                  {initials}
+                </AvatarFallback>
+              </Avatar>
+            </button>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent align="end" className="w-56">
+            <DropdownMenuLabel className="flex flex-col gap-0.5 py-2">
+              <span className="font-semibold text-sm text-foreground truncate">{profileName || "—"}</span>
+              <span className="text-xs text-muted-foreground font-normal truncate">{profileEmail}</span>
+            </DropdownMenuLabel>
+            <DropdownMenuSeparator />
+            <DropdownMenuItem onClick={() => navigate(profilePath)}>
+              <User className="h-4 w-4 mr-2" />
+              Meu perfil
+            </DropdownMenuItem>
+            <DropdownMenuItem onClick={() => navigate(profilePath)}>
+              <Settings className="h-4 w-4 mr-2" />
+              Configurações
+            </DropdownMenuItem>
+            <DropdownMenuSeparator />
+            <DropdownMenuItem onClick={signOut} className="text-destructive focus:text-destructive">
+              <LogOut className="h-4 w-4 mr-2" />
+              Sair da conta
+            </DropdownMenuItem>
+          </DropdownMenuContent>
+        </DropdownMenu>
+      </div>
     </header>
   );
 }
