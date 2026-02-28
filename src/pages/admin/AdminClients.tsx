@@ -336,18 +336,6 @@ function ClientProfileCard({ client, email, isProfessional, onClick, onToggleBlo
         }
       `}</style>
 
-      {/* Status dot */}
-      <div className="absolute top-3 right-3 flex items-center gap-1">
-        <div className="relative">
-          <span className={cn("h-2 w-2 rounded-full block", client.blocked ? "bg-destructive" : "bg-green-500")} />
-          {!client.blocked && (
-            <span
-              className="absolute inset-0 rounded-full bg-green-500"
-              style={{ animation: "pulseRing 1.8s ease-in-out infinite" }}
-            />
-          )}
-        </div>
-      </div>
 
       {/* Blocked badge top-left */}
       {client.blocked && (
