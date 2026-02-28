@@ -12,9 +12,8 @@ import { Separator } from "@/components/ui/separator";
 import { Calendar } from "@/components/ui/calendar";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { useToast } from "@/hooks/use-toast";
-import { Clock, CalendarDays, Filter, ChevronLeft, ChevronRight, StickyNote, Trash2, DollarSign, Handshake, UserCheck, CheckCircle2, User, Scissors } from "lucide-react";
+import { Clock, CalendarDays, Filter, ChevronLeft, ChevronRight, StickyNote, Trash2, DollarSign, Handshake, CheckCircle2, User, Scissors } from "lucide-react";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
 
@@ -31,7 +30,6 @@ export default function AdminAgenda() {
   const { toast } = useToast();
   const { user } = useAuth();
   const { adminLevel } = useAdminPermissions();
-  const isProfessional = adminLevel === "professional";
 
   const [appointments, setAppointments] = useState<any[]>([]);
   const [services, setServices] = useState<any[]>([]);
@@ -39,10 +37,6 @@ export default function AdminAgenda() {
   const [page, setPage] = useState(0);
   const [totalCount, setTotalCount] = useState(0);
 
-  // Queue modal
-  const [queueOpen, setQueueOpen] = useState(false);
-  const [queue, setQueue] = useState<any[]>([]);
-  const [queueLoading, setQueueLoading] = useState(false);
   const [takingId, setTakingId] = useState<string | null>(null);
 
   // Filters
@@ -96,18 +90,6 @@ export default function AdminAgenda() {
     else { toast({ title: "Notas salvas!" }); setEditingNotes(null); fetchAppointments(); }
   };
 
-  const fetchQueue = async () => {
-    setQueueLoading(true);
-    const { data } = await supabase
-      .from("appointments")
-      .select("*, services(name, price), profiles!appointments_client_profile_fkey(full_name, phone)")
-      .in("status", ["pending", "confirmed"])
-      .order("appointment_date", { ascending: true })
-      .order("appointment_time", { ascending: true });
-    setQueue(data || []);
-    setQueueLoading(false);
-  };
-
   const takeAppointment = async (a: any) => {
     if (!user) return;
     setTakingId(a.id);
@@ -120,7 +102,6 @@ export default function AdminAgenda() {
     if (error) toast({ title: "Erro", description: error.message, variant: "destructive" });
     else {
       toast({ title: "Agendamento pego!", description: `Você confirmou o atendimento de ${a.profiles?.full_name}.` });
-      fetchQueue();
       fetchAppointments();
     }
   };
@@ -135,62 +116,10 @@ export default function AdminAgenda() {
   return (
     <div className="space-y-6">
       {/* Header */}
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="font-serif text-2xl">Controle de Agenda</h1>
-          <p className="text-sm text-muted-foreground mt-0.5">{totalCount} agendamento(s) encontrado(s)</p>
-        </div>
-        {isProfessional && (
-          <Button onClick={() => { setQueueOpen(true); fetchQueue(); }} className="gap-2">
-            <Handshake className="h-4 w-4" />
-            Pegar Agendamento
-          </Button>
-        )}
+      <div>
+        <h1 className="font-serif text-2xl">Controle de Agenda</h1>
+        <p className="text-sm text-muted-foreground mt-0.5">{totalCount} agendamento(s) encontrado(s)</p>
       </div>
-
-      {/* Queue Modal */}
-      <Dialog open={queueOpen} onOpenChange={setQueueOpen}>
-        <DialogContent className="max-w-2xl max-h-[80vh] overflow-y-auto">
-          <DialogHeader>
-            <DialogTitle className="flex items-center gap-2">
-              <UserCheck className="h-5 w-5 text-primary" />
-              Fila de Agendamentos
-            </DialogTitle>
-          </DialogHeader>
-          {queueLoading ? (
-            <div className="space-y-3 py-4"><Skeleton className="h-16 w-full" /><Skeleton className="h-16 w-full" /></div>
-          ) : queue.length === 0 ? (
-            <p className="text-center text-muted-foreground py-8">Nenhum agendamento pendente na fila.</p>
-          ) : (
-            <div className="space-y-3 py-2">
-              {queue.map((a, i) => (
-                <Card key={a.id} className="border-border">
-                  <CardContent className="py-3">
-                    <div className="flex items-center justify-between gap-3">
-                      <div className="flex items-center gap-3">
-                        <span className="text-xl font-bold text-muted-foreground/30 w-7 text-center tabular-nums">{i + 1}</span>
-                        <div>
-                          <p className="font-medium">{a.profiles?.full_name || "Cliente"}</p>
-                          <p className="text-sm text-muted-foreground">{a.services?.name}</p>
-                          <div className="flex items-center gap-3 text-xs text-muted-foreground">
-                            <span className="flex items-center gap-1"><Clock className="h-3 w-3" />{new Date(a.appointment_date).toLocaleDateString("pt-BR")} às {a.appointment_time?.slice(0, 5)}</span>
-                            <span className="flex items-center gap-1"><DollarSign className="h-3 w-3" />R$ {Number(a.services?.price || 0).toFixed(2)}</span>
-                          </div>
-                          {a.profiles?.phone && <p className="text-xs text-muted-foreground mt-0.5">📱 {a.profiles.phone}</p>}
-                        </div>
-                      </div>
-                      <Button size="sm" onClick={() => takeAppointment(a)} disabled={takingId === a.id} className="gap-1 shrink-0">
-                        <UserCheck className="h-3 w-3" />
-                        {takingId === a.id ? "Pegando..." : "Pegar"}
-                      </Button>
-                    </div>
-                  </CardContent>
-                </Card>
-              ))}
-            </div>
-          )}
-        </DialogContent>
-      </Dialog>
 
       {/* Filters */}
       <Card className="border-border">
@@ -335,9 +264,9 @@ export default function AdminAgenda() {
                         </Button>
                       )}
                       {(a.status === "pending" || a.status === "confirmed") && (
-                        <Button size="sm" variant="outline" className="gap-1.5" onClick={() => { setQueueOpen(true); fetchQueue(); }}>
+                        <Button size="sm" variant="outline" className="gap-1.5" onClick={() => takeAppointment(a)} disabled={takingId === a.id}>
                           <Handshake className="h-3.5 w-3.5" />
-                          Pegar
+                          {takingId === a.id ? "Pegando..." : "Pegar"}
                         </Button>
                       )}
                       <div className="ml-auto">
