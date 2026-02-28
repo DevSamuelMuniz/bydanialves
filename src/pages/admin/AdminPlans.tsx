@@ -12,7 +12,15 @@ import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, 
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useToast } from "@/hooks/use-toast";
-import { Plus, Edit2, Trash2, Crown, Users, UserPlus } from "lucide-react";
+import { Plus, Edit2, Trash2, Users, UserPlus, CheckCircle2, AlertCircle, Sparkles } from "lucide-react";
+
+// Medal colors per plan rank
+const PLAN_ACCENTS = [
+  { from: "from-amber-400", to: "to-yellow-500", ring: "ring-amber-400/30", badge: "bg-amber-400/20 text-amber-600" },
+  { from: "from-slate-300", to: "to-slate-400", ring: "ring-slate-300/30", badge: "bg-slate-300/20 text-slate-500" },
+  { from: "from-orange-400", to: "to-amber-600", ring: "ring-orange-400/30", badge: "bg-orange-400/20 text-orange-600" },
+];
+
 
 export default function AdminPlans() {
   const { toast } = useToast();
@@ -153,113 +161,136 @@ export default function AdminPlans() {
       </div>
 
       {/* Plans */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
-        {plans.map((p) => (
-          <Card key={p.id} className={`relative overflow-hidden border-border/60 flex flex-col ${!p.active ? "opacity-60" : ""}`}>
-            {/* Gold accent top bar */}
-            <div className="h-1 w-full gradient-gold" />
-            <CardHeader className="pb-3 pt-5">
-              <div className="flex items-start justify-between gap-2">
-                <div>
-                  <p className="text-xs font-semibold uppercase tracking-widest text-muted-foreground mb-1">Plano</p>
-                  <CardTitle className="font-serif text-xl leading-tight">{p.name}</CardTitle>
-                  {p.description && <p className="text-xs text-muted-foreground mt-1">{p.description}</p>}
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+        {plans.map((p, idx) => {
+          const accent = PLAN_ACCENTS[idx % PLAN_ACCENTS.length];
+          const subCount = subsCountByPlan(p.id);
+          return (
+            <div
+              key={p.id}
+              className={`relative rounded-2xl overflow-hidden border border-border/40 flex flex-col transition-all duration-300 hover:shadow-elevated hover:-translate-y-0.5 ${!p.active ? "opacity-60" : ""}`}
+            >
+              {/* Gradient header */}
+              <div className={`relative bg-gradient-to-br ${accent.from} ${accent.to} px-6 pt-6 pb-8`}>
+                {/* Decorative circle */}
+                <div className="absolute -top-4 -right-4 h-24 w-24 rounded-full bg-white/10 blur-xl" />
+                <div className="absolute bottom-0 left-0 right-0 h-6 bg-card [clip-path:ellipse(55%_100%_at_50%_100%)]" />
+
+                <div className="flex items-start justify-between mb-4">
+                  <div className={`flex items-center gap-1.5 rounded-full px-2.5 py-1 text-[10px] font-semibold uppercase tracking-wider ${accent.badge}`}>
+                    <Sparkles className="h-3 w-3" />
+                    Plano
+                  </div>
+                  {!p.active && <Badge variant="secondary" className="text-[10px]">Inativo</Badge>}
                 </div>
-                {!p.active && <Badge variant="secondary" className="text-xs shrink-0">Inativo</Badge>}
-              </div>
-            </CardHeader>
-            <CardContent className="flex flex-col flex-1 space-y-4">
-              {/* Price */}
-              <div className="flex items-end gap-1">
-                <span className="text-3xl font-serif font-bold text-primary">R$ {Number(p.price).toFixed(2)}</span>
-                <span className="text-sm text-muted-foreground mb-1">/mês</span>
-              </div>
 
-              {/* Divider */}
-              <div className="border-t border-border/50" />
+                <h3 className="font-serif text-2xl font-bold text-foreground leading-tight">{p.name}</h3>
+                {p.description && (
+                  <p className="text-xs text-foreground/70 mt-1">{p.description}</p>
+                )}
 
-              {/* Includes */}
-              <div className="flex items-start gap-2">
-                <div className="mt-0.5 h-4 w-4 rounded-full gradient-gold flex items-center justify-center shrink-0">
-                  <span className="text-[8px] text-primary-foreground font-bold">✓</span>
-                </div>
-                <p className="text-sm leading-snug">{p.includes}</p>
-              </div>
-
-              {/* Restriction */}
-              {p.restriction && (
-                <div className="rounded-md bg-muted/60 px-3 py-2 text-xs text-muted-foreground italic border border-border/40">
-                  {p.restriction}
-                </div>
-              )}
-
-              {/* Subscribers badge */}
-              <div className="flex items-center gap-1.5 mt-auto">
-                <div className="flex items-center gap-1.5 bg-secondary/60 rounded-full px-3 py-1">
-                  <Users className="h-3 w-3 text-primary" />
-                  <span className="text-xs font-medium">{subsCountByPlan(p.id)} assinante(s)</span>
+                <div className="mt-4 flex items-end gap-1">
+                  <span className="text-4xl font-bold font-serif tracking-tight text-foreground">
+                    R$ {Number(p.price).toFixed(2)}
+                  </span>
+                  <span className="text-sm text-foreground/60 mb-1">/mês</span>
                 </div>
               </div>
 
-              {/* Actions */}
-              <div className="flex gap-2 pt-1">
-                <Button variant="outline" size="sm" className="flex-1" onClick={() => openEdit(p)}>
-                  <Edit2 className="mr-1 h-3 w-3" />Editar
-                </Button>
-                <AlertDialog>
-                  <AlertDialogTrigger asChild>
-                    <Button variant="ghost" size="sm" className="border border-border/40 hover:bg-destructive/10 hover:border-destructive/40">
-                      <Trash2 className="h-3 w-3 text-destructive" />
+              {/* Body */}
+              <div className="bg-card flex flex-col flex-1 px-6 py-5 gap-4">
+                {/* Includes */}
+                <div className="space-y-2">
+                  {p.includes.split("\n").filter(Boolean).map((line: string, i: number) => (
+                    <div key={i} className="flex items-start gap-2.5">
+                      <CheckCircle2 className="h-4 w-4 text-primary shrink-0 mt-0.5" />
+                      <span className="text-sm text-foreground/80 leading-snug">{line}</span>
+                    </div>
+                  ))}
+                  {!p.includes.includes("\n") && (
+                    <div className="flex items-start gap-2.5">
+                      <CheckCircle2 className="h-4 w-4 text-primary shrink-0 mt-0.5" />
+                      <span className="text-sm text-foreground/80 leading-snug">{p.includes}</span>
+                    </div>
+                  )}
+                </div>
+
+                {/* Restriction */}
+                {p.restriction && (
+                  <div className="flex items-start gap-2 rounded-lg bg-muted/50 border border-border/40 px-3 py-2">
+                    <AlertCircle className="h-3.5 w-3.5 text-muted-foreground shrink-0 mt-0.5" />
+                    <p className="text-xs text-muted-foreground italic leading-snug">{p.restriction}</p>
+                  </div>
+                )}
+
+                {/* Footer */}
+                <div className="mt-auto pt-3 border-t border-border/40 flex items-center justify-between gap-2">
+                  <div className={`flex items-center gap-1.5 rounded-full px-3 py-1.5 text-xs font-medium ring-1 ${accent.ring} bg-muted/40`}>
+                    <Users className="h-3.5 w-3.5" />
+                    <span>{subCount} assinante{subCount !== 1 ? "s" : ""}</span>
+                  </div>
+
+                  <div className="flex gap-1.5">
+                    <Button variant="outline" size="sm" className="h-8 px-3 text-xs" onClick={() => openEdit(p)}>
+                      <Edit2 className="mr-1 h-3 w-3" />Editar
                     </Button>
-                  </AlertDialogTrigger>
-                  <AlertDialogContent>
-                    <AlertDialogHeader>
-                      <AlertDialogTitle>Excluir plano?</AlertDialogTitle>
-                      <AlertDialogDescription>Esta ação não pode ser desfeita.</AlertDialogDescription>
-                    </AlertDialogHeader>
-                    <AlertDialogFooter>
-                      <AlertDialogCancel>Cancelar</AlertDialogCancel>
-                      <AlertDialogAction onClick={() => handleDelete(p.id)}>Excluir</AlertDialogAction>
-                    </AlertDialogFooter>
-                  </AlertDialogContent>
-                </AlertDialog>
+                    <AlertDialog>
+                      <AlertDialogTrigger asChild>
+                        <Button variant="ghost" size="icon" className="h-8 w-8 hover:bg-destructive/10 hover:text-destructive border border-border/40">
+                          <Trash2 className="h-3.5 w-3.5" />
+                        </Button>
+                      </AlertDialogTrigger>
+                      <AlertDialogContent>
+                        <AlertDialogHeader>
+                          <AlertDialogTitle>Excluir plano?</AlertDialogTitle>
+                          <AlertDialogDescription>Esta ação não pode ser desfeita.</AlertDialogDescription>
+                        </AlertDialogHeader>
+                        <AlertDialogFooter>
+                          <AlertDialogCancel>Cancelar</AlertDialogCancel>
+                          <AlertDialogAction onClick={() => handleDelete(p.id)}>Excluir</AlertDialogAction>
+                        </AlertDialogFooter>
+                      </AlertDialogContent>
+                    </AlertDialog>
+                  </div>
+                </div>
               </div>
-            </CardContent>
-          </Card>
-        ))}
+            </div>
+          );
+        })}
       </div>
 
       {/* Active subscriptions */}
       <div>
-        <h2 className="font-serif text-lg mb-3">Assinaturas Ativas</h2>
+        <h2 className="font-serif text-lg mb-3 flex items-center gap-2">
+          <Users className="h-4 w-4 text-primary" />
+          Assinaturas Ativas
+        </h2>
         {subscriptions.filter((s) => s.status === "active").length === 0 ? (
           <p className="text-sm text-muted-foreground">Nenhuma assinatura ativa.</p>
         ) : (
-          <div className="space-y-2">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
             {subscriptions.filter((s) => s.status === "active").map((s) => (
-              <Card key={s.id} className="border-border">
-                <CardContent className="py-3 flex items-center justify-between">
-                  <div>
-                    <p className="font-medium text-sm">{(s as any).profiles?.full_name || "Cliente"}</p>
-                    <p className="text-xs text-muted-foreground">{(s as any).plans?.name} — desde {new Date(s.started_at).toLocaleDateString("pt-BR")}</p>
-                  </div>
-                  <AlertDialog>
-                    <AlertDialogTrigger asChild>
-                      <Button variant="outline" size="sm">Cancelar</Button>
-                    </AlertDialogTrigger>
-                    <AlertDialogContent>
-                      <AlertDialogHeader>
-                        <AlertDialogTitle>Cancelar assinatura?</AlertDialogTitle>
-                        <AlertDialogDescription>O cliente perderá acesso ao plano.</AlertDialogDescription>
-                      </AlertDialogHeader>
-                      <AlertDialogFooter>
-                        <AlertDialogCancel>Voltar</AlertDialogCancel>
-                        <AlertDialogAction onClick={() => cancelSubscription(s.id)}>Confirmar</AlertDialogAction>
-                      </AlertDialogFooter>
-                    </AlertDialogContent>
-                  </AlertDialog>
-                </CardContent>
-              </Card>
+              <div key={s.id} className="flex items-center justify-between gap-3 rounded-xl border border-border/40 bg-card px-4 py-3 hover:border-primary/20 transition-colors">
+                <div className="min-w-0">
+                  <p className="font-medium text-sm truncate">{(s as any).profiles?.full_name || "Cliente"}</p>
+                  <p className="text-xs text-muted-foreground truncate">{(s as any).plans?.name} · desde {new Date(s.started_at).toLocaleDateString("pt-BR")}</p>
+                </div>
+                <AlertDialog>
+                  <AlertDialogTrigger asChild>
+                    <Button variant="ghost" size="sm" className="shrink-0 h-7 px-2 text-xs hover:bg-destructive/10 hover:text-destructive border border-border/40">Cancelar</Button>
+                  </AlertDialogTrigger>
+                  <AlertDialogContent>
+                    <AlertDialogHeader>
+                      <AlertDialogTitle>Cancelar assinatura?</AlertDialogTitle>
+                      <AlertDialogDescription>O cliente perderá acesso ao plano.</AlertDialogDescription>
+                    </AlertDialogHeader>
+                    <AlertDialogFooter>
+                      <AlertDialogCancel>Voltar</AlertDialogCancel>
+                      <AlertDialogAction onClick={() => cancelSubscription(s.id)}>Confirmar</AlertDialogAction>
+                    </AlertDialogFooter>
+                  </AlertDialogContent>
+                </AlertDialog>
+              </div>
             ))}
           </div>
         )}
