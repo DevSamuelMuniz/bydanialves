@@ -87,8 +87,8 @@ export default function AdminFinance() {
   });
 
   // Filters
-  const [dateFrom, setDateFrom]   = useState<Date | undefined>(startOfMonth(new Date()));
-  const [dateTo, setDateTo]       = useState<Date | undefined>(endOfMonth(new Date()));
+  const [dateFrom, setDateFrom]   = useState<Date | undefined>(undefined);
+  const [dateTo, setDateTo]       = useState<Date | undefined>(undefined);
   const [typeFilter, setTypeFilter] = useState<string>("all");
   const [tab, setTab]             = useState("overview");
 
