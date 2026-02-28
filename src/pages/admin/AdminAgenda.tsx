@@ -13,7 +13,7 @@ import { Calendar } from "@/components/ui/calendar";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
 import { useToast } from "@/hooks/use-toast";
-import { Clock, CalendarDays, Filter, StickyNote, Trash2, DollarSign, Handshake, CheckCircle2, User, Scissors, RefreshCw, AlertCircle } from "lucide-react";
+import { Clock, CalendarDays, Filter, StickyNote, Trash2, DollarSign, Handshake, CheckCircle2, User, Scissors, RefreshCw, AlertCircle, XCircle } from "lucide-react";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
 
@@ -110,9 +110,10 @@ export default function AdminAgenda() {
   };
 
   // Split into columns
-  const toConfirm = appointments.filter((a) => a.status === "pending");
-  const toTake    = appointments.filter((a) => a.status === "confirmed" && !hasAttendant(a));
-  const toDo      = appointments.filter((a) => a.status === "confirmed" && hasAttendant(a));
+  const toConfirm  = appointments.filter((a) => a.status === "pending");
+  const toTake     = appointments.filter((a) => a.status === "confirmed" && !hasAttendant(a));
+  const toDo       = appointments.filter((a) => a.status === "confirmed" && hasAttendant(a));
+  const cancelled  = appointments.filter((a) => a.status === "cancelled");
 
   function hasAttendant(a: any) {
     return a.notes && a.notes.includes("[Atendido por:");
@@ -148,6 +149,16 @@ export default function AdminAgenda() {
       dot: "bg-green-400",
       items: toDo,
       emptyMsg: "Nenhum atendimento em andamento",
+    },
+    {
+      key: "cancelled",
+      title: "Cancelados",
+      icon: <XCircle className="h-4 w-4" />,
+      color: "border-destructive",
+      headerColor: "bg-destructive/10 text-destructive",
+      dot: "bg-destructive",
+      items: cancelled,
+      emptyMsg: "Nenhum agendamento cancelado",
     },
   ];
 
@@ -254,6 +265,7 @@ export default function AdminAgenda() {
               </Button>
             )}
 
+            {col.key !== "cancelled" && (
             <div className="ml-auto">
               <AlertDialog>
                 <AlertDialogTrigger asChild>
@@ -273,6 +285,7 @@ export default function AdminAgenda() {
                 </AlertDialogContent>
               </AlertDialog>
             </div>
+            )}
           </div>
         </CardContent>
       </Card>
@@ -335,8 +348,8 @@ export default function AdminAgenda() {
 
       {/* Kanban Columns */}
       {loading ? (
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-          {[0,1,2].map(i => (
+        <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-4">
+          {[0,1,2,3].map(i => (
             <div key={i} className="space-y-3">
               <Skeleton className="h-8 w-full" />
               <Skeleton className="h-40 w-full" />
@@ -345,7 +358,7 @@ export default function AdminAgenda() {
           ))}
         </div>
       ) : (
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 items-start">
+        <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-4 items-start">
           {columns.map((col) => (
             <div key={col.key} className="space-y-3">
               {/* Column header */}
