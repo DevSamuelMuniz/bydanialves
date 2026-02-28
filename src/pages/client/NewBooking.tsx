@@ -108,7 +108,7 @@ export default function NewBooking() {
     : [];
 
   useEffect(() => {
-    supabase.from("branches" as any).select("id, name, address").eq("active", true).order("name")
+    supabase.from("branches" as any).select("id, name, address, image_url").eq("active", true).order("name")
       .then(({ data }) => setBranches((data as unknown as Branch[]) || []));
   }, []);
 
