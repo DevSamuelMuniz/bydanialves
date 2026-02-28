@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
+import { useAuth } from "@/contexts/AuthContext";
 import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
@@ -42,8 +43,10 @@ const statusLabels: Record<string, string> = {
 
 export default function AdminClients() {
   const { toast } = useToast();
+  const { adminBranchId } = useAuth();
   const { adminLevel } = useAdminPermissions();
   const isProfessional = adminLevel === "professional";
+  const isRestricted = adminLevel === "attendant" || adminLevel === "professional";
   const [clients, setClients] = useState<ClientProfile[]>([]);
   const [emails, setEmails] = useState<Record<string, { email: string }>>({});
   const [branches, setBranches] = useState<Record<string, string>>({}); // id -> name
@@ -57,7 +60,12 @@ export default function AdminClients() {
   const [editForm, setEditForm] = useState({ full_name: "", phone: "", gender: "male" });
 
   const fetchClients = async () => {
-    const { data } = await supabase.from("profiles").select("*").order("full_name");
+    let query = supabase.from("profiles").select("*").order("full_name");
+    // Atendentes e profissionais veem apenas clientes da sua filial
+    if (isRestricted && adminBranchId) {
+      query = query.eq("branch_id", adminBranchId);
+    }
+    const { data } = await query;
     setClients((data as any[]) || []);
     setLoading(false);
   };
