@@ -10,8 +10,9 @@ import { Separator } from "@/components/ui/separator";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Textarea } from "@/components/ui/textarea";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useToast } from "@/hooks/use-toast";
-import { Mail, Phone, Calendar, Edit3, Save, Star, Camera, Loader2, Crown, Clock, User, Info } from "lucide-react";
+import { Mail, Phone, Calendar, Edit3, Save, Star, Camera, Loader2, Crown, Clock, User, Info, MapPin } from "lucide-react";
 
 export default function ClientProfile() {
   const { user } = useAuth();
@@ -20,12 +21,13 @@ export default function ClientProfile() {
 
   const [profile, setProfile] = useState<any>(null);
   const [subscription, setSubscription] = useState<any>(null);
+  const [branches, setBranches] = useState<{ id: string; name: string; address: string | null }[]>([]);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [uploading, setUploading] = useState(false);
   const [editing, setEditing] = useState(false);
   const [avatarUrl, setAvatarUrl] = useState<string | null>(null);
-  const [form, setForm] = useState({ full_name: "", phone: "", bio: "" });
+  const [form, setForm] = useState({ full_name: "", phone: "", bio: "", branch_id: "" });
 
   useEffect(() => {
     if (!user) return;
@@ -42,7 +44,7 @@ export default function ClientProfile() {
     ]).then(([{ data: profileData }, { data: subData }]) => {
       if (profileData) {
         setProfile(profileData);
-        setForm({ full_name: profileData.full_name || "", phone: profileData.phone || "", bio: (profileData as any).bio || "" });
+        setForm({ full_name: profileData.full_name || "", phone: profileData.phone || "", bio: (profileData as any).bio || "", branch_id: profileData.branch_id || "" });
         if (profileData.avatar_url) {
           const { data: urlData } = supabase.storage.from("avatars").getPublicUrl(profileData.avatar_url);
           setAvatarUrl(urlData.publicUrl);
@@ -52,6 +54,12 @@ export default function ClientProfile() {
       setLoading(false);
     });
   }, [user]);
+
+  // Fetch branches for the select
+  useEffect(() => {
+    supabase.from("branches").select("id, name, address").eq("active", true).order("name")
+      .then(({ data }) => setBranches(data || []));
+  }, []);
 
   const handleAvatarUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -89,6 +97,7 @@ export default function ClientProfile() {
       full_name: form.full_name,
       phone: form.phone,
       bio: form.bio,
+      branch_id: form.branch_id || null,
     } as any).eq("user_id", user.id);
     setSaving(false);
     if (error) {
@@ -207,7 +216,7 @@ export default function ClientProfile() {
       </Card>
 
       {/* Info cards */}
-      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
         <Card className="border-border/60">
           <CardContent className="pt-5 pb-4 flex items-center gap-3">
             <div className="h-9 w-9 rounded-full bg-primary/10 flex items-center justify-center shrink-0">
@@ -240,6 +249,22 @@ export default function ClientProfile() {
             <div className="min-w-0">
               <p className="text-xs text-muted-foreground uppercase tracking-wide">Membro desde</p>
               <p className="text-sm font-medium capitalize">{memberSince || "—"}</p>
+            </div>
+          </CardContent>
+        </Card>
+
+        <Card className="border-border/60">
+          <CardContent className="pt-5 pb-4 flex items-center gap-3">
+            <div className="h-9 w-9 rounded-full bg-primary/10 flex items-center justify-center shrink-0">
+              <MapPin className="h-4 w-4 text-primary" />
+            </div>
+            <div className="min-w-0">
+              <p className="text-xs text-muted-foreground uppercase tracking-wide">Filial preferida</p>
+              <p className="text-sm font-medium truncate">
+                {profile?.branch_id
+                  ? (branches.find((b) => b.id === profile.branch_id)?.name || "—")
+                  : "Não definida"}
+              </p>
             </div>
           </CardContent>
         </Card>
@@ -346,6 +371,27 @@ export default function ClientProfile() {
                   maxLength={300}
                 />
                 <p className="text-xs text-muted-foreground text-right">{form.bio.length}/300</p>
+              </div>
+              <div className="space-y-2">
+                <Label className="flex items-center gap-1.5">
+                  <MapPin className="h-3.5 w-3.5 text-muted-foreground" />
+                  Filial preferida
+                </Label>
+                <Select value={form.branch_id} onValueChange={(v) => setForm({ ...form, branch_id: v })}>
+                  <SelectTrigger className="h-10">
+                    <SelectValue placeholder="Selecione a filial..." />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {branches.map((b) => (
+                      <SelectItem key={b.id} value={b.id}>
+                        <div className="flex flex-col">
+                          <span>{b.name}</span>
+                          {b.address && <span className="text-xs text-muted-foreground">{b.address}</span>}
+                        </div>
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
               </div>
               <div className="flex gap-3 pt-1">
                 <Button type="submit" className="gap-2" disabled={saving}>
