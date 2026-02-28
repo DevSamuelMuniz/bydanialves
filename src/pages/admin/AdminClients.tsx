@@ -11,6 +11,7 @@ import { useToast } from "@/hooks/use-toast";
 import { Search, Ban, CheckCircle, Calendar, DollarSign, Edit2, Save, X, Star, MessageCircle, UserPlus } from "lucide-react";
 import { useAdminPermissions } from "@/hooks/use-admin-permissions";
 import { cn } from "@/lib/utils";
+import Avatar3D from "@/components/ui/avatar-3d";
 
 interface ClientProfile {
   id: string;
@@ -344,11 +345,9 @@ function ClientProfileCard({ client, email, isProfessional, onClick, onToggleBlo
         </div>
       )}
 
-      {/* Avatar */}
-      <div className="relative mt-2">
-        <div className="h-16 w-16 rounded-full bg-primary/10 border-2 border-primary/20 flex items-center justify-center transition-transform duration-300 group-hover:scale-105 overflow-hidden">
-          <span className="text-2xl font-bold text-primary">{initials}</span>
-        </div>
+      {/* Avatar 3D */}
+      <div className="relative mt-2 transition-transform duration-300 group-hover:scale-105">
+        <Avatar3D initial={initials} blocked={client.blocked} />
         <div className="absolute inset-0 rounded-full ring-2 ring-primary/0 transition-all duration-300 group-hover:ring-primary/40 group-hover:ring-offset-2" />
       </div>
 
