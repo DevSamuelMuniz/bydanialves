@@ -14,7 +14,7 @@ import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { useToast } from "@/hooks/use-toast";
-import { Clock, CalendarDays, Filter, ChevronLeft, ChevronRight, StickyNote, Trash2, DollarSign, Handshake, UserCheck, CheckCircle2, XCircle, User, Scissors } from "lucide-react";
+import { Clock, CalendarDays, Filter, ChevronLeft, ChevronRight, StickyNote, Trash2, DollarSign, Handshake, UserCheck, CheckCircle2, User, Scissors } from "lucide-react";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
 
@@ -334,18 +334,13 @@ export default function AdminAgenda() {
                           Concluir
                         </Button>
                       )}
-                      <div className="ml-auto flex gap-2">
-                        <Select value={a.status} onValueChange={(v: "pending" | "confirmed" | "completed" | "cancelled") => updateStatus(a.id, v)}>
-                          <SelectTrigger className="h-8 w-32 text-xs">
-                            <SelectValue />
-                          </SelectTrigger>
-                          <SelectContent>
-                            <SelectItem value="pending">Pendente</SelectItem>
-                            <SelectItem value="confirmed">Confirmado</SelectItem>
-                            <SelectItem value="completed">Concluído</SelectItem>
-                            <SelectItem value="cancelled">Cancelado</SelectItem>
-                          </SelectContent>
-                        </Select>
+                      {(a.status === "pending" || a.status === "confirmed") && (
+                        <Button size="sm" variant="outline" className="gap-1.5" onClick={() => { setQueueOpen(true); fetchQueue(); }}>
+                          <Handshake className="h-3.5 w-3.5" />
+                          Pegar
+                        </Button>
+                      )}
+                      <div className="ml-auto">
                         {a.status !== "cancelled" && (
                           <AlertDialog>
                             <AlertDialogTrigger asChild>
