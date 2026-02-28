@@ -307,9 +307,6 @@ export default function AdminClients() {
                             <Badge variant="outline" className="text-xs block">
                               {statusLabels[a.status] || a.status}
                             </Badge>
-                            <p className="text-xs text-muted-foreground">
-                              R$ {Number(a.services?.price || 0).toFixed(2)}
-                            </p>
                           </div>
                         </CardContent>
                       </Card>
