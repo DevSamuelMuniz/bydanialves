@@ -18,7 +18,7 @@ const statusConfig: Record<string, { label: string; color: string }> = {
 };
 
 export default function AdminMyAppointments() {
-  const { user } = useAuth();
+  const { user, adminBranchId } = useAuth();
   const { toast } = useToast();
 
   const [profName, setProfName] = useState("");
@@ -44,12 +44,17 @@ export default function AdminMyAppointments() {
 
     if (!name) { setLoading(false); return; }
 
-    const { data } = await supabase
+    let apptQuery = supabase
       .from("appointments")
       .select("*, services(name, price, duration_minutes), profiles!appointments_client_profile_fkey(full_name, phone)")
       .ilike("notes", `%${TAG_PREFIX} ${name}]%`)
       .order("appointment_date", { ascending: true })
       .order("appointment_time", { ascending: true });
+
+    // Filter by branch if staff is assigned to one
+    if (adminBranchId) apptQuery = apptQuery.eq("branch_id", adminBranchId);
+
+    const { data } = await apptQuery;
 
     const all = data || [];
     setConfirmed(all.filter((a) => ["pending", "confirmed"].includes(a.status)));

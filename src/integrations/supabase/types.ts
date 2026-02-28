@@ -358,23 +358,34 @@ export type Database = {
       user_roles: {
         Row: {
           admin_level: Database["public"]["Enums"]["admin_level"] | null
+          branch_id: string | null
           id: string
           role: Database["public"]["Enums"]["app_role"]
           user_id: string
         }
         Insert: {
           admin_level?: Database["public"]["Enums"]["admin_level"] | null
+          branch_id?: string | null
           id?: string
           role?: Database["public"]["Enums"]["app_role"]
           user_id: string
         }
         Update: {
           admin_level?: Database["public"]["Enums"]["admin_level"] | null
+          branch_id?: string | null
           id?: string
           role?: Database["public"]["Enums"]["app_role"]
           user_id?: string
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "user_roles_branch_id_fkey"
+            columns: ["branch_id"]
+            isOneToOne: false
+            referencedRelation: "branches"
+            referencedColumns: ["id"]
+          },
+        ]
       }
     }
     Views: {
