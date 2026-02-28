@@ -36,10 +36,10 @@ function parseEscovasFromIncludes(includes: string): number {
 const WHATSAPP_NUMBER = "5500000000000";
 
 const BRANCH_IMAGES: Record<number, string> = {
-  0: "https://images.unsplash.com/photo-1521590832167-7bcbfaa6381f?w=800&q=70&auto=format&fit=crop",
-  1: "https://images.unsplash.com/photo-1599351431202-1e0f0137899a?w=800&q=70&auto=format&fit=crop",
-  2: "https://images.unsplash.com/photo-1633681926022-84c23e8cb2d6?w=800&q=70&auto=format&fit=crop",
-  3: "https://images.unsplash.com/photo-1578662996442-48f60103fc96?w=800&q=70&auto=format&fit=crop",
+  0: "https://images.unsplash.com/photo-1582095133179-bfd08e2d6b27?w=800&q=70&auto=format&fit=crop",
+  1: "https://images.unsplash.com/photo-1600948836101-f9ffda59d250?w=800&q=70&auto=format&fit=crop",
+  2: "https://images.unsplash.com/photo-1559599101-f09722fb4948?w=800&q=70&auto=format&fit=crop",
+  3: "https://images.unsplash.com/photo-1565520834234-5b4c5b394dce?w=800&q=70&auto=format&fit=crop",
 };
 
 function getBranchImage(index: number) {
