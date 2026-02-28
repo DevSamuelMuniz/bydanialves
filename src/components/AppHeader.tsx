@@ -108,7 +108,7 @@ export function AppHeader({ title, profilePath, onSearch }: AppHeaderProps) {
           <Tooltip>
             <TooltipTrigger asChild>
               <button
-                onClick={() => navigate("/politica-de-privacidade")}
+                onClick={() => navigate("/politica-e-termos")}
                 className="h-9 w-9 flex items-center justify-center rounded-lg hover:bg-secondary/60 transition-colors text-muted-foreground hover:text-foreground"
               >
                 <FileText className="h-4 w-4" />
