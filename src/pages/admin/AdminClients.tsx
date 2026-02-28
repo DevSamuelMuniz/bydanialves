@@ -382,7 +382,7 @@ function ClientProfileCard({ client, email, freqBranch, isProfessional, onClick,
       onClick={onClick}
     >
       {/* Animated grid bg */}
-      <div className="absolute inset-0 overflow-hidden opacity-[0.04] pointer-events-none">
+      <div className="absolute inset-0 overflow-hidden opacity-[0.06] dark:opacity-[0.04] pointer-events-none">
         <div
           className="absolute inset-0"
           style={{
