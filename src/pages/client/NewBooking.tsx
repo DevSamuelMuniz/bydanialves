@@ -7,8 +7,10 @@ import { Calendar } from "@/components/ui/calendar";
 import { useToast } from "@/hooks/use-toast";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Badge } from "@/components/ui/badge";
-import { Check, ChevronLeft, ShieldX, MessageCircle } from "lucide-react";
+import { Check, ChevronLeft, ShieldX, MessageCircle, Building2, MapPin } from "lucide-react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from "@/components/ui/dialog";
+
+interface Branch { id: string; name: string; address: string | null; }
 
 const TIME_SLOTS = [
   "08:00", "09:00", "10:00", "11:00",
@@ -26,6 +28,8 @@ export default function NewBooking() {
   const { user } = useAuth();
   const { toast } = useToast();
   const [step, setStep] = useState(1);
+  const [branches, setBranches] = useState<Branch[]>([]);
+  const [selectedBranch, setSelectedBranch] = useState<Branch | null>(null);
   const [services, setServices] = useState<any[]>([]);
   const [selectedService, setSelectedService] = useState<any>(null);
   const [selectedDate, setSelectedDate] = useState<Date | undefined>();
@@ -36,6 +40,11 @@ export default function NewBooking() {
   const [escovasDisponiveis, setEscovasDisponiveis] = useState(0);
   const [blocked, setBlocked] = useState(false);
   const [blockedModalOpen, setBlockedModalOpen] = useState(false);
+
+  useEffect(() => {
+    supabase.from("branches" as any).select("id, name, address").eq("active", true).order("name")
+      .then(({ data }) => setBranches((data as unknown as Branch[]) || []));
+  }, []);
 
   useEffect(() => {
     if (!user) return;
@@ -125,7 +134,8 @@ export default function NewBooking() {
       appointment_date: selectedDate.toISOString().split("T")[0],
       appointment_time: selectedTime + ":00",
       status: "pending",
-    });
+      branch_id: selectedBranch?.id || null,
+    } as any);
     if (error) {
       toast({ title: "Erro ao agendar", description: error.message, variant: "destructive" });
     } else {
@@ -134,6 +144,7 @@ export default function NewBooking() {
       setSelectedService(null);
       setSelectedDate(undefined);
       setSelectedTime(null);
+      setSelectedBranch(null);
     }
     setSubmitting(false);
   };
@@ -209,7 +220,7 @@ export default function NewBooking() {
 
       {/* Steps indicator */}
       <div className="flex gap-2">
-        {[1, 2, 3, 4].map((s) => (
+        {[1, 2, 3, 4, 5].map((s) => (
           <div
             key={s}
             className={`h-1.5 flex-1 rounded-full transition-colors ${s <= step ? "bg-primary" : "bg-muted"}`}
@@ -217,8 +228,42 @@ export default function NewBooking() {
         ))}
       </div>
 
-      {/* Step 1: Choose service */}
+      {/* Step 1: Choose branch */}
       {step === 1 && (
+        <div className="space-y-3">
+          <p className="text-muted-foreground">Escolha a filial</p>
+          {branches.length === 0 ? (
+            <p className="text-center py-8 text-muted-foreground">Nenhuma filial disponível.</p>
+          ) : (
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              {branches.map((b) => (
+                <div
+                  key={b.id}
+                  onClick={() => { setSelectedBranch(b); setStep(2); }}
+                  className={`flex items-center gap-4 p-4 rounded-xl border-2 cursor-pointer transition-all duration-200
+                    ${selectedBranch?.id === b.id ? "border-primary bg-primary/5" : "border-border/60 hover:border-primary/40"}`}
+                >
+                  <div className="h-10 w-10 rounded-xl bg-primary/10 flex items-center justify-center shrink-0">
+                    <Building2 className="h-5 w-5 text-primary" />
+                  </div>
+                  <div className="min-w-0">
+                    <p className="font-medium text-sm">{b.name}</p>
+                    {b.address && (
+                      <p className="text-xs text-muted-foreground flex items-center gap-1 mt-0.5 truncate">
+                        <MapPin className="h-3 w-3 shrink-0" />
+                        {b.address}
+                      </p>
+                    )}
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* Step 2: Choose service */}
+      {step === 2 && (
         <div className="space-y-3">
           <p className="text-muted-foreground">Escolha o serviço</p>
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
@@ -226,26 +271,17 @@ export default function NewBooking() {
             const escova = isEscovaService(s);
             const free = escova && escovasDisponiveis > 0;
             const isSelected = selectedService?.id === s.id;
-            // Use service image_url or a category-based placeholder
             const imgUrl = s.image_url ||
               `https://images.unsplash.com/photo-1522337360788-8b13dee7a37e?w=600&q=60&auto=format&fit=crop`;
             return (
               <div
                 key={s.id}
-                onClick={() => { setSelectedService(s); setStep(2); }}
+                onClick={() => { setSelectedService(s); setStep(3); }}
                 className={`relative overflow-hidden rounded-xl cursor-pointer transition-all duration-300 border-2 h-44
                   ${isSelected ? "border-primary shadow-elevated scale-[1.02]" : "border-transparent hover:border-primary/40 hover:scale-[1.01]"}`}
               >
-                {/* Background image */}
-                <img
-                  src={imgUrl}
-                  alt={s.name}
-                  className="absolute inset-0 w-full h-full object-cover"
-                />
-                {/* Gradient overlay */}
+                <img src={imgUrl} alt={s.name} className="absolute inset-0 w-full h-full object-cover" />
                 <div className="absolute inset-0 bg-gradient-to-t from-black/75 via-black/30 to-black/10" />
-
-                {/* Content */}
                 <div className="relative z-10 h-full flex flex-col justify-end p-4">
                   <div className="flex justify-between items-end">
                     <div>
@@ -262,21 +298,15 @@ export default function NewBooking() {
                     <div className="text-right">
                       {free ? (
                         <div>
-                          <p className="text-xs text-white/50 line-through">
-                            R$ {Number(s.price).toFixed(2)}
-                          </p>
+                          <p className="text-xs text-white/50 line-through">R$ {Number(s.price).toFixed(2)}</p>
                           <p className="font-serif text-xl text-primary">R$ 0,00</p>
                         </div>
                       ) : (
-                        <p className="font-serif text-xl text-white">
-                          R$ {Number(s.price).toFixed(2)}
-                        </p>
+                        <p className="font-serif text-xl text-white">R$ {Number(s.price).toFixed(2)}</p>
                       )}
                     </div>
                   </div>
                 </div>
-
-                {/* Selected indicator */}
                 {isSelected && (
                   <div className="absolute top-3 right-3 h-6 w-6 rounded-full bg-primary flex items-center justify-center">
                     <Check className="h-3.5 w-3.5 text-primary-foreground" />
@@ -292,15 +322,15 @@ export default function NewBooking() {
         </div>
       )}
 
-      {/* Step 2: Choose date */}
-      {step === 2 && (
+      {/* Step 3: Choose date */}
+      {step === 3 && (
         <div className="space-y-3">
           <p className="text-muted-foreground">Escolha a data</p>
           <div className="flex justify-center">
             <Calendar
               mode="single"
               selected={selectedDate}
-              onSelect={(d) => { setSelectedDate(d); if (d) setStep(3); }}
+              onSelect={(d) => { setSelectedDate(d); if (d) setStep(4); }}
               disabled={(date) => date < new Date() || date.getDay() === 0}
               className="rounded-md border border-primary/15"
             />
@@ -308,8 +338,8 @@ export default function NewBooking() {
         </div>
       )}
 
-      {/* Step 3: Choose time */}
-      {step === 3 && (
+      {/* Step 4: Choose time */}
+      {step === 4 && (
         <div className="space-y-3">
           <p className="text-muted-foreground">
             Escolha o horário — {selectedDate?.toLocaleDateString("pt-BR")}
@@ -323,7 +353,7 @@ export default function NewBooking() {
                   variant={selectedTime === t ? "default" : "outline"}
                   disabled={booked}
                   className={booked ? "opacity-40" : ""}
-                  onClick={() => { setSelectedTime(t); setStep(4); }}
+                  onClick={() => { setSelectedTime(t); setStep(5); }}
                 >
                   {t}
                 </Button>
@@ -333,12 +363,13 @@ export default function NewBooking() {
         </div>
       )}
 
-      {/* Step 4: Confirm */}
-      {step === 4 && (
+      {/* Step 5: Confirm */}
+      {step === 5 && (
         <div className="space-y-4">
           <p className="text-muted-foreground">Confirme seu agendamento</p>
           <Card className="border-primary/15">
             <CardContent className="py-4 space-y-2">
+              <p><span className="text-muted-foreground">Filial:</span> {selectedBranch?.name}</p>
               <p><span className="text-muted-foreground">Serviço:</span> {selectedService?.name}</p>
               <p><span className="text-muted-foreground">Data:</span> {selectedDate?.toLocaleDateString("pt-BR")}</p>
               <p><span className="text-muted-foreground">Horário:</span> {selectedTime}</p>

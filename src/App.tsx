@@ -25,6 +25,7 @@ import AdminUsers from "./pages/admin/AdminUsers";
 import AdminPlans from "./pages/admin/AdminPlans";
 import AdminProfile from "./pages/admin/AdminProfile";
 import AdminLogs from "./pages/admin/AdminLogs";
+import AdminBranches from "./pages/admin/AdminBranches";
 import TermosDeServico from "./pages/TermosDeServico";
 import PoliticaDePrivacidade from "./pages/PoliticaDePrivacidade";
 const queryClient = new QueryClient();
@@ -69,6 +70,7 @@ const App = () => (
               <Route path="services" element={<AdminServices />} />
               <Route path="plans" element={<AdminPlans />} />
               <Route path="finance" element={<AdminFinance />} />
+              <Route path="branches" element={<AdminBranches />} />
               <Route path="users" element={<AdminUsers />} />
               <Route path="profile" element={<AdminProfile />} />
               <Route path="logs" element={<AdminLogs />} />

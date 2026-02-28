@@ -57,9 +57,14 @@ export function useAdminPermissions() {
     canViewLogs: r >= 4,
     canManageSystemSettings: r >= 4,
 
+    // ── Filiais ────────────────────────────────────────
+    canViewBranches: r >= 3,
+    canManageBranches: r >= 3,
+
     // ── Dashboard ──────────────────────────────────────
     canViewDashboard: r >= 1 && adminLevel !== "professional",
     canViewDashboardFinancials: r >= 4,
+    canViewBranchKpis: r >= 3,
   };
 }
 
