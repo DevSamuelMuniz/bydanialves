@@ -195,10 +195,10 @@ export default function AdminDashboard() {
       </div>
 
       {/* Row 1: Receita do mês + Serviços mais populares */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+      <div className="grid grid-cols-1 lg:grid-cols-5 gap-6">
         {/* Receita acumulada do mês */}
         {canViewDashboardFinancials ? (
-          <Card className="lg:col-span-2 border-border/60 animate-slide-up" style={{ animationDelay: "0.2s" }}>
+          <Card className="lg:col-span-3 border-border/60 animate-slide-up" style={{ animationDelay: "0.2s" }}>
             <CardContent className="pt-6">
               <div className="flex items-center justify-between mb-1">
                 <h3 className="font-serif text-base font-medium tracking-tight">Receita do Mês</h3>
@@ -232,7 +232,7 @@ export default function AdminDashboard() {
         ) : null}
 
         {/* Serviços mais populares */}
-        <Card className={`border-border/60 animate-slide-up ${!canViewDashboardFinancials ? "lg:col-span-3" : ""}`} style={{ animationDelay: "0.25s" }}>
+        <Card className={`border-border/60 animate-slide-up ${!canViewDashboardFinancials ? "lg:col-span-5" : "lg:col-span-2"}`} style={{ animationDelay: "0.25s" }}>
           <CardContent className="pt-6">
             <div className="flex items-center gap-2 mb-1">
               <Scissors className="h-4 w-4 text-primary" />
