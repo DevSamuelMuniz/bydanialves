@@ -9,6 +9,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/u
 import { Label } from "@/components/ui/label";
 import { useToast } from "@/hooks/use-toast";
 import { Search, Ban, CheckCircle, Calendar, DollarSign, Edit2, Save, X } from "lucide-react";
+import { useAdminPermissions } from "@/hooks/use-admin-permissions";
 
 interface ClientProfile {
   id: string;
@@ -36,6 +37,8 @@ const statusLabels: Record<string, string> = {
 
 export default function AdminClients() {
   const { toast } = useToast();
+  const { adminLevel } = useAdminPermissions();
+  const isProfessional = adminLevel === "professional";
   const [clients, setClients] = useState<ClientProfile[]>([]);
   const [emails, setEmails] = useState<Record<string, { email: string }>>({});
   const [search, setSearch] = useState("");
@@ -201,9 +204,9 @@ export default function AdminClients() {
           </DialogHeader>
           {selectedClient && (
             <div className="space-y-6">
-              {/* Info */}
-              <div className="space-y-3">
-                {editing ? (
+               {/* Info */}
+               <div className="space-y-3">
+                 {editing && !isProfessional ? (
                   <div className="space-y-3">
                     <div className="space-y-1">
                       <Label>Nome</Label>
@@ -239,9 +242,11 @@ export default function AdminClients() {
                         <p className="text-sm text-muted-foreground">{emails[selectedClient.user_id].email}</p>
                       )}
                     </div>
-                    <Button size="icon" variant="ghost" onClick={() => setEditing(true)}>
-                      <Edit2 className="h-4 w-4" />
-                    </Button>
+                    {!isProfessional && (
+                      <Button size="icon" variant="ghost" onClick={() => setEditing(true)}>
+                        <Edit2 className="h-4 w-4" />
+                      </Button>
+                    )}
                   </div>
                 )}
 
@@ -250,29 +255,33 @@ export default function AdminClients() {
                     <Calendar className="h-3 w-3" />
                     {clientAppointments.length} agendamentos
                   </div>
-                  <div className="flex items-center gap-1 text-sm text-muted-foreground">
-                    <DollarSign className="h-3 w-3" />
-                    R$ {totalSpent.toFixed(2)} gastos
-                  </div>
+                  {!isProfessional && (
+                    <div className="flex items-center gap-1 text-sm text-muted-foreground">
+                      <DollarSign className="h-3 w-3" />
+                      R$ {totalSpent.toFixed(2)} gastos
+                    </div>
+                  )}
                 </div>
 
-                <Button
-                  variant={selectedClient.blocked ? "default" : "destructive"}
-                  size="sm"
-                  onClick={() => toggleBlock(selectedClient)}
-                >
-                  {selectedClient.blocked ? (
-                    <>
-                      <CheckCircle className="mr-1 h-3 w-3" />
-                      Desbloquear
-                    </>
-                  ) : (
-                    <>
-                      <Ban className="mr-1 h-3 w-3" />
-                      Bloquear Cliente
-                    </>
-                  )}
-                </Button>
+                {!isProfessional && (
+                  <Button
+                    variant={selectedClient.blocked ? "default" : "destructive"}
+                    size="sm"
+                    onClick={() => toggleBlock(selectedClient)}
+                  >
+                    {selectedClient.blocked ? (
+                      <>
+                        <CheckCircle className="mr-1 h-3 w-3" />
+                        Desbloquear
+                      </>
+                    ) : (
+                      <>
+                        <Ban className="mr-1 h-3 w-3" />
+                        Bloquear Cliente
+                      </>
+                    )}
+                  </Button>
+                )}
               </div>
 
               {/* History */}
