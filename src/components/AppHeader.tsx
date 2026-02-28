@@ -5,11 +5,12 @@ import { useAuth } from "@/contexts/AuthContext";
 import { SidebarTrigger } from "@/components/ui/sidebar";
 import { Input } from "@/components/ui/input";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { Settings, Search } from "lucide-react";
+import { Search, User, Settings, LogOut } from "lucide-react";
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
+  DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 
@@ -73,41 +74,37 @@ export function AppHeader({ title, profilePath, onSearch }: AppHeaderProps) {
         </div>
       </div>
 
-      {/* Settings dropdown */}
+      {/* Avatar dropdown */}
       <DropdownMenu>
         <DropdownMenuTrigger asChild>
-          <button
-            className="p-2 rounded-lg text-muted-foreground hover:text-foreground hover:bg-secondary/60 transition-colors shrink-0"
-            title="Configurações"
-          >
-            <Settings className="h-5 w-5" />
+          <button className="flex items-center gap-2 rounded-lg p-1 hover:bg-secondary/60 transition-colors shrink-0">
+            <Avatar className="h-8 w-8">
+              <AvatarImage src={avatarUrl || undefined} />
+              <AvatarFallback className="bg-primary text-primary-foreground text-xs font-serif">
+                {initials}
+              </AvatarFallback>
+            </Avatar>
+            <span className="text-sm font-medium text-foreground hidden md:block max-w-[120px] truncate">
+              {profileName || "—"}
+            </span>
           </button>
         </DropdownMenuTrigger>
         <DropdownMenuContent align="end" className="w-48">
           <DropdownMenuItem onClick={() => navigate(profilePath)}>
-            Meu Perfil
+            <User className="h-4 w-4 mr-2" />
+            Ver perfil
           </DropdownMenuItem>
-          <DropdownMenuItem onClick={signOut} className="text-destructive">
-            Sair
+          <DropdownMenuItem onClick={() => navigate(profilePath)}>
+            <Settings className="h-4 w-4 mr-2" />
+            Configurações
+          </DropdownMenuItem>
+          <DropdownMenuSeparator />
+          <DropdownMenuItem onClick={signOut} className="text-destructive focus:text-destructive">
+            <LogOut className="h-4 w-4 mr-2" />
+            Sair da conta
           </DropdownMenuItem>
         </DropdownMenuContent>
       </DropdownMenu>
-
-      {/* Avatar — link to profile */}
-      <button
-        onClick={() => navigate(profilePath)}
-        className="flex items-center gap-2 rounded-lg p-1 hover:bg-secondary/60 transition-colors shrink-0"
-      >
-        <Avatar className="h-8 w-8">
-          <AvatarImage src={avatarUrl || undefined} />
-          <AvatarFallback className="bg-primary text-primary-foreground text-xs font-serif">
-            {initials}
-          </AvatarFallback>
-        </Avatar>
-        <span className="text-sm font-medium text-foreground hidden md:block max-w-[120px] truncate">
-          {profileName || "—"}
-        </span>
-      </button>
     </header>
   );
 }
