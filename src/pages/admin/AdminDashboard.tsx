@@ -10,7 +10,7 @@ import {
 } from "lucide-react";
 import {
   AreaChart, Area, BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer,
-  CartesianGrid, Legend, PieChart, Pie, Cell,
+  CartesianGrid,
 } from "recharts";
 import { format, subDays } from "date-fns";
 import { ptBR } from "date-fns/locale";
@@ -29,7 +29,7 @@ const statusColors: Record<string, string> = {
   cancelled: "bg-destructive/10 text-destructive border-destructive/30",
 };
 
-const PIE_COLORS = ["hsl(40,65%,48%)", "hsl(142,60%,40%)", "hsl(220,60%,55%)", "hsl(0,60%,50%)"];
+type SparkDay = { day: string; v: number };
 
 export default function AdminDashboard() {
   const navigate = useNavigate();
@@ -45,8 +45,14 @@ export default function AdminDashboard() {
   const [pendingCount, setPendingCount] = useState(0);
   const [weekCount, setWeekCount] = useState(0);
   const [completedCount, setCompletedCount] = useState(0);
+  const [cancelledCount, setCancelledCount] = useState(0);
+  const [confirmedCount, setConfirmedCount] = useState(0);
   const [weeklyRevenue, setWeeklyRevenue] = useState<{ day: string; value: number }[]>([]);
-  const [statusDistribution, setStatusDistribution] = useState<{ name: string; value: number }[]>([]);
+  const [statusSparklines, setStatusSparklines] = useState<{
+    confirmed: SparkDay[];
+    completed: SparkDay[];
+    cancelled: SparkDay[];
+  }>({ confirmed: [], completed: [], cancelled: [] });
   const [recentClients, setRecentClients] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
 
@@ -68,19 +74,24 @@ export default function AdminDashboard() {
       supabase.from("appointments").select("id", { count: "exact", head: true })
         .gte("appointment_date", weekStart).lte("appointment_date", today),
       supabase.from("appointments").select("id", { count: "exact", head: true }).eq("status", "completed"),
+      supabase.from("appointments").select("id", { count: "exact", head: true }).eq("status", "cancelled"),
+      supabase.from("appointments").select("id", { count: "exact", head: true }).eq("status", "confirmed"),
       supabase.from("financial_records").select("amount, created_at").eq("type", "income").gte("created_at", weekStart),
       supabase.from("profiles").select("full_name, created_at").order("created_at", { ascending: false }).limit(5),
-      supabase.from("appointments").select("status").gte("appointment_date", weekStart).lte("appointment_date", today),
-    ]).then(([apptRes, finRes, clientRes, pendingRes, weekRes, completedRes, weekFinRes, recentRes, statusRes]) => {
+      supabase.from("appointments").select("status, appointment_date")
+        .gte("appointment_date", weekStart).lte("appointment_date", today),
+    ]).then(([apptRes, finRes, clientRes, pendingRes, weekRes, completedRes, cancelledRes, confirmedRes, weekFinRes, recentRes, statusRes]) => {
       setTodayAppointments(apptRes.data || []);
       setMonthRevenue((finRes.data || []).reduce((sum, r) => sum + Number(r.amount), 0));
       setTotalClients(clientRes.count || 0);
       setPendingCount(pendingRes.count || 0);
       setWeekCount(weekRes.count || 0);
       setCompletedCount(completedRes.count || 0);
+      setCancelledCount(cancelledRes.count || 0);
+      setConfirmedCount(confirmedRes.count || 0);
       setRecentClients(recentRes.data || []);
 
-      // Weekly revenue area chart
+      // Build weekly revenue area data
       const dayMap: Record<string, number> = {};
       for (let i = 6; i >= 0; i--) {
         const d = format(subDays(new Date(), i), "yyyy-MM-dd");
@@ -97,16 +108,27 @@ export default function AdminDashboard() {
         }))
       );
 
-      // Status distribution pie
-      const counts: Record<string, number> = { pending: 0, confirmed: 0, completed: 0, cancelled: 0 };
+      // Build sparklines per status
+      const mkMap = () => {
+        const m: Record<string, number> = {};
+        for (let i = 6; i >= 0; i--) m[format(subDays(new Date(), i), "yyyy-MM-dd")] = 0;
+        return m;
+      };
+      const maps = { confirmed: mkMap(), completed: mkMap(), cancelled: mkMap() } as Record<string, Record<string, number>>;
       for (const a of statusRes.data || []) {
-        if (counts[a.status] !== undefined) counts[a.status]++;
+        const d = a.appointment_date;
+        if (maps[a.status] && maps[a.status][d] !== undefined) maps[a.status][d]++;
       }
-      setStatusDistribution(
-        Object.entries(counts)
-          .filter(([, v]) => v > 0)
-          .map(([name, value]) => ({ name: statusLabels[name] || name, value }))
-      );
+      const toSpark = (m: Record<string, number>): SparkDay[] =>
+        Object.entries(m).map(([day, v]) => ({
+          day: format(new Date(day + "T12:00:00"), "EEE", { locale: ptBR }),
+          v,
+        }));
+      setStatusSparklines({
+        confirmed: toSpark(maps.confirmed),
+        completed: toSpark(maps.completed),
+        cancelled: toSpark(maps.cancelled),
+      });
 
       setLoading(false);
     });
@@ -131,6 +153,36 @@ export default function AdminDashboard() {
     { label: "Semana", value: weekCount, icon: TrendingUp, color: "text-blue-600", bg: "bg-blue-500/10" },
     { label: "Concluídos", value: completedCount, icon: CheckCircle2, color: "text-emerald-600", bg: "bg-emerald-500/10" },
     { label: "Clientes", value: totalClients, icon: Users, color: "text-violet-600", bg: "bg-violet-500/10" },
+  ];
+
+  const miniDashboards = [
+    {
+      label: "Confirmados",
+      count: confirmedCount,
+      color: "hsl(220,60%,55%)",
+      bg: "bg-blue-500/8",
+      border: "border-blue-500/20",
+      textColor: "text-blue-600",
+      spark: statusSparklines.confirmed,
+    },
+    {
+      label: "Concluídos",
+      count: completedCount,
+      color: "hsl(142,60%,40%)",
+      bg: "bg-emerald-500/8",
+      border: "border-emerald-500/20",
+      textColor: "text-emerald-600",
+      spark: statusSparklines.completed,
+    },
+    {
+      label: "Cancelados",
+      count: cancelledCount,
+      color: "hsl(0,60%,50%)",
+      bg: "bg-red-500/8",
+      border: "border-red-500/20",
+      textColor: "text-red-500",
+      spark: statusSparklines.cancelled,
+    },
   ];
 
   return (
@@ -201,38 +253,30 @@ export default function AdminDashboard() {
           </Card>
         )}
 
-        {/* Pie — Status da semana */}
-        <Card className={`border-border/60 animate-slide-up ${!canViewDashboardFinancials ? "lg:col-span-3" : ""}`} style={{ animationDelay: "0.3s" }}>
-          <CardContent className="pt-6">
-            <h3 className="font-serif text-base font-medium tracking-tight mb-1">Status da Semana</h3>
-            <p className="text-xs text-muted-foreground mb-5">Distribuição de agendamentos</p>
-            {statusDistribution.length === 0 ? (
-              <p className="text-sm text-muted-foreground text-center py-12">Sem agendamentos na semana.</p>
-            ) : (
-              <>
-                <ResponsiveContainer width="100%" height={160}>
-                  <PieChart>
-                    <Pie data={statusDistribution} cx="50%" cy="50%" innerRadius={45} outerRadius={70}
-                      paddingAngle={3} dataKey="value">
-                      {statusDistribution.map((_, idx) => (
-                        <Cell key={idx} fill={PIE_COLORS[idx % PIE_COLORS.length]} />
-                      ))}
-                    </Pie>
-                    <Tooltip contentStyle={{ borderRadius: "12px", border: "1px solid hsl(var(--border))", fontSize: 12 }} />
-                  </PieChart>
-                </ResponsiveContainer>
-                <div className="flex flex-wrap gap-x-4 gap-y-1 mt-2 justify-center">
-                  {statusDistribution.map((s, idx) => (
-                    <div key={s.name} className="flex items-center gap-1.5 text-xs text-muted-foreground">
-                      <span className="h-2.5 w-2.5 rounded-full" style={{ background: PIE_COLORS[idx % PIE_COLORS.length] }} />
-                      {s.name} ({s.value})
-                    </div>
-                  ))}
+        {/* 3 mini-dashboards — Status da semana */}
+        <div className={`flex flex-col gap-4 ${!canViewDashboardFinancials ? "lg:col-span-3 grid grid-cols-1 sm:grid-cols-3" : ""}`}>
+          {miniDashboards.map((m) => (
+            <Card key={m.label} className={`border ${m.border} ${m.bg} animate-slide-up flex-1`} style={{ animationDelay: "0.3s" }}>
+              <CardContent className="pt-4 pb-3 px-4">
+                <div className="flex items-center justify-between mb-1">
+                  <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">{m.label}</p>
+                  <p className={`text-2xl font-serif font-bold ${m.textColor}`}>{m.count}</p>
                 </div>
-              </>
-            )}
-          </CardContent>
-        </Card>
+                <p className="text-[10px] text-muted-foreground mb-2">Últimos 7 dias</p>
+                <ResponsiveContainer width="100%" height={48}>
+                  <BarChart data={m.spark} barSize={6}>
+                    <Bar dataKey="v" fill={m.color} radius={[3, 3, 0, 0]} />
+                    <Tooltip
+                      cursor={false}
+                      contentStyle={{ borderRadius: "8px", border: "1px solid hsl(var(--border))", fontSize: 11, padding: "4px 8px" }}
+                      formatter={(v: number) => [v, m.label]}
+                    />
+                  </BarChart>
+                </ResponsiveContainer>
+              </CardContent>
+            </Card>
+          ))}
+        </div>
       </div>
 
       {/* Bottom row */}
