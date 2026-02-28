@@ -297,16 +297,19 @@ export type Database = {
       }
       user_roles: {
         Row: {
+          admin_level: Database["public"]["Enums"]["admin_level"] | null
           id: string
           role: Database["public"]["Enums"]["app_role"]
           user_id: string
         }
         Insert: {
+          admin_level?: Database["public"]["Enums"]["admin_level"] | null
           id?: string
           role?: Database["public"]["Enums"]["app_role"]
           user_id: string
         }
         Update: {
+          admin_level?: Database["public"]["Enums"]["admin_level"] | null
           id?: string
           role?: Database["public"]["Enums"]["app_role"]
           user_id?: string
@@ -327,6 +330,7 @@ export type Database = {
       }
     }
     Enums: {
+      admin_level: "attendant" | "professional" | "manager" | "ceo"
       app_role: "admin" | "client"
       appointment_status: "pending" | "confirmed" | "completed" | "cancelled"
       financial_type: "income" | "expense"
@@ -457,6 +461,7 @@ export type CompositeTypes<
 export const Constants = {
   public: {
     Enums: {
+      admin_level: ["attendant", "professional", "manager", "ceo"],
       app_role: ["admin", "client"],
       appointment_status: ["pending", "confirmed", "completed", "cancelled"],
       financial_type: ["income", "expense"],

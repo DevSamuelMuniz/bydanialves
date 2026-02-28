@@ -1,5 +1,7 @@
 import { useEffect, useState, useCallback } from "react";
 import { supabase } from "@/integrations/supabase/client";
+import { useAdminPermissions } from "@/hooks/use-admin-permissions";
+import { AccessDenied } from "@/components/admin/AccessDenied";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -64,6 +66,7 @@ function formatDetails(action: string, details: any): string {
 }
 
 export default function AdminLogs() {
+  const perms = useAdminPermissions();
   const [logs, setLogs] = useState<any[]>([]);
   const [profiles, setProfiles] = useState<Record<string, string>>({});
   const [loading, setLoading] = useState(true);
@@ -122,6 +125,8 @@ export default function AdminLogs() {
         return name.includes(search.toLowerCase()) || l.action.includes(search.toLowerCase());
       })
     : logs;
+
+  if (!perms.canViewLogs) return <AccessDenied />;
 
   return (
     <div className="space-y-6">

@@ -1,5 +1,6 @@
 import { NavLink } from "@/components/NavLink";
 import { useAuth } from "@/contexts/AuthContext";
+import { useAdminPermissions, ADMIN_LEVEL_LABELS, ADMIN_LEVEL_COLORS } from "@/hooks/use-admin-permissions";
 import {
   Sidebar,
   SidebarContent,
@@ -13,22 +14,27 @@ import {
 } from "@/components/ui/sidebar";
 import { LayoutDashboard, Users, Calendar, Scissors, DollarSign, BarChart3, LogOut, ShieldCheck, Crown, Activity } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
 import logoImg from "@/assets/logo-dani-alves.jpg";
 
-const items = [
-  { title: "Dashboard", url: "/admin", icon: LayoutDashboard },
-  { title: "Clientes", url: "/admin/clients", icon: Users },
-  { title: "Agenda", url: "/admin/agenda", icon: Calendar },
-  { title: "Serviços", url: "/admin/services", icon: Scissors },
-  { title: "Planos", url: "/admin/plans", icon: Crown },
-  { title: "Financeiro", url: "/admin/finance", icon: DollarSign },
-  { title: "Relatórios", url: "/admin/reports", icon: BarChart3 },
-  { title: "Usuários", url: "/admin/users", icon: ShieldCheck },
-  { title: "Logs", url: "/admin/logs", icon: Activity },
-];
-
 export function AdminSidebar() {
-  const { signOut } = useAuth();
+  const { signOut, adminLevel } = useAuth();
+  const perms = useAdminPermissions();
+
+  const items = [
+    { title: "Dashboard", url: "/admin", icon: LayoutDashboard, show: perms.canViewDashboard },
+    { title: "Clientes", url: "/admin/clients", icon: Users, show: perms.canViewClients },
+    { title: "Agenda", url: "/admin/agenda", icon: Calendar, show: perms.canViewAgenda },
+    { title: "Serviços", url: "/admin/services", icon: Scissors, show: perms.canViewServices },
+    { title: "Planos", url: "/admin/plans", icon: Crown, show: perms.canViewPlans },
+    { title: "Financeiro", url: "/admin/finance", icon: DollarSign, show: perms.canViewFinance },
+    { title: "Relatórios", url: "/admin/reports", icon: BarChart3, show: perms.canViewReports },
+    { title: "Usuários", url: "/admin/users", icon: ShieldCheck, show: perms.canViewUsers },
+    { title: "Logs", url: "/admin/logs", icon: Activity, show: perms.canViewLogs },
+  ].filter((i) => i.show);
+
+  const levelLabel = adminLevel ? ADMIN_LEVEL_LABELS[adminLevel] : null;
+  const levelColor = adminLevel ? ADMIN_LEVEL_COLORS[adminLevel] : "";
 
   return (
     <Sidebar className="border-r border-sidebar-border/60">
@@ -40,6 +46,15 @@ export function AdminSidebar() {
           className="h-16 w-auto object-contain"
         />
       </div>
+
+      {/* Level badge */}
+      {levelLabel && (
+        <div className="px-4 pt-3 pb-1">
+          <Badge variant="outline" className={`text-xs w-full justify-center py-1 ${levelColor}`}>
+            {levelLabel}
+          </Badge>
+        </div>
+      )}
 
       <SidebarContent>
         <SidebarGroup>
