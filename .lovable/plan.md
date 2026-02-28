@@ -1,56 +1,108 @@
 
-# Plano: Escova gratuita para assinantes com escovas disponiveis
+# Implementação de Filiais (Multi-Branch)
 
-## Resumo
+## Visão Geral
 
-Quando o cliente tiver um plano ativo com escovas disponiveis no mes, ao agendar um servico do tipo "escova", o valor exibido sera R$ 0,00 (cortesia do plano). Se ja tiver usado todas as escovas do plano, o preco normal sera cobrado. Servicos que nao sao "escova" continuam com preco normal.
-
----
-
-## Mudancas no fluxo de agendamento (`NewBooking.tsx`)
-
-1. **Ao carregar a pagina**, buscar tambem:
-   - A assinatura ativa do cliente (`subscriptions` com `plans(*)`)
-   - O numero de escovas ja usadas no mes atual (appointments com servico "escova", status != "cancelled")
-
-2. **No Step 1 (lista de servicos)**, ao lado do servico de escova:
-   - Se o cliente tem plano ativo E ainda tem escovas disponiveis: exibir "Cortesia do plano" e preco riscado ou R$ 0,00
-   - Se o cliente tem plano mas ja usou todas: exibir preco normal
-   - Para outros servicos: preco normal
-
-3. **No Step 4 (confirmacao)**:
-   - Se a escova sera coberta pelo plano: exibir "R$ 0,00 (incluso no plano)" no campo Valor
-   - Caso contrario: exibir preco normal
-
-4. **Logica de verificacao**: servico e "escova" se `service.name.toLowerCase().includes("escova")`. Escovas disponiveis = total do plano (parseado do campo `includes`) menos escovas usadas no mes.
+Adicionar suporte a filiais no sistema, com seleção obrigatória no cadastro e no agendamento, e visualização restrita a CEO e Gerente no dashboard.
 
 ---
 
-## Detalhes Tecnicos
+## 1. Banco de Dados
 
-### Arquivo modificado: `src/pages/client/NewBooking.tsx`
+### Nova tabela: `branches`
+Armazena as filiais cadastradas pela empresa.
 
-**Novos estados:**
-- `subscription` - assinatura ativa do cliente (com `plans(*)`)
-- `escovasUsadas` - contagem de escovas usadas no mes
-- `escovasDisponiveis` - calculado: total do plano - usadas
+```text
+branches
+├── id         uuid (PK)
+├── name       text (ex: "Centro", "Jardins")
+├── address    text (nullable)
+├── active     boolean default true
+├── created_at timestamptz
+└── updated_at timestamptz
+```
 
-**Novos fetches no useEffect inicial:**
-- `supabase.from("subscriptions").select("*, plans(*)").eq("client_id", user.id).eq("status", "active").maybeSingle()`
-- `supabase.from("appointments").select("*, services(name)").eq("client_id", user.id).gte("appointment_date", startOfMonth).lte("appointment_date", endOfMonth).neq("status", "cancelled")` e filtrar por servicos com nome contendo "escova"
+**RLS:**
+- Qualquer usuário autenticado pode **ler** filiais ativas (necessário para o select no cadastro e agendamento)
+- Somente admins podem **gerenciar** (INSERT/UPDATE/DELETE)
 
-**Funcao auxiliar:**
-- Reutilizar `parseEscovasFromIncludes()` (mesma logica do `ClientDashboard`)
+### Alterações em tabelas existentes
 
-**Calculo `isFreeEscova`:**
-- `const isEscova = selectedService?.name?.toLowerCase().includes("escova")`
-- `const isFreeEscova = isEscova && escovasDisponiveis > 0`
+| Tabela | Coluna adicionada | Tipo | Notas |
+|---|---|---|---|
+| `profiles` | `branch_id` | uuid (FK → branches) | Filial preferida do cliente |
+| `appointments` | `branch_id` | uuid (FK → branches) | Filial do agendamento |
 
-**Exibicao no Step 1 (card do servico):**
-- Se escova + escovas disponiveis > 0: mostrar preco riscado + badge "Incluso no plano"
-- Senao: preco normal
+---
 
-**Exibicao no Step 4 (confirmacao):**
-- Valor: `isFreeEscova ? "R$ 0,00 (incluso no plano)" : "R$ " + price`
+## 2. Fluxo do Cliente — Cadastro (`/auth`)
 
-**Nenhuma mudanca no insert** do appointment - o agendamento continua sendo inserido normalmente. A diferenca e apenas visual (o preco exibido). A cobranca real pode ser controlada pelo admin no fluxo financeiro.
+Adicionar um campo **"Selecione a filial"** (Select) no formulário de cadastro, logo após cidade/telefone. A filial escolhida será salva em `profiles.branch_id` junto com `phone` e `gender`.
+
+A lista de filiais será carregada do banco ao montar a aba de cadastro.
+
+---
+
+## 3. Fluxo do Cliente — Agendamento (`/client/booking`)
+
+Adicionar um **Step 0** antes da seleção de serviço: o cliente escolhe a filial. O fluxo passa de 4 para 5 etapas:
+
+```text
+Passo 1 → Filial
+Passo 2 → Serviço
+Passo 3 → Data
+Passo 4 → Horário
+Passo 5 → Confirmação
+```
+
+- A filial selecionada aparece no card de confirmação
+- O campo `branch_id` é salvo em `appointments` no momento da criação
+
+---
+
+## 4. Dashboard Administrativo — Visualização por Filial
+
+Na página `AdminDashboard.tsx`, adicionar uma seção de **KPIs por Filial** visível somente para **CEO (r >= 4)** e **Gerente (r >= 3)**.
+
+Será exibido um conjunto de cards e/ou um gráfico de barras com:
+- Total de agendamentos por filial (no período)
+- Receita por filial (quando o usuário tiver permissão financeira)
+
+A permissão de visualização seguirá a constante já existente no hook:
+- `canViewFinance: r >= 3` (Gerente e CEO)
+
+---
+
+## 5. Gestão de Filiais — Admin
+
+Criar uma nova página `AdminBranches.tsx` acessível via menu lateral somente para CEO e Gerente, com operações de:
+- Listar filiais
+- Criar filial (nome + endereço)
+- Ativar / desativar filial
+
+Adicionar item "Filiais" ao `AdminSidebar.tsx` com permissão `canViewFinance` (r >= 3).
+
+---
+
+## Arquivos Modificados / Criados
+
+| Arquivo | Operação | Motivo |
+|---|---|---|
+| Migration SQL | Criado | Tabela `branches`, colunas em `profiles` e `appointments` |
+| `src/pages/Auth.tsx` | Editado | Select de filial no cadastro |
+| `src/pages/client/NewBooking.tsx` | Editado | Passo 1 de seleção de filial |
+| `src/pages/admin/AdminDashboard.tsx` | Editado | Seção de KPIs por filial (CEO/Gerente) |
+| `src/pages/admin/AdminBranches.tsx` | Criado | CRUD de filiais |
+| `src/components/admin/AdminSidebar.tsx` | Editado | Link "Filiais" no menu |
+| `src/hooks/use-admin-permissions.ts` | Editado | Permissão `canViewBranches` |
+
+---
+
+## Controle de Acesso
+
+| Ação | Nível mínimo |
+|---|---|
+| Ver filiais (select público) | Qualquer usuário autenticado |
+| Ver KPIs de filiais no Dashboard | Gerente (r >= 3) |
+| Gerenciar filiais (CRUD) | Gerente (r >= 3) |
+| Ver receita por filial | CEO (r >= 4) |
