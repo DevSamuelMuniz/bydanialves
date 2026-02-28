@@ -6,13 +6,6 @@ const corsHeaders = {
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
 };
 
-const prompts: Record<string, string> = {
-  "Corte de cabelo": "Professional hair cut salon scene, close-up of scissors cutting dark hair, elegant barbershop atmosphere, warm golden lighting, luxury aesthetic, photorealistic",
-  "Pintar cabelo": "Hair coloring salon treatment, foils and color being applied to hair, vibrant hair dye, professional stylist hands, luxurious salon environment, warm tones, photorealistic",
-  "escova algo mais": "Professional hair blow-dry brushing session, round brush and hair dryer, sleek shiny hair, glamorous salon, soft warm lighting, photorealistic",
-  "Escova": "Elegant hair blowout styling, professional round brush, smooth silky hair, luxury beauty salon, golden bokeh background, photorealistic close-up",
-};
-
 async function generateImage(prompt: string, lovableApiKey: string): Promise<string | null> {
   const response = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
     method: "POST",
@@ -28,7 +21,7 @@ async function generateImage(prompt: string, lovableApiKey: string): Promise<str
   });
 
   if (!response.ok) {
-    console.error("AI error:", await response.text());
+    console.error("AI error:", response.status, await response.text());
     return null;
   }
 
@@ -59,21 +52,31 @@ serve(async (req) => {
       { auth: { persistSession: false } }
     );
 
-    // Fetch all active services
-    const { data: services, error } = await supabase
-      .from("services")
-      .select("id, name, image_url")
-      .eq("active", true);
+    const body = await req.json().catch(() => ({}));
+    const singleServiceId: string | undefined = body.serviceId;
+    const singleServiceName: string | undefined = body.serviceName;
 
-    if (error) throw error;
+    let servicesToProcess: { id: string; name: string; image_url: string | null }[] = [];
+
+    if (singleServiceId && singleServiceName) {
+      // Single service mode: generate for one specific service
+      servicesToProcess = [{ id: singleServiceId, name: singleServiceName, image_url: null }];
+    } else {
+      // Bulk mode: generate for all services without images
+      const { data: services, error } = await supabase
+        .from("services")
+        .select("id, name, image_url")
+        .eq("active", true);
+      if (error) throw error;
+      servicesToProcess = (services ?? []).filter((s) => !s.image_url);
+    }
 
     const results: { id: string; name: string; status: string; url?: string }[] = [];
 
-    for (const service of services ?? []) {
+    for (const service of servicesToProcess) {
       console.log(`Generating image for: ${service.name}`);
 
-      const prompt = prompts[service.name] ??
-        `Professional beauty salon service: ${service.name}, luxury aesthetic, warm golden lighting, photorealistic`;
+      const prompt = `Professional beauty salon service: ${service.name}, luxury aesthetic, warm golden lighting, photorealistic, high quality, elegant`;
 
       const imageDataUrl = await generateImage(prompt, lovableApiKey);
       if (!imageDataUrl) {
@@ -100,7 +103,6 @@ serve(async (req) => {
         .getPublicUrl(filePath);
 
       const publicUrl = publicData.publicUrl;
-
       await supabase.from("services").update({ image_url: publicUrl }).eq("id", service.id);
 
       results.push({ id: service.id, name: service.name, status: "ok", url: publicUrl });
