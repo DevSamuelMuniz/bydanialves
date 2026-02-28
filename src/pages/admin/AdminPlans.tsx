@@ -177,7 +177,7 @@ export default function AdminPlans() {
                 <div className="absolute bottom-0 left-0 right-0 h-6 bg-card [clip-path:ellipse(55%_100%_at_50%_100%)]" />
 
                 <div className="flex items-start justify-between mb-4">
-                  <div className={`flex items-center gap-1.5 rounded-full px-2.5 py-1 text-[10px] font-semibold uppercase tracking-wider ${accent.badge}`}>
+                  <div className="flex items-center gap-1.5 rounded-full px-3 py-1.5 text-[10px] font-bold uppercase tracking-widest bg-foreground/90 text-background shadow-md">
                     <Sparkles className="h-3 w-3" />
                     Plano
                   </div>
