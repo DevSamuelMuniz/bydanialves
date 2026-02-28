@@ -8,7 +8,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Label } from "@/components/ui/label";
 import { useToast } from "@/hooks/use-toast";
-import { Search, Ban, CheckCircle, Calendar, DollarSign, Edit2, Save, X, MessageCircle } from "lucide-react";
+import { Search, Ban, CheckCircle, Calendar, DollarSign, Edit2, Save, X, MessageCircle, MapPin } from "lucide-react";
 import { useAdminPermissions } from "@/hooks/use-admin-permissions";
 import { cn } from "@/lib/utils";
 import Avatar3D from "@/components/ui/avatar-3d";
@@ -22,6 +22,7 @@ interface ClientProfile {
   blocked: boolean;
   created_at: string;
   gender?: string | null;
+  branch_id?: string | null;
 }
 
 interface Appointment {
@@ -45,6 +46,8 @@ export default function AdminClients() {
   const isProfessional = adminLevel === "professional";
   const [clients, setClients] = useState<ClientProfile[]>([]);
   const [emails, setEmails] = useState<Record<string, { email: string }>>({});
+  const [branches, setBranches] = useState<Record<string, string>>({}); // id -> name
+  const [clientFreqBranch, setClientFreqBranch] = useState<Record<string, string>>({}); // user_id -> branch name
   const [search, setSearch] = useState("");
   const [loading, setLoading] = useState(true);
   const [selectedClient, setSelectedClient] = useState<ClientProfile | null>(null);
@@ -66,9 +69,38 @@ export default function AdminClients() {
     } catch {}
   };
 
+  const fetchBranchData = async () => {
+    const { data: branchData } = await supabase.from("branches").select("id, name");
+    const map: Record<string, string> = {};
+    branchData?.forEach((b) => { map[b.id] = b.name; });
+    setBranches(map);
+
+    // Fetch all completed appointments with branch_id to compute most frequented
+    const { data: appts } = await supabase
+      .from("appointments")
+      .select("client_id, branch_id")
+      .eq("status", "completed")
+      .not("branch_id", "is", null);
+
+    const counts: Record<string, Record<string, number>> = {};
+    appts?.forEach((a) => {
+      if (!a.branch_id) return;
+      if (!counts[a.client_id]) counts[a.client_id] = {};
+      counts[a.client_id][a.branch_id] = (counts[a.client_id][a.branch_id] || 0) + 1;
+    });
+
+    const freqMap: Record<string, string> = {};
+    Object.entries(counts).forEach(([clientId, branchCounts]) => {
+      const topBranchId = Object.entries(branchCounts).sort((a, b) => b[1] - a[1])[0]?.[0];
+      if (topBranchId && map[topBranchId]) freqMap[clientId] = map[topBranchId];
+    });
+    setClientFreqBranch(freqMap);
+  };
+
   useEffect(() => {
     fetchClients();
     fetchEmails();
+    fetchBranchData();
   }, []);
 
   const openDetail = async (client: ClientProfile) => {
@@ -165,6 +197,7 @@ export default function AdminClients() {
               key={c.id}
               client={c}
               email={emails[c.user_id]?.email}
+              freqBranch={clientFreqBranch[c.user_id]}
               isProfessional={isProfessional}
               onClick={() => openDetail(c)}
               onToggleBlock={(e) => { e.stopPropagation(); toggleBlock(c); }}
@@ -243,7 +276,7 @@ export default function AdminClients() {
                   </div>
                 )}
 
-                <div className="flex gap-4">
+                <div className="flex gap-4 flex-wrap">
                   <div className="flex items-center gap-1 text-sm text-muted-foreground">
                     <Calendar className="h-3 w-3" />
                     {clientAppointments.length} agendamentos
@@ -252,6 +285,12 @@ export default function AdminClients() {
                     <div className="flex items-center gap-1 text-sm text-muted-foreground">
                       <DollarSign className="h-3 w-3" />
                       R$ {totalSpent.toFixed(2)} gastos
+                    </div>
+                  )}
+                  {clientFreqBranch[selectedClient.user_id] && (
+                    <div className="flex items-center gap-1 text-sm text-muted-foreground">
+                      <MapPin className="h-3 w-3" />
+                      {clientFreqBranch[selectedClient.user_id]}
                     </div>
                   )}
                 </div>
@@ -320,12 +359,13 @@ export default function AdminClients() {
 interface ClientProfileCardProps {
   client: ClientProfile;
   email?: string;
+  freqBranch?: string;
   isProfessional: boolean;
   onClick: () => void;
   onToggleBlock: (e: React.MouseEvent) => void;
 }
 
-function ClientProfileCard({ client, email, isProfessional, onClick, onToggleBlock }: ClientProfileCardProps) {
+function ClientProfileCard({ client, email, freqBranch, isProfessional, onClick, onToggleBlock }: ClientProfileCardProps) {
   const initials = (client.full_name || "?")[0].toUpperCase();
 
   return (
@@ -375,6 +415,12 @@ function ClientProfileCard({ client, email, isProfessional, onClick, onToggleBlo
         <p className="font-semibold text-sm text-foreground truncate w-full">{client.full_name || "Sem nome"}</p>
         <p className="text-xs text-muted-foreground truncate w-full">{client.phone || "Sem telefone"}</p>
         {email && <p className="text-xs text-muted-foreground truncate w-full">{email}</p>}
+        {freqBranch && (
+          <div className="flex items-center gap-1 justify-center mt-0.5">
+            <MapPin className="h-3 w-3 text-primary shrink-0" />
+            <p className="text-xs text-primary font-medium truncate">{freqBranch}</p>
+          </div>
+        )}
       </div>
 
       {/* Action buttons */}
