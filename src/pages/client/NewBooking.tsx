@@ -405,13 +405,13 @@ export default function NewBooking() {
                   <div className="p-2 bg-card">
                     <p className="font-semibold text-sm leading-tight">{s.name}</p>
                     <div className="flex items-center justify-between mt-0.5">
-                      <span className="text-[10px] text-muted-foreground flex items-center gap-0.5">
-                        <Timer className="h-2.5 w-2.5" /> {s.duration_minutes}min
+                      <span className="text-xs text-muted-foreground flex items-center gap-1">
+                        <Timer className="h-3 w-3" /> {s.duration_minutes}min
                       </span>
                       {free ? (
-                        <p className="font-serif font-semibold text-primary text-xs">Grátis</p>
+                        <p className="font-serif font-semibold text-primary text-sm">Grátis</p>
                       ) : (
-                        <p className="font-serif font-semibold text-foreground text-xs">R$ {Number(s.price).toFixed(2)}</p>
+                        <p className="font-serif font-semibold text-foreground text-sm">R$ {Number(s.price).toFixed(2)}</p>
                       )}
                     </div>
                   </div>
