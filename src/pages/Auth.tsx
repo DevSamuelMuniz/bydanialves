@@ -40,12 +40,12 @@ export default function Auth() {
       return;
     }
 
-    const { data: roleData } = await supabase
-      .from("user_roles")
-      .select("role")
-      .eq("user_id", data.user.id)
-      .eq("role", "admin")
-      .maybeSingle();
+    const { data: roleData } = await supabase.
+    from("user_roles").
+    select("role").
+    eq("user_id", data.user.id).
+    eq("role", "admin").
+    maybeSingle();
 
     navigate(roleData ? "/admin" : "/client");
     setLoading(false);
@@ -67,8 +67,8 @@ export default function Auth() {
       password,
       options: {
         data: { full_name: fullName },
-        emailRedirectTo: window.location.origin,
-      },
+        emailRedirectTo: window.location.origin
+      }
     });
     if (error) {
       toast({ title: "Erro ao cadastrar", description: error.message, variant: "destructive" });
@@ -86,7 +86,7 @@ export default function Auth() {
     e.preventDefault();
     setLoading(true);
     const { error } = await supabase.auth.resetPasswordForEmail(email, {
-      redirectTo: `${window.location.origin}/reset-password`,
+      redirectTo: `${window.location.origin}/reset-password`
     });
     if (error) {
       toast({ title: "Erro", description: error.message, variant: "destructive" });
@@ -121,8 +121,8 @@ export default function Auth() {
             </form>
           </div>
         </div>
-      </div>
-    );
+      </div>);
+
   }
 
   return (
@@ -132,7 +132,7 @@ export default function Auth() {
       <div className="w-full lg:w-1/2 flex justify-center bg-background px-6 py-12 overflow-y-auto h-screen">
         <div className="w-full max-w-md space-y-6 my-auto">
           <div className="text-center">
-            <img src={logo} alt="Dani Alves" className="mx-auto h-16 w-16 rounded-full object-cover border-2 border-primary/20 shadow-lg mb-4" />
+            <img alt="Dani Alves" className="mx-auto h-16 w-16 mb-4" src="/lovable-uploads/918087c5-cbd1-4b65-a2a5-90fdab6041dc.png" />
             <h1 className="font-serif text-2xl font-bold tracking-tight">Dani Alves Studio</h1>
             <p className="text-muted-foreground mt-1">Agende seus serviços com elegância</p>
           </div>
@@ -154,8 +154,8 @@ export default function Auth() {
                     onChange={(e) => setEmail(e.target.value)}
                     required
                     className="h-11"
-                    placeholder="Digite seu e-mail"
-                  />
+                    placeholder="Digite seu e-mail" />
+
                 </div>
                 <div className="space-y-2">
                   <Label htmlFor="login-password">Senha</Label>
@@ -164,8 +164,8 @@ export default function Auth() {
                     value={password}
                     onChange={(e) => setPassword(e.target.value)}
                     required
-                    placeholder="Digite sua senha"
-                  />
+                    placeholder="Digite sua senha" />
+
                 </div>
                 <Button type="submit" className="w-full h-11" disabled={loading}>
                   {loading ? "Entrando..." : "Entrar"}
@@ -186,8 +186,8 @@ export default function Auth() {
                     onChange={(e) => setFullName(e.target.value)}
                     required
                     className="h-11"
-                    placeholder="Digite seu nome completo"
-                  />
+                    placeholder="Digite seu nome completo" />
+
                 </div>
 
                 <div className="grid grid-cols-2 gap-3">
@@ -200,8 +200,8 @@ export default function Auth() {
                       onChange={(e) => setPhone(e.target.value)}
                       required
                       className="h-11"
-                      placeholder="(00) 00000-0000"
-                    />
+                      placeholder="(00) 00000-0000" />
+
                   </div>
                   <div className="space-y-2">
                     <Label htmlFor="signup-city">Cidade</Label>
@@ -211,8 +211,8 @@ export default function Auth() {
                       onChange={(e) => setCity(e.target.value)}
                       required
                       className="h-11"
-                      placeholder="Sua cidade"
-                    />
+                      placeholder="Sua cidade" />
+
                 </div>
                 </div>
 
@@ -239,8 +239,8 @@ export default function Auth() {
                     onChange={(e) => setEmail(e.target.value)}
                     required
                     className="h-11"
-                    placeholder="Digite seu e-mail"
-                  />
+                    placeholder="Digite seu e-mail" />
+
                 </div>
 
                 <div className="space-y-2">
@@ -251,8 +251,8 @@ export default function Auth() {
                     onChange={(e) => setPassword(e.target.value)}
                     required
                     minLength={6}
-                    placeholder="Crie uma senha (mín. 6 caracteres)"
-                  />
+                    placeholder="Crie uma senha (mín. 6 caracteres)" />
+
                 </div>
 
                 <div className="space-y-2">
@@ -262,8 +262,8 @@ export default function Auth() {
                     value={confirmPassword}
                     onChange={(e) => setConfirmPassword(e.target.value)}
                     required
-                    placeholder="Repita sua senha"
-                  />
+                    placeholder="Repita sua senha" />
+
                 </div>
 
                 <div className="flex items-start gap-3 pt-1">
@@ -271,11 +271,11 @@ export default function Auth() {
                     id="accept-terms"
                     checked={acceptTerms}
                     onCheckedChange={(v) => {
-                      if (v) setShowTermsModal(true);
-                      else setAcceptTerms(false);
+                      if (v) setShowTermsModal(true);else
+                      setAcceptTerms(false);
                     }}
-                    className="mt-0.5"
-                  />
+                    className="mt-0.5" />
+
                   <Label htmlFor="accept-terms" className="font-normal text-sm leading-snug cursor-pointer text-muted-foreground">
                     Li e aceito os{" "}
                     <a href="/termosdeservico" target="_blank" className="text-primary underline underline-offset-2 hover:opacity-80">termos de serviço</a>{" "}
@@ -296,20 +296,20 @@ export default function Auth() {
 
                     <div className="space-y-3 py-1">
                       {[
-                        { icon: "📋", title: "Uso da plataforma", text: "Ao se cadastrar, você concorda em usar a plataforma apenas para fins lícitos e fornecer informações verdadeiras." },
-                        { icon: "📅", title: "Agendamentos", text: "Cancelamentos devem ser feitos com no mínimo 2 horas de antecedência. Cancelamentos fora desse prazo podem acarretar cobrança ou perda do horário." },
-                        { icon: "👑", title: "Planos e assinaturas", text: "Planos podem ser cancelados a qualquer momento, sem multa, com efeito a partir do próximo ciclo de cobrança." },
-                        { icon: "🔒", title: "Privacidade", text: "Coletamos apenas dados necessários para o funcionamento do serviço (nome, telefone, e-mail). Seus dados não são vendidos a terceiros." },
-                        { icon: "⚠️", title: "Conduta", text: "Contas que utilizarem a plataforma de forma abusiva ou fraudulenta poderão ser suspensas ou encerradas." },
-                      ].map((item) => (
-                        <div key={item.title} className="flex gap-3 p-3 rounded-lg bg-muted/50 border border-border">
+                      { icon: "📋", title: "Uso da plataforma", text: "Ao se cadastrar, você concorda em usar a plataforma apenas para fins lícitos e fornecer informações verdadeiras." },
+                      { icon: "📅", title: "Agendamentos", text: "Cancelamentos devem ser feitos com no mínimo 2 horas de antecedência. Cancelamentos fora desse prazo podem acarretar cobrança ou perda do horário." },
+                      { icon: "👑", title: "Planos e assinaturas", text: "Planos podem ser cancelados a qualquer momento, sem multa, com efeito a partir do próximo ciclo de cobrança." },
+                      { icon: "🔒", title: "Privacidade", text: "Coletamos apenas dados necessários para o funcionamento do serviço (nome, telefone, e-mail). Seus dados não são vendidos a terceiros." },
+                      { icon: "⚠️", title: "Conduta", text: "Contas que utilizarem a plataforma de forma abusiva ou fraudulenta poderão ser suspensas ou encerradas." }].
+                      map((item) =>
+                      <div key={item.title} className="flex gap-3 p-3 rounded-lg bg-muted/50 border border-border">
                           <span className="text-lg shrink-0">{item.icon}</span>
                           <div>
                             <p className="text-sm font-semibold leading-tight mb-0.5">{item.title}</p>
                             <p className="text-xs text-muted-foreground leading-relaxed">{item.text}</p>
                           </div>
                         </div>
-                      ))}
+                      )}
 
                       <p className="text-xs text-muted-foreground text-center pt-1">
                         Leia na íntegra:{" "}
@@ -323,16 +323,16 @@ export default function Auth() {
                       <Button
                         type="button"
                         className="w-full"
-                        onClick={() => { setAcceptTerms(true); setShowTermsModal(false); }}
-                      >
+                        onClick={() => {setAcceptTerms(true);setShowTermsModal(false);}}>
+
                         Li e aceito os termos
                       </Button>
                       <Button
                         type="button"
                         variant="outline"
                         className="w-full"
-                        onClick={() => { setAcceptTerms(false); setShowTermsModal(false); }}
-                      >
+                        onClick={() => {setAcceptTerms(false);setShowTermsModal(false);}}>
+
                         Cancelar
                       </Button>
                     </div>
@@ -347,6 +347,6 @@ export default function Auth() {
           </Tabs>
         </div>
       </div>
-    </div>
-  );
+    </div>);
+
 }
