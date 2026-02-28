@@ -403,7 +403,7 @@ export default function NewBooking() {
                   </div>
                   {/* Info below image */}
                   <div className="p-2 bg-card">
-                    <p className="font-semibold text-xs leading-tight">{s.name}</p>
+                    <p className="font-semibold text-sm leading-tight">{s.name}</p>
                     <div className="flex items-center justify-between mt-0.5">
                       <span className="text-[10px] text-muted-foreground flex items-center gap-0.5">
                         <Timer className="h-2.5 w-2.5" /> {s.duration_minutes}min
