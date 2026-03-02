@@ -30,14 +30,8 @@ import AdminCoupons from "./pages/admin/AdminCoupons";
 import TermosDeServico from "./pages/TermosDeServico";
 import PoliticaDePrivacidade from "./pages/PoliticaDePrivacidade";
 import PoliticaETermos from "./pages/PoliticaETermos";
+import LandingPage from "./pages/LandingPage";
 const queryClient = new QueryClient();
-
-function AuthRedirect() {
-  const { user, userRole, loading } = useAuth();
-  if (loading) return null;
-  if (!user) return <Navigate to="/auth" replace />;
-  return <Navigate to={userRole === "admin" ? "/admin" : "/client"} replace />;
-}
 
 const App = () => (
   <QueryClientProvider client={queryClient}>
@@ -47,7 +41,7 @@ const App = () => (
       <BrowserRouter>
         <AuthProvider>
           <Routes>
-            <Route path="/" element={<AuthRedirect />} />
+            <Route path="/" element={<LandingPage />} />
             <Route path="/auth" element={<Auth />} />
             <Route path="/admin/login" element={<Navigate to="/auth" replace />} />
             <Route path="/reset-password" element={<ResetPassword />} />
