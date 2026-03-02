@@ -176,7 +176,7 @@ export default function LandingPage() {
               <Calendar className="h-5 w-5" />
               Fazer meu agendamento
             </Button>
-            <Button size="lg" variant="outline" onClick={() => navigate("/auth")}>
+            <Button size="lg" variant="outline" onClick={() => document.getElementById("planos")?.scrollIntoView({ behavior: "smooth" })}>
               Ver planos e preços
             </Button>
           </div>
