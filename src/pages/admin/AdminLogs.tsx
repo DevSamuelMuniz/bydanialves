@@ -161,7 +161,7 @@ export default function AdminLogs() {
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
             {/* Action */}
             <Select value={actionFilter} onValueChange={(v) => { setActionFilter(v); setPage(0); }}>
-              <SelectTrigger><SelectValue placeholder="Tipo de ação" /></SelectTrigger>
+              <SelectTrigger><SelectValue placeholder="Filtrar por tipo de ação" /></SelectTrigger>
               <SelectContent>
                 <SelectItem value="all">Todas as ações</SelectItem>
                 <SelectItem value="appointment_created">Agendamento criado</SelectItem>
@@ -176,7 +176,7 @@ export default function AdminLogs() {
 
             {/* Entity */}
             <Select value={entityFilter} onValueChange={(v) => { setEntityFilter(v); setPage(0); }}>
-              <SelectTrigger><SelectValue placeholder="Entidade" /></SelectTrigger>
+              <SelectTrigger><SelectValue placeholder="Filtrar por entidade" /></SelectTrigger>
               <SelectContent>
                 <SelectItem value="all">Todas</SelectItem>
                 <SelectItem value="appointments">Agendamentos</SelectItem>
