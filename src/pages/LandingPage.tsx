@@ -609,7 +609,7 @@ export default function LandingPage() {
               <img
                 src={heroImage}
                 alt="Salão Daniella Alves"
-                className="w-full h-full object-cover"
+                className="w-full h-full object-cover object-top"
               />
               <div className="absolute inset-0 bg-gradient-to-t from-background/30 to-transparent" />
             </div>
