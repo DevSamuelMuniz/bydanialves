@@ -233,7 +233,7 @@ export default function LandingPage() {
 
           {/* Gallery marquee */}
           <div className="mt-12 overflow-hidden rounded-2xl">
-            <div className="flex gap-4 animate-[gallery-marquee_18s_linear_infinite]" style={{ width: "max-content" }}>
+            <div className="flex gap-4 animate-[gallery-marquee_28s_linear_infinite]" style={{ width: "max-content" }}>
               {[...galleryImages, ...galleryImages].map((src, i) => (
                 <div key={i} className="flex-shrink-0 w-[280px] md:w-[320px] aspect-[4/3] rounded-2xl overflow-hidden">
                   <img src={src} alt={`Serviço ${i + 1}`} className="w-full h-full object-cover" />
