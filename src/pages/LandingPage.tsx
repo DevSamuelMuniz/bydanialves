@@ -248,8 +248,8 @@ export default function LandingPage() {
       <section className="py-24 bg-secondary/40">
         <div className="max-w-6xl mx-auto px-6">
           <SectionHeader
-            badge="Diferenciais"
-            title={<>Somos mais que um <span className="gradient-gold-text">salão de beleza</span></>}
+            badge="Benefícios"
+            title={<>Benefícios de <span className="gradient-gold-text">assinar conosco</span></>}
             subtitle="Tecnologia, cuidado e exclusividade reunidos para transformar sua experiência."
           />
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
