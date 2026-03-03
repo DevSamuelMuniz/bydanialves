@@ -3,12 +3,13 @@ import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Textarea } from "@/components/ui/textarea";
 import { Switch } from "@/components/ui/switch";
 import { Badge } from "@/components/ui/badge";
+import { Checkbox } from "@/components/ui/checkbox";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { ScrollArea } from "@/components/ui/scroll-area";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useToast } from "@/hooks/use-toast";
 import { Plus, Edit2, Trash2, Users, UserPlus, CheckCircle2, AlertCircle, Zap, Crown, Star } from "lucide-react";
@@ -47,10 +48,12 @@ export default function AdminPlans() {
   const { toast } = useToast();
   const [plans, setPlans] = useState<any[]>([]);
   const [subscriptions, setSubscriptions] = useState<any[]>([]);
+  const [services, setServices] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editing, setEditing] = useState<any | null>(null);
-  const [form, setForm] = useState({ name: "", description: "", includes: "", restriction: "", price: "", active: true });
+  const [selectedServices, setSelectedServices] = useState<string[]>([]);
+  const [form, setForm] = useState({ name: "", description: "", restriction: "", price: "", active: true });
 
   const [linkDialogOpen, setLinkDialogOpen] = useState(false);
   const [clients, setClients] = useState<any[]>([]);
@@ -59,12 +62,14 @@ export default function AdminPlans() {
 
   const fetchData = async () => {
     setLoading(true);
-    const [plansRes, subsRes] = await Promise.all([
+    const [plansRes, subsRes, servicesRes] = await Promise.all([
       supabase.from("plans").select("*").order("price"),
       supabase.from("subscriptions").select("*, plans(name), profiles!subscriptions_client_profile_fkey(full_name)").order("created_at", { ascending: false }),
+      supabase.from("services").select("id, name, price").eq("active", true).order("name"),
     ]);
     setPlans(plansRes.data || []);
     setSubscriptions((subsRes.data as any[]) || []);
+    setServices(servicesRes.data || []);
     setLoading(false);
   };
 
@@ -72,22 +77,31 @@ export default function AdminPlans() {
 
   const openAdd = () => {
     setEditing(null);
-    setForm({ name: "", description: "", includes: "", restriction: "", price: "", active: true });
+    setForm({ name: "", description: "", restriction: "", price: "", active: true });
+    setSelectedServices([]);
     setDialogOpen(true);
   };
 
   const openEdit = (p: any) => {
     setEditing(p);
-    setForm({ name: p.name, description: p.description || "", includes: p.includes, restriction: p.restriction || "", price: String(p.price), active: p.active });
+    setForm({ name: p.name, description: p.description || "", restriction: p.restriction || "", price: String(p.price), active: p.active });
+    // Pre-select services whose names appear in includes
+    const existingLines = (p.includes || "").split("\n").map((s: string) => s.trim()).filter(Boolean);
+    const matched = services.filter((s) => existingLines.includes(s.name)).map((s) => s.id);
+    setSelectedServices(matched);
     setDialogOpen(true);
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    const includesText = selectedServices
+      .map((id) => services.find((s) => s.id === id)?.name)
+      .filter(Boolean)
+      .join("\n");
     const payload = {
       name: form.name,
       description: form.description || null,
-      includes: form.includes,
+      includes: includesText,
       restriction: form.restriction || null,
       price: Number(form.price),
       active: form.active,
@@ -373,17 +387,44 @@ export default function AdminPlans() {
           <form onSubmit={handleSubmit} className="space-y-4">
             <div className="space-y-2"><Label>Nome</Label><Input value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} required /></div>
             <div className="space-y-2"><Label>Descrição</Label><Input value={form.description} onChange={(e) => setForm({ ...form, description: e.target.value })} /></div>
+
+            {/* Service selection */}
             <div className="space-y-2">
-              <Label>O que inclui <span className="text-muted-foreground text-xs">(uma linha por item)</span></Label>
-              <Textarea rows={4} value={form.includes} onChange={(e) => setForm({ ...form, includes: e.target.value })} required />
+              <Label>Serviços incluídos <span className="text-muted-foreground text-xs">({selectedServices.length} selecionado{selectedServices.length !== 1 ? "s" : ""})</span></Label>
+              <ScrollArea className="h-44 rounded-lg border border-border/60 bg-muted/20 p-3">
+                {services.length === 0 ? (
+                  <p className="text-sm text-muted-foreground text-center py-4">Nenhum serviço cadastrado.</p>
+                ) : (
+                  <div className="space-y-2">
+                    {services.map((s) => (
+                      <div key={s.id} className="flex items-center gap-3 rounded-md px-2 py-1.5 hover:bg-muted/60 transition-colors">
+                        <Checkbox
+                          id={`svc-${s.id}`}
+                          checked={selectedServices.includes(s.id)}
+                          onCheckedChange={(checked) =>
+                            setSelectedServices((prev) =>
+                              checked ? [...prev, s.id] : prev.filter((id) => id !== s.id)
+                            )
+                          }
+                        />
+                        <label htmlFor={`svc-${s.id}`} className="flex-1 cursor-pointer text-sm leading-snug">
+                          {s.name}
+                          <span className="ml-2 text-xs text-muted-foreground">R$ {Number(s.price).toFixed(2).replace(".", ",")}</span>
+                        </label>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </ScrollArea>
             </div>
+
             <div className="space-y-2"><Label>Restrição</Label><Input value={form.restriction} onChange={(e) => setForm({ ...form, restriction: e.target.value })} /></div>
             <div className="space-y-2"><Label>Preço mensal (R$)</Label><Input type="number" step="0.01" value={form.price} onChange={(e) => setForm({ ...form, price: e.target.value })} required /></div>
             <div className="flex items-center gap-2">
               <Switch checked={form.active} onCheckedChange={(v) => setForm({ ...form, active: v })} />
               <Label>Ativo</Label>
             </div>
-            <Button type="submit" className="w-full">{editing ? "Salvar alterações" : "Criar Plano"}</Button>
+            <Button type="submit" className="w-full" disabled={selectedServices.length === 0}>{editing ? "Salvar alterações" : "Criar Plano"}</Button>
           </form>
         </DialogContent>
       </Dialog>
