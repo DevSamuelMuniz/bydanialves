@@ -1,6 +1,5 @@
 import { useNavigate } from "react-router-dom";
-import { useEffect, useState, useCallback } from "react";
-import useEmblaCarousel from "embla-carousel-react";
+import { useState, useCallback, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent } from "@/components/ui/card";
@@ -131,15 +130,7 @@ export default function LandingPage() {
   const [plans, setPlans] = useState<any[]>([]);
   const [activeChapter, setActiveChapter] = useState(0);
 
-  // Gallery carousel
-  const [galleryRef, galleryApi] = useEmblaCarousel({ loop: true });
-
-  // Auto-play gallery every 3s
-  useEffect(() => {
-    if (!galleryApi) return;
-    const id = setInterval(() => galleryApi.scrollNext(), 3000);
-    return () => clearInterval(id);
-  }, [galleryApi]);
+  // Gallery: continuous marquee (no Embla needed)
 
   // Fetch real plans from DB
   useEffect(() => {
@@ -248,10 +239,10 @@ export default function LandingPage() {
             </div>
           </div>
 
-          {/* Gallery carousel below */}
-          <div className="mt-12 overflow-hidden rounded-2xl" ref={galleryRef}>
-            <div className="flex gap-4">
-              {galleryImages.map((src, i) => (
+          {/* Gallery — continuous marquee */}
+          <div className="mt-12 overflow-hidden rounded-2xl">
+            <div className="flex gap-4 animate-[gallery-marquee_18s_linear_infinite]" style={{ width: "max-content" }}>
+              {[...galleryImages, ...galleryImages].map((src, i) => (
                 <div key={i} className="flex-shrink-0 w-[280px] md:w-[320px] aspect-[4/3] rounded-2xl overflow-hidden">
                   <img src={src} alt={`Serviço ${i + 1}`} className="w-full h-full object-cover" />
                 </div>
