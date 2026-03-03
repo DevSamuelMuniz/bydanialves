@@ -532,9 +532,10 @@ export default function LandingPage() {
             <img src={logoLight} alt="Salão Daniella Alves" className="h-14 object-contain cursor-pointer" />
           </button>
           <nav className="hidden md:flex items-center gap-8 text-sm font-medium text-muted-foreground">
-            <button onClick={() => scrollTo("depoimentos")} className="hover:text-foreground transition-colors">Depoimentos</button>
+            <button onClick={() => scrollTo("beneficios")} className="hover:text-foreground transition-colors">Benefícios</button>
             <button onClick={() => scrollTo("historia")} className="hover:text-foreground transition-colors">Nossa História</button>
             <button onClick={() => scrollTo("planos")} className="hover:text-foreground transition-colors">Planos</button>
+            <button onClick={() => scrollTo("depoimentos")} className="hover:text-foreground transition-colors">Depoimentos</button>
             <button onClick={() => scrollTo("contato")} className="hover:text-foreground transition-colors">Contato</button>
           </nav>
           <Button size="sm" onClick={() => navigate("/auth")} className="gradient-gold border-0 shadow-gold text-primary-foreground">
@@ -612,7 +613,7 @@ export default function LandingPage() {
       </section>
 
       {/* ═══ SEÇÃO 3 — DIFERENCIAIS ═══ */}
-      <section className="py-24 bg-secondary/40">
+      <section id="beneficios" className="py-24 bg-secondary/40">
         <div className="max-w-6xl mx-auto px-6">
           <SectionHeader
             badge="Benefícios"
