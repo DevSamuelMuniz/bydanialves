@@ -17,6 +17,7 @@ import {
   CreditCard,
   Building2,
   CheckCircle2,
+  AlertCircle,
 } from "lucide-react";
 import logoDark from "@/assets/logo_dark.png";
 import { supabase } from "@/integrations/supabase/client";
@@ -444,50 +445,85 @@ export default function LandingPage() {
               ))}
             </div>
           ) : (
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-8 items-stretch">
               {plans.map((plan, idx) => {
                 const isHighlight = idx === 1;
-                const includes = plan.includes?.split(",").map((s: string) => s.trim()).filter(Boolean) || [];
+                const includes = plan.includes?.split("\n").flatMap((s: string) => s.split(",")).map((s: string) => s.trim()).filter(Boolean) || [];
+                const tierLabels = ["Essencial", "Popular", "Premium"];
+                const tierLabel = tierLabels[idx] ?? "Plano";
                 return (
                   <div key={plan.id}
-                    className={`relative rounded-2xl border flex flex-col overflow-hidden transition-all duration-300 hover:-translate-y-1 hover:shadow-elevated ${
+                    className={`group relative flex flex-col rounded-3xl border overflow-hidden transition-all duration-300 hover:-translate-y-2 ${
                       isHighlight
-                        ? "border-primary/40 shadow-gold bg-card"
-                        : "border-border/60 bg-card"
+                        ? "border-primary/50 shadow-gold bg-card"
+                        : "border-border/60 bg-card hover:border-primary/30 hover:shadow-elevated"
                     }`}>
+
+                    {/* Top accent bar */}
+                    <div className={`h-1.5 w-full ${isHighlight ? "gradient-gold" : "bg-gradient-to-r from-border/60 to-border/20"}`} />
+
+                    {/* Popular badge */}
                     {isHighlight && (
-                      <div className="gradient-gold text-primary-foreground text-center text-xs font-semibold tracking-widest uppercase py-2">
+                      <div className="gradient-gold text-primary-foreground text-center text-[11px] font-bold tracking-widest uppercase py-2 letter-spacing-widest">
                         ✦ Mais popular
                       </div>
                     )}
-                    <div className="p-7 flex flex-col gap-5 flex-1">
+
+                    <div className="p-8 flex flex-col gap-6 flex-1">
+
+                      {/* Tier label */}
+                      <span className={`inline-flex self-start items-center text-[11px] font-semibold uppercase tracking-widest px-3 py-1 rounded-full ${
+                        isHighlight
+                          ? "bg-primary/15 text-primary border border-primary/30"
+                          : "bg-muted/60 text-muted-foreground border border-border"
+                      }`}>
+                        {tierLabel}
+                      </span>
+
+                      {/* Name + description */}
                       <div>
-                        <h3 className="font-serif text-xl font-bold">{plan.name}</h3>
+                        <h3 className="font-serif text-2xl font-bold leading-tight">{plan.name}</h3>
                         {plan.description && (
-                          <p className="text-sm text-muted-foreground mt-1">{plan.description}</p>
+                          <p className="text-sm text-muted-foreground mt-2 leading-relaxed">{plan.description}</p>
                         )}
                       </div>
-                      <div>
-                        <span className="font-serif text-4xl font-bold gradient-gold-text">{formatPrice(plan.price)}</span>
-                        <span className="text-muted-foreground text-sm">/mês</span>
+
+                      {/* Price */}
+                      <div className="flex items-end gap-1.5">
+                        <span className={`font-serif text-4xl font-bold leading-none ${isHighlight ? "gradient-gold-text" : ""}`}>
+                          {formatPrice(plan.price)}
+                        </span>
+                        <span className="text-muted-foreground text-sm mb-1">/mês</span>
                       </div>
-                      {plan.restriction && (
-                        <p className="text-xs text-muted-foreground border border-border/60 rounded-lg px-3 py-2 bg-secondary/40">
-                          {plan.restriction}
-                        </p>
-                      )}
-                      <ul className="space-y-2.5 flex-1">
+
+                      {/* Divider */}
+                      <div className="border-t border-border/40" />
+
+                      {/* Includes */}
+                      <ul className="space-y-3 flex-1">
                         {includes.map((item: string) => (
-                          <li key={item} className="flex items-start gap-2.5 text-sm">
-                            <CheckCircle2 className="h-4 w-4 text-primary mt-0.5 shrink-0" />
-                            <span>{item}</span>
+                          <li key={item} className="flex items-start gap-3 text-sm">
+                            <CheckCircle2 className={`h-4 w-4 mt-0.5 shrink-0 ${isHighlight ? "text-primary" : "text-muted-foreground"}`} />
+                            <span className="leading-snug">{item}</span>
                           </li>
                         ))}
                       </ul>
-                    </div>
-                    <div className="px-7 pb-7">
+
+                      {/* Restriction */}
+                      {plan.restriction && (
+                        <div className="flex items-start gap-2 rounded-xl bg-muted/50 border border-border/40 px-3 py-2.5">
+                          <AlertCircle className="h-3.5 w-3.5 text-muted-foreground shrink-0 mt-0.5" />
+                          <p className="text-xs text-muted-foreground italic leading-snug">{plan.restriction}</p>
+                        </div>
+                      )}
+
+                      {/* CTA Button */}
                       <Button
-                        className="w-full gradient-gold border-0 shadow-gold text-primary-foreground font-semibold"
+                        className={`w-full font-semibold text-sm py-5 rounded-xl transition-all duration-300 ${
+                          isHighlight
+                            ? "gradient-gold border-0 text-primary-foreground shadow-gold hover:scale-[1.03] hover:shadow-[0_8px_32px_hsl(var(--primary)/0.5)] active:scale-[0.98]"
+                            : "border border-primary/40 bg-transparent text-foreground hover:gradient-gold hover:text-primary-foreground hover:border-transparent hover:scale-[1.03] hover:shadow-gold active:scale-[0.98]"
+                        }`}
                         onClick={() => navigate("/auth")}
                       >
                         Assinar agora
