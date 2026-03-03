@@ -61,15 +61,16 @@ const testimonials = [
 ];
 
 const galleryImages = [
-  "https://images.unsplash.com/photo-1560066984-138daaa0f9b6?auto=format&fit=crop&w=600&q=80",
-  "https://images.unsplash.com/photo-1522337360788-8b13dee7a37e?auto=format&fit=crop&w=600&q=80",
-  "https://images.unsplash.com/photo-1595476108010-b4d1f102b1b1?auto=format&fit=crop&w=600&q=80",
-  "https://images.unsplash.com/photo-1570172619644-dfd03ed5d881?auto=format&fit=crop&w=600&q=80",
-  "https://images.unsplash.com/photo-1562322140-8baeececf3df?auto=format&fit=crop&w=600&q=80",
-  "https://images.unsplash.com/photo-1521590832167-7bcbfaa6381f?auto=format&fit=crop&w=600&q=80",
-  "https://images.unsplash.com/photo-1580618672591-eb180b1a973f?auto=format&fit=crop&w=600&q=80",
-  "https://images.unsplash.com/photo-1519014816548-bf5fe059798b?auto=format&fit=crop&w=600&q=80",
-  "https://images.unsplash.com/photo-1583316174775-bd6dc0e9f298?auto=format&fit=crop&w=600&q=80",
+  "https://images.unsplash.com/photo-1522337360788-8b13dee7a37e?auto=format&fit=crop&w=700&q=80",
+  "https://images.unsplash.com/photo-1560066984-138daaa0f9b6?auto=format&fit=crop&w=700&q=80",
+  "https://images.unsplash.com/photo-1522337660009-5d2c7b8c7f8e?auto=format&fit=crop&w=700&q=80",
+  "https://images.unsplash.com/photo-1607779097040-26e80aa78e66?auto=format&fit=crop&w=700&q=80",
+  "https://images.unsplash.com/photo-1562322140-8baeececf3df?auto=format&fit=crop&w=700&q=80",
+  "https://images.unsplash.com/photo-1519014816548-bf5fe059798b?auto=format&fit=crop&w=700&q=80",
+  "https://images.unsplash.com/photo-1595476108010-b4d1f102b1b1?auto=format&fit=crop&w=700&q=80",
+  "https://images.unsplash.com/photo-1580618672591-eb180b1a973f?auto=format&fit=crop&w=700&q=80",
+  "https://images.unsplash.com/photo-1571290274554-6a2eaa771e5f?auto=format&fit=crop&w=700&q=80",
+  "https://images.unsplash.com/photo-1527799820374-dcf8d9d4a388?auto=format&fit=crop&w=700&q=80",
 ];
 
 const storyChapters = [
@@ -606,6 +607,26 @@ export default function LandingPage() {
           </div>
 
           {/* Gallery marquee */}
+          <div className="mt-14 overflow-hidden">
+            <div
+              className="flex gap-5 animate-[gallery-marquee_60s_linear_infinite]"
+              style={{ width: "max-content" }}
+            >
+              {[...galleryImages, ...galleryImages].map((src, i) => (
+                <div
+                  key={i}
+                  className="flex-shrink-0 w-[300px] md:w-[360px] aspect-[4/3] rounded-2xl overflow-hidden shadow-lg group"
+                >
+                  <img
+                    src={src}
+                    alt={`Serviço ${(i % galleryImages.length) + 1}`}
+                    className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700"
+                    loading="lazy"
+                  />
+                </div>
+              ))}
+            </div>
+          </div>
         </div>
       </section>
 
