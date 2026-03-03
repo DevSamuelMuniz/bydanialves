@@ -286,42 +286,58 @@ export default function LandingPage() {
           <p className="text-center text-xs uppercase tracking-widest text-muted-foreground mb-8 font-medium">
             Onde encontrar nossas unidades
           </p>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6 max-w-3xl mx-auto">
-            {/* Filial Principal */}
-            <div className="group relative rounded-2xl overflow-hidden border border-border/60 hover:border-primary/40 hover:shadow-elevated transition-all duration-300">
-              <div className="aspect-[4/3] overflow-hidden">
-                <img
-                  src="https://vugesuaephjbygtpyese.supabase.co/storage/v1/object/public/branch-images/branch-1772306240857.jpeg"
-                  alt="Filial Principal"
-                  className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
-                />
-              </div>
-              <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/20 to-transparent" />
-              <div className="absolute bottom-0 left-0 right-0 p-5">
-                <div className="flex items-center gap-2 mb-1">
-                  <MapPin className="h-4 w-4 text-primary shrink-0" />
-                  <span className="text-white font-bold text-base">Filial Principal</span>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6 max-w-5xl mx-auto items-stretch">
+            {/* Esquerda — filiais empilhadas */}
+            <div className="flex flex-col gap-4">
+              {/* Filial Principal */}
+              <div className="group relative rounded-2xl overflow-hidden border border-border/60 hover:border-primary/40 hover:shadow-elevated transition-all duration-300 flex-1">
+                <div className="h-48 overflow-hidden">
+                  <img
+                    src="https://vugesuaephjbygtpyese.supabase.co/storage/v1/object/public/branch-images/branch-1772306240857.jpeg"
+                    alt="Filial Principal"
+                    className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+                  />
                 </div>
-                <p className="text-white/70 text-sm pl-6">Rua lá em baixo</p>
+                <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/20 to-transparent" />
+                <div className="absolute bottom-0 left-0 right-0 p-4">
+                  <div className="flex items-center gap-2 mb-0.5">
+                    <MapPin className="h-4 w-4 text-primary shrink-0" />
+                    <span className="text-white font-bold text-sm">Filial Principal</span>
+                  </div>
+                  <p className="text-white/70 text-xs pl-6">Rua lá em baixo</p>
+                </div>
+              </div>
+              {/* Filial Centro Sul */}
+              <div className="group relative rounded-2xl overflow-hidden border border-border/60 hover:border-primary/40 hover:shadow-elevated transition-all duration-300 flex-1">
+                <div className="h-48 overflow-hidden">
+                  <img
+                    src="https://vugesuaephjbygtpyese.supabase.co/storage/v1/object/public/branch-images/branch-1772306249342.jpeg"
+                    alt="Filial Centro Sul"
+                    className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+                  />
+                </div>
+                <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/20 to-transparent" />
+                <div className="absolute bottom-0 left-0 right-0 p-4">
+                  <div className="flex items-center gap-2 mb-0.5">
+                    <MapPin className="h-4 w-4 text-primary shrink-0" />
+                    <span className="text-white font-bold text-sm">Filial Centro Sul</span>
+                  </div>
+                  <p className="text-white/70 text-xs pl-6">Rua beco escuro</p>
+                </div>
               </div>
             </div>
-            {/* Filial Centro Sul */}
-            <div className="group relative rounded-2xl overflow-hidden border border-border/60 hover:border-primary/40 hover:shadow-elevated transition-all duration-300">
-              <div className="aspect-[4/3] overflow-hidden">
-                <img
-                  src="https://vugesuaephjbygtpyese.supabase.co/storage/v1/object/public/branch-images/branch-1772306249342.jpeg"
-                  alt="Filial Centro Sul"
-                  className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
-                />
-              </div>
-              <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/20 to-transparent" />
-              <div className="absolute bottom-0 left-0 right-0 p-5">
-                <div className="flex items-center gap-2 mb-1">
-                  <MapPin className="h-4 w-4 text-primary shrink-0" />
-                  <span className="text-white font-bold text-base">Filial Centro Sul</span>
-                </div>
-                <p className="text-white/70 text-sm pl-6">Rua beco escuro</p>
-              </div>
+            {/* Direita — Google Maps embed */}
+            <div className="rounded-2xl overflow-hidden border border-border/60 shadow-elegant min-h-[400px]">
+              <iframe
+                title="Localização das filiais"
+                src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d3657.1!2d-46.6333!3d-23.5505!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x0%3A0x0!2zMjPCsDMzJzAxLjgiUyA0NsKwMzgnMDAuMCJX!5e0!3m2!1spt-BR!2sbr!4v1"
+                width="100%"
+                height="100%"
+                style={{ border: 0, minHeight: "400px" }}
+                allowFullScreen
+                loading="lazy"
+                referrerPolicy="no-referrer-when-downgrade"
+              />
             </div>
           </div>
         </div>
