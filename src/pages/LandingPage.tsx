@@ -244,7 +244,32 @@ export default function LandingPage() {
         </div>
       </section>
 
-      {/* ═══ SEÇÃO 3 — HISTÓRIA ═══ */}
+      {/* ═══ SEÇÃO 3 — DIFERENCIAIS ═══ */}
+      <section className="py-24 bg-secondary/40">
+        <div className="max-w-6xl mx-auto px-6">
+          <SectionHeader
+            badge="Diferenciais"
+            title={<>Somos mais que um <span className="gradient-gold-text">salão de beleza</span></>}
+            subtitle="Tecnologia, cuidado e exclusividade reunidos para transformar sua experiência."
+          />
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+            {differentials.map((d) => (
+              <div key={d.title}
+                className="flex flex-col gap-4 p-6 rounded-2xl bg-card border border-border/60 hover:border-primary/30 hover:-translate-y-0.5 transition-all duration-300">
+                <div className="h-12 w-12 rounded-xl gradient-gold flex items-center justify-center text-primary-foreground shadow-gold">
+                  {d.icon}
+                </div>
+                <div>
+                  <h3 className="font-serif font-semibold text-base mb-1">{d.title}</h3>
+                  <p className="text-sm text-muted-foreground leading-relaxed">{d.desc}</p>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* ═══ SEÇÃO 4 — HISTÓRIA ═══ */}
       <section id="historia" className="py-24">
         <div className="max-w-6xl mx-auto px-6">
           <SectionHeader
@@ -290,31 +315,6 @@ export default function LandingPage() {
                 loading="lazy"
               />
             </div>
-          </div>
-        </div>
-      </section>
-
-      {/* ═══ SEÇÃO 4 — DIFERENCIAIS ═══ */}
-      <section className="py-24 bg-secondary/40">
-        <div className="max-w-6xl mx-auto px-6">
-          <SectionHeader
-            badge="Diferenciais"
-            title={<>Somos mais que um <span className="gradient-gold-text">salão de beleza</span></>}
-            subtitle="Tecnologia, cuidado e exclusividade reunidos para transformar sua experiência."
-          />
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-            {differentials.map((d) => (
-              <div key={d.title}
-                className="flex flex-col gap-4 p-6 rounded-2xl bg-card border border-border/60 hover:border-primary/30 hover:-translate-y-0.5 transition-all duration-300">
-                <div className="h-12 w-12 rounded-xl gradient-gold flex items-center justify-center text-primary-foreground shadow-gold">
-                  {d.icon}
-                </div>
-                <div>
-                  <h3 className="font-serif font-semibold text-base mb-1">{d.title}</h3>
-                  <p className="text-sm text-muted-foreground leading-relaxed">{d.desc}</p>
-                </div>
-              </div>
-            ))}
           </div>
         </div>
       </section>
