@@ -262,16 +262,17 @@ export default function LandingPage() {
             <p className="text-center text-xs uppercase tracking-widest text-muted-foreground mb-8 font-medium">
               Onde encontrar nossas unidades
             </p>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6 max-w-5xl mx-auto items-stretch">
-              {/* Filiais */}
-              <div className="flex flex-col gap-4">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6 max-w-5xl mx-auto">
+
+              {/* Filial Principal */}
+              <div className="flex flex-col gap-3">
                 <a
                   href="https://maps.app.goo.gl/8EjE6nU1NppMmqiE8"
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="group relative rounded-2xl overflow-hidden border border-border/60 hover:border-primary/40 hover:shadow-elevated transition-all duration-300 flex-1 cursor-pointer block"
+                  className="group relative rounded-2xl overflow-hidden border border-border/60 hover:border-primary/40 hover:shadow-elevated transition-all duration-300 cursor-pointer block"
                 >
-                  <div className="h-52 overflow-hidden">
+                  <div className="h-48 overflow-hidden">
                     <img
                       src="https://vugesuaephjbygtpyese.supabase.co/storage/v1/object/public/branch-images/branch-1772306240857.jpeg"
                       alt="Filial Principal"
@@ -286,13 +287,28 @@ export default function LandingPage() {
                     <p className="text-white/70 text-xs pl-6">Av. Domingos Ferreira, 2215 — Sala 308</p>
                   </div>
                 </a>
+                <div className="rounded-2xl overflow-hidden border border-border/60 shadow-elegant">
+                  <iframe
+                    title="Mapa Filial Principal"
+                    src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d3951.1!2d-34.9010!3d-8.1194!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x7ab196f0e0e0e0e1%3A0x0!2sAv.+Domingos+Ferreira%2C+2215%2C+Boa+Viagem%2C+Recife+-+PE!5e0!3m2!1spt-BR!2sbr!4v1&q=Av.+Domingos+Ferreira,+2215,+Boa+Viagem,+Recife+PE"
+                    width="100%"
+                    height="220"
+                    style={{ border: 0, display: "block" }}
+                    allowFullScreen
+                    loading="lazy"
+                  />
+                </div>
+              </div>
+
+              {/* Filial Centro Sul */}
+              <div className="flex flex-col gap-3">
                 <a
                   href="https://maps.app.goo.gl/FAModEifGVMXaRTz9"
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="group relative rounded-2xl overflow-hidden border border-border/60 hover:border-primary/40 hover:shadow-elevated transition-all duration-300 flex-1 cursor-pointer block"
+                  className="group relative rounded-2xl overflow-hidden border border-border/60 hover:border-primary/40 hover:shadow-elevated transition-all duration-300 cursor-pointer block"
                 >
-                  <div className="h-52 overflow-hidden">
+                  <div className="h-48 overflow-hidden">
                     <img
                       src="https://vugesuaephjbygtpyese.supabase.co/storage/v1/object/public/branch-images/branch-1772306249342.jpeg"
                       alt="Filial Centro Sul"
@@ -307,19 +323,17 @@ export default function LandingPage() {
                     <p className="text-white/70 text-xs pl-6">Praça Dr. Lula Cabral de Melo, 68 — Parnamirim, Recife</p>
                   </div>
                 </a>
-              </div>
-
-              {/* Mapa */}
-              <div className="rounded-2xl overflow-hidden border border-border/60 shadow-elegant" style={{ minHeight: "432px" }}>
-                <iframe
-                  title="Localização das filiais"
-                  src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d15468.4!2d-34.9186!3d-8.0476!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x7ab196d4b3e5f3b%3A0x0!2zQXYuIERvbWluZ29zIEZlcnJlaXJhLCAyMjE1LCBSZWN0ZQ!5e0!3m2!1spt-BR!2sbr!4v1&q=Av.+Domingos+Ferreira,+2215+Recife+PE"
-                  width="100%"
-                  height="100%"
-                  style={{ border: 0, minHeight: "432px" }}
-                  allowFullScreen
-                  loading="lazy"
-                />
+                <div className="rounded-2xl overflow-hidden border border-border/60 shadow-elegant">
+                  <iframe
+                    title="Mapa Filial Centro Sul"
+                    src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d3950.8!2d-34.9200!3d-8.1050!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x7ab196d4c0e0f0e1%3A0x0!2sPra%C3%A7a+Dr.+Lula+Cabral+de+Melo%2C+68%2C+Parnamirim%2C+Recife+-+PE!5e0!3m2!1spt-BR!2sbr!4v1&q=Praça+Dr.+Lula+Cabral+de+Melo,+68,+Parnamirim,+Recife+PE"
+                    width="100%"
+                    height="220"
+                    style={{ border: 0, display: "block" }}
+                    allowFullScreen
+                    loading="lazy"
+                  />
+                </div>
               </div>
             </div>
           </div>
