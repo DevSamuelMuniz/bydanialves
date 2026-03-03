@@ -427,7 +427,7 @@ export default function LandingPage() {
         <div className="max-w-6xl mx-auto px-6">
           <SectionHeader
             badge="Planos & Assinaturas"
-            title={<>Beleza sem <span className="gradient-gold-text">preocupação</span></>}
+            title={<>Nossas <span className="gradient-gold-text">assinaturas</span></>}
             subtitle="Assine um plano e garanta seus serviços mensais com preço fixo e vantagens exclusivas."
           />
 
