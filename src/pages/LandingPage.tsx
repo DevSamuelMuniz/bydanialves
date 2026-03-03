@@ -292,7 +292,7 @@ export default function LandingPage() {
             <div className="flex flex-col gap-4">
               {/* Filial Principal */}
               <a
-                href="https://www.google.com/maps/search/?api=1&query=Av.+Domingos+Ferreira,+2215+Empresarial+Santa+Sicilia+Sala+308+terceiro+andar+Recife+PE"
+                href="https://maps.app.goo.gl/8EjE6nU1NppMmqiE8"
                 target="_blank"
                 rel="noopener noreferrer"
                 className="group relative rounded-2xl overflow-hidden border border-border/60 hover:border-primary/40 hover:shadow-elevated transition-all duration-300 flex-1 cursor-pointer block"
@@ -315,7 +315,7 @@ export default function LandingPage() {
               </a>
               {/* Filial Centro Sul */}
               <a
-                href="https://www.google.com/maps/search/?api=1&query=Praça+Dr.+Lula+Cabral+de+Melo,+68+Parnamirim+Recife+PE+52060-141"
+                href="https://maps.app.goo.gl/FAModEifGVMXaRTz9"
                 target="_blank"
                 rel="noopener noreferrer"
                 className="group relative rounded-2xl overflow-hidden border border-border/60 hover:border-primary/40 hover:shadow-elevated transition-all duration-300 flex-1 cursor-pointer block"
