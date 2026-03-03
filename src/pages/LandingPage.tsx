@@ -605,11 +605,11 @@ export default function LandingPage() {
               </div>
             </div>
             {/* Right */}
-            <div className="relative rounded-3xl overflow-hidden aspect-[4/3] shadow-elevated">
+            <div className="relative rounded-3xl overflow-hidden aspect-[9/16] shadow-elevated">
               <img
                 src={heroImage}
                 alt="Salão Daniella Alves"
-                className="w-full h-full object-cover"
+                className="w-full h-full object-contain bg-black"
               />
               <div className="absolute inset-0 bg-gradient-to-t from-background/30 to-transparent" />
             </div>
