@@ -605,7 +605,7 @@ export default function LandingPage() {
               </div>
             </div>
             {/* Right */}
-            <div className="relative rounded-3xl overflow-hidden aspect-[9/16] shadow-elevated">
+            <div className="relative rounded-3xl overflow-hidden aspect-[9/16] shadow-elevated max-h-[480px] mx-auto w-full max-w-[270px]">
               <img
                 src={heroImage}
                 alt="Salão Daniella Alves"
