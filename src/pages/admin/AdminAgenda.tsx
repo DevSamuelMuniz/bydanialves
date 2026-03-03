@@ -79,10 +79,29 @@ export default function AdminAgenda() {
     return () => { supabase.removeChannel(channel); };
   }, [fetchAppointments]);
 
-  const updateStatus = async (id: string, status: "pending" | "confirmed" | "completed" | "cancelled") => {
+  const updateStatus = async (id: string, status: "pending" | "confirmed" | "completed" | "cancelled", appointment?: any) => {
     const { error } = await supabase.from("appointments").update({ status }).eq("id", id);
-    if (error) toast({ title: "Erro", description: error.message, variant: "destructive" });
-    else toast({ title: "Status atualizado!" });
+    if (error) {
+      toast({ title: "Erro", description: error.message, variant: "destructive" });
+      return;
+    }
+
+    // Se confirmou, dispara notificação e abre WhatsApp
+    if (status === "confirmed" && appointment) {
+      toast({ title: "✅ Agendamento confirmado!", description: `${appointment.profiles?.full_name} foi notificado(a).` });
+
+      // Busca link do WhatsApp via edge function
+      const { data: waData } = await supabase.functions.invoke("send-whatsapp-confirmation", {
+        body: { appointmentId: id },
+      });
+
+      if (waData?.ok && waData?.waUrl) {
+        // Abre o WhatsApp em nova aba automaticamente
+        window.open(waData.waUrl, "_blank");
+      }
+    } else {
+      toast({ title: "Status atualizado!" });
+    }
   };
 
   const saveNotes = async (id: string) => {
@@ -241,7 +260,7 @@ export default function AdminAgenda() {
               <Button
                 size="sm"
                 className="h-7 text-xs gap-1 bg-blue-600 hover:bg-blue-700 text-white"
-                onClick={() => updateStatus(a.id, "confirmed")}
+                onClick={() => updateStatus(a.id, "confirmed", a)}
               >
                 <CheckCircle2 className="h-3 w-3" />
                 Confirmar

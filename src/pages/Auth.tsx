@@ -57,6 +57,10 @@ export default function Auth() {
       toast({ title: "Senhas não coincidem", description: "Verifique e tente novamente.", variant: "destructive" });
       return;
     }
+    if (!phone.trim()) {
+      toast({ title: "WhatsApp obrigatório", description: "Informe seu número de WhatsApp para continuar.", variant: "destructive" });
+      return;
+    }
     if (!acceptTerms) {
       toast({ title: "Aceite os termos", description: "Você precisa aceitar os termos de serviço.", variant: "destructive" });
       return;
@@ -191,8 +195,8 @@ export default function Auth() {
                 </div>
 
                 <div className="grid grid-cols-2 gap-3">
-                  <div className="space-y-2">
-                    <Label htmlFor="signup-phone">Telefone</Label>
+                   <div className="space-y-2">
+                    <Label htmlFor="signup-phone">WhatsApp <span className="text-destructive">*</span></Label>
                     <Input
                       id="signup-phone"
                       type="tel"
@@ -201,7 +205,6 @@ export default function Auth() {
                       required
                       className="h-11"
                       placeholder="(00) 00000-0000" />
-
                   </div>
                   <div className="space-y-2">
                     <Label htmlFor="signup-city">Cidade</Label>
