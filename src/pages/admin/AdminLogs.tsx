@@ -158,58 +158,70 @@ export default function AdminLogs() {
             <Filter className="h-4 w-4 text-muted-foreground" />
             <span className="text-sm font-medium">Filtros</span>
           </div>
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
             {/* Action */}
-            <Select value={actionFilter} onValueChange={(v) => { setActionFilter(v); setPage(0); }}>
-              <SelectTrigger><SelectValue placeholder="Filtrar por tipo de ação" /></SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">Todas as ações</SelectItem>
-                <SelectItem value="appointment_created">Agendamento criado</SelectItem>
-                <SelectItem value="appointment_status_changed">Status alterado</SelectItem>
-                <SelectItem value="profile_blocked">Perfil bloqueado</SelectItem>
-                <SelectItem value="profile_unblocked">Perfil desbloqueado</SelectItem>
-                <SelectItem value="profile_updated">Perfil atualizado</SelectItem>
-                <SelectItem value="subscription_created">Assinatura criada</SelectItem>
-                <SelectItem value="subscription_status_changed">Status de assinatura</SelectItem>
-              </SelectContent>
-            </Select>
+            <div className="flex flex-col gap-1.5">
+              <label className="text-xs font-medium text-muted-foreground">Tipo de ação</label>
+              <Select value={actionFilter} onValueChange={(v) => { setActionFilter(v); setPage(0); }}>
+                <SelectTrigger><SelectValue placeholder="Filtrar por tipo de ação" /></SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">Todas as ações</SelectItem>
+                  <SelectItem value="appointment_created">Agendamento criado</SelectItem>
+                  <SelectItem value="appointment_status_changed">Status alterado</SelectItem>
+                  <SelectItem value="profile_blocked">Perfil bloqueado</SelectItem>
+                  <SelectItem value="profile_unblocked">Perfil desbloqueado</SelectItem>
+                  <SelectItem value="profile_updated">Perfil atualizado</SelectItem>
+                  <SelectItem value="subscription_created">Assinatura criada</SelectItem>
+                  <SelectItem value="subscription_status_changed">Status de assinatura</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
 
             {/* Entity */}
-            <Select value={entityFilter} onValueChange={(v) => { setEntityFilter(v); setPage(0); }}>
-              <SelectTrigger><SelectValue placeholder="Filtrar por entidade" /></SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">Todas</SelectItem>
-                <SelectItem value="appointments">Agendamentos</SelectItem>
-                <SelectItem value="profiles">Perfis</SelectItem>
-                <SelectItem value="subscriptions">Assinaturas</SelectItem>
-              </SelectContent>
-            </Select>
+            <div className="flex flex-col gap-1.5">
+              <label className="text-xs font-medium text-muted-foreground">Entidade</label>
+              <Select value={entityFilter} onValueChange={(v) => { setEntityFilter(v); setPage(0); }}>
+                <SelectTrigger><SelectValue placeholder="Filtrar por entidade" /></SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">Todas</SelectItem>
+                  <SelectItem value="appointments">Agendamentos</SelectItem>
+                  <SelectItem value="profiles">Perfis</SelectItem>
+                  <SelectItem value="subscriptions">Assinaturas</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
 
             {/* Date From */}
-            <Popover>
-              <PopoverTrigger asChild>
-                <Button variant="outline" className="justify-start text-sm font-normal">
-                  <CalendarDays className="mr-2 h-3 w-3" />
-                  {dateFrom ? format(dateFrom, "dd/MM/yyyy") : "Data início"}
-                </Button>
-              </PopoverTrigger>
-              <PopoverContent className="w-auto p-0">
-                <Calendar mode="single" selected={dateFrom} onSelect={(d) => { setDateFrom(d); setPage(0); }} locale={ptBR} />
-              </PopoverContent>
-            </Popover>
+            <div className="flex flex-col gap-1.5">
+              <label className="text-xs font-medium text-muted-foreground">Data início</label>
+              <Popover>
+                <PopoverTrigger asChild>
+                  <Button variant="outline" className="justify-start text-sm font-normal">
+                    <CalendarDays className="mr-2 h-3 w-3" />
+                    {dateFrom ? format(dateFrom, "dd/MM/yyyy") : "Selecionar data"}
+                  </Button>
+                </PopoverTrigger>
+                <PopoverContent className="w-auto p-0">
+                  <Calendar mode="single" selected={dateFrom} onSelect={(d) => { setDateFrom(d); setPage(0); }} locale={ptBR} />
+                </PopoverContent>
+              </Popover>
+            </div>
 
             {/* Date To */}
-            <Popover>
-              <PopoverTrigger asChild>
-                <Button variant="outline" className="justify-start text-sm font-normal">
-                  <CalendarDays className="mr-2 h-3 w-3" />
-                  {dateTo ? format(dateTo, "dd/MM/yyyy") : "Data fim"}
-                </Button>
-              </PopoverTrigger>
-              <PopoverContent className="w-auto p-0">
-                <Calendar mode="single" selected={dateTo} onSelect={(d) => { setDateTo(d); setPage(0); }} locale={ptBR} />
-              </PopoverContent>
-            </Popover>
+            <div className="flex flex-col gap-1.5">
+              <label className="text-xs font-medium text-muted-foreground">Data fim</label>
+              <Popover>
+                <PopoverTrigger asChild>
+                  <Button variant="outline" className="justify-start text-sm font-normal">
+                    <CalendarDays className="mr-2 h-3 w-3" />
+                    {dateTo ? format(dateTo, "dd/MM/yyyy") : "Selecionar data"}
+                  </Button>
+                </PopoverTrigger>
+                <PopoverContent className="w-auto p-0">
+                  <Calendar mode="single" selected={dateTo} onSelect={(d) => { setDateTo(d); setPage(0); }} locale={ptBR} />
+                </PopoverContent>
+              </Popover>
+            </div>
           </div>
           {(actionFilter !== "all" || entityFilter !== "all" || dateFrom || dateTo || search) && (
             <Button variant="ghost" size="sm" className="mt-2 text-xs" onClick={resetFilters}>
