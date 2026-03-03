@@ -95,32 +95,44 @@ const differentials = [
   {
     icon: <Scissors className="h-6 w-6" />,
     title: "Escovas Mensais Inclusas",
-    desc: "Dependendo do plano, escovas progressivas e modelagens já estão cobertas — sem custo extra.",
+    desc: "Progressivas e modelagens já cobertas pelo plano — sem custo extra, todo mês.",
+    highlight: "Incluso no plano",
+    emoji: "✂️",
   },
   {
     icon: <Star className="h-6 w-6" />,
     title: "Prioridade no Agendamento",
-    desc: "Assinantes escolhem os horários primeiro. Garanta sua vaga nos dias mais disputados com exclusividade.",
+    desc: "Assinantes escolhem os horários primeiro. Garanta sua vaga nos dias mais disputados.",
+    highlight: "Acesso exclusivo",
+    emoji: "⭐",
   },
   {
     icon: <Tag className="h-6 w-6" />,
     title: "Desconto em Serviços Avulsos",
-    desc: "Além dos serviços incluídos, assine e ganhe desconto especial em qualquer outro procedimento do salão.",
+    desc: "Fora do plano? Ainda assim você paga menos. Desconto especial em qualquer procedimento do salão.",
+    highlight: "Economia real",
+    emoji: "🏷️",
   },
   {
     icon: <Gift className="h-6 w-6" />,
     title: "Mimos e Brindes Exclusivos",
-    desc: "Produtos de beleza, amostras de marcas premium e surpresas mensais só para quem é assinante.",
+    desc: "Produtos premium, amostras de marcas selecionadas e surpresas mensais só para assinantes.",
+    highlight: "Só para membros",
+    emoji: "🎁",
   },
   {
     icon: <CreditCard className="h-6 w-6" />,
     title: "Valor Fixo, Sem Surpresas",
-    desc: "Uma mensalidade previsível que cobre tudo do seu plano. Sem taxas ocultas ou cobranças extras.",
+    desc: "Uma mensalidade previsível que cobre tudo do seu plano. Zero taxas ocultas.",
+    highlight: "Previsibilidade",
+    emoji: "💳",
   },
   {
     icon: <Bell className="h-6 w-6" />,
     title: "Cancele Quando Quiser",
     desc: "Sem fidelidade forçada. Cancele ou troque de plano a qualquer momento, sem burocracia.",
+    highlight: "Sem compromisso",
+    emoji: "🔓",
   },
 ];
 
@@ -621,15 +633,40 @@ export default function LandingPage() {
             subtitle="Tecnologia, cuidado e exclusividade reunidos para transformar sua experiência."
           />
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-            {differentials.map((d) => (
-              <div key={d.title}
-                className="flex flex-col gap-4 p-6 rounded-2xl bg-card border border-border/60 hover:border-primary/30 hover:-translate-y-0.5 transition-all duration-300">
-                <div className="h-12 w-12 rounded-xl gradient-gold flex items-center justify-center text-primary-foreground shadow-gold">
-                  {d.icon}
+            {differentials.map((d, i) => (
+              <div
+                key={d.title}
+                className="group relative flex flex-col gap-4 p-6 rounded-2xl bg-card border border-border/60 overflow-hidden cursor-default
+                  hover:border-primary/50 hover:-translate-y-2 hover:shadow-gold transition-all duration-500"
+                style={{ animationDelay: `${i * 80}ms` }}
+              >
+                {/* Glow background on hover */}
+                <div className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-500 pointer-events-none"
+                  style={{ background: "radial-gradient(ellipse at top left, hsl(var(--primary)/0.08), transparent 70%)" }} />
+
+                {/* Number */}
+                <span className="absolute top-4 right-5 text-4xl font-black text-primary/8 group-hover:text-primary/15 transition-colors duration-300 select-none leading-none">
+                  {String(i + 1).padStart(2, "0")}
+                </span>
+
+                {/* Icon + emoji */}
+                <div className="relative flex items-center gap-3">
+                  <div className="h-12 w-12 rounded-xl gradient-gold flex items-center justify-center text-primary-foreground shadow-gold
+                    group-hover:scale-110 group-hover:rotate-3 transition-transform duration-300">
+                    {d.icon}
+                  </div>
+                  <span className="text-2xl group-hover:animate-bounce">{d.emoji}</span>
                 </div>
-                <div>
-                  <h3 className="font-serif font-semibold text-base mb-1">{d.title}</h3>
+
+                {/* Content */}
+                <div className="relative flex flex-col gap-2">
+                  <h3 className="font-serif font-semibold text-base leading-snug">{d.title}</h3>
                   <p className="text-sm text-muted-foreground leading-relaxed">{d.desc}</p>
+                  {/* Highlight badge */}
+                  <span className="mt-1 self-start text-[10px] font-semibold tracking-widest uppercase px-2.5 py-1 rounded-full
+                    bg-primary/10 text-primary border border-primary/20 group-hover:bg-primary/20 transition-colors duration-300">
+                    {d.highlight}
+                  </span>
                 </div>
               </div>
             ))}
