@@ -91,7 +91,7 @@ export default function AdminLogs() {
     setLoading(true);
     let query = supabase
       .from("activity_logs")
-      .select("*", { count: "exact" })
+      .select("*, performed_by", { count: "exact" })
       .order("created_at", { ascending: false });
 
     if (actionFilter !== "all") query = query.eq("action", actionFilter);
@@ -248,6 +248,7 @@ export default function AdminLogs() {
                     </div>
                     <div className="flex-1 min-w-0">
                       <div className="flex items-center gap-2 flex-wrap">
+                        {/* Usuário afetado */}
                         <p className="font-medium text-sm truncate">
                           {profiles[log.user_id] || "Usuário desconhecido"}
                         </p>
@@ -257,17 +258,17 @@ export default function AdminLogs() {
                         >
                           {actionLabels[log.action] || log.action}
                         </Badge>
-                        {/* Quem realizou a ação */}
-                        <span className="text-xs text-muted-foreground/70 italic shrink-0">
-                          {["profile_blocked", "profile_unblocked", "appointment_status_changed"].includes(log.action)
-                            ? "por administrador"
-                            : ["appointment_created", "subscription_created"].includes(log.action)
-                            ? "pelo próprio usuário"
-                            : "por sistema"}
-                        </span>
                       </div>
+                      {/* Executor da ação */}
+                      <p className="text-xs text-muted-foreground mt-0.5">
+                        {log.performed_by
+                          ? log.performed_by === log.user_id
+                            ? <span>por <span className="font-medium text-foreground/70">{profiles[log.performed_by] || "próprio usuário"}</span></span>
+                            : <span>por <span className="font-medium text-primary/80">{profiles[log.performed_by] || "administrador"}</span></span>
+                          : <span className="italic opacity-60">executor não registrado</span>}
+                      </p>
                       {log.details && (
-                        <p className="text-xs text-muted-foreground mt-0.5 truncate">
+                        <p className="text-xs text-muted-foreground/70 mt-0.5 truncate">
                           {formatDetails(log.action, log.details)}
                         </p>
                       )}

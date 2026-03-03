@@ -22,6 +22,7 @@ export type Database = {
           entity: string
           entity_id: string | null
           id: string
+          performed_by: string | null
           user_id: string
         }
         Insert: {
@@ -31,6 +32,7 @@ export type Database = {
           entity: string
           entity_id?: string | null
           id?: string
+          performed_by?: string | null
           user_id: string
         }
         Update: {
@@ -40,6 +42,7 @@ export type Database = {
           entity?: string
           entity_id?: string | null
           id?: string
+          performed_by?: string | null
           user_id?: string
         }
         Relationships: []
