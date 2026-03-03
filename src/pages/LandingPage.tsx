@@ -33,57 +33,57 @@ const testimonials = [
   {
     name: "Camila Rodrigues",
     rating: 5,
-    text: "Melhor esmalteria que já fui! Atendimento impecável e resultado incrível. Não troco por nada.",
+    text: "Melhor salão que já fui! Atendimento impecável, saí com o cabelo incrível. Não troco por nada.",
   },
   {
     name: "Fernanda Lima",
     rating: 5,
-    text: "Adoro o ambiente aconchegante e as profissionais são muito atenciosas. Indico para todas as minhas amigas!",
+    text: "Adoro o ambiente aconchegante e as profissionais são muito atenciosas. Meu cabelo nunca esteve tão bonito!",
   },
   {
     name: "Patrícia Souza",
     rating: 5,
-    text: "O gel dura muito mais do que em outros lugares. Qualidade premium e preço justo. Voltarei sempre!",
+    text: "A escova dura muito mais do que em outros lugares. Qualidade premium e preço justo. Voltarei sempre!",
   },
 ];
 
 // ─── Products marquee ────────────────────────────────────────────────────────
 const salonBrands = [
-  "OPI", "Essie", "Sally Hansen", "CND Shellac", "Gelish",
-  "Morgan Taylor", "Kiesque", "Nail Tek", "Orly", "Zoya",
+  "L'Oréal", "Wella", "Kérastase", "Schwarzkopf", "Redken",
+  "Matrix", "Amend", "Cadiveu", "Inoar", "Alfaparf",
 ];
 
 // ─── Hero carousel images ────────────────────────────────────────────────────
 const heroImages = [
-  "https://images.unsplash.com/photo-1604654894610-df63bc536371?w=900&q=80",
-  "https://images.unsplash.com/photo-1604654894610-df63bc536371?w=900&q=80",
-  "https://images.unsplash.com/photo-1519014816548-bf5fe059798b?w=900&q=80",
-  "https://images.unsplash.com/photo-1522337360788-8b13dee7a37e?w=900&q=80",
   "https://images.unsplash.com/photo-1560066984-138daaa0f9b6?w=900&q=80",
+  "https://images.unsplash.com/photo-1522337360788-8b13dee7a37e?w=900&q=80",
+  "https://images.unsplash.com/photo-1595476108010-b4d1f102b1b1?w=900&q=80",
+  "https://images.unsplash.com/photo-1570172619644-dfd03ed5d881?w=900&q=80",
+  "https://images.unsplash.com/photo-1487412947147-5cebf100ffc2?w=900&q=80",
 ];
 
 const galleryImages = [
-  "https://images.unsplash.com/photo-1604654894610-df63bc536371?w=600&q=80",
-  "https://images.unsplash.com/photo-1519014816548-bf5fe059798b?w=600&q=80",
-  "https://images.unsplash.com/photo-1522337360788-8b13dee7a37e?w=600&q=80",
   "https://images.unsplash.com/photo-1560066984-138daaa0f9b6?w=600&q=80",
-  "https://images.unsplash.com/photo-1610992015732-2449b76344bc?w=600&q=80",
-  "https://images.unsplash.com/photo-1604902396830-aca29e19b067?w=600&q=80",
+  "https://images.unsplash.com/photo-1522337360788-8b13dee7a37e?w=600&q=80",
+  "https://images.unsplash.com/photo-1595476108010-b4d1f102b1b1?w=600&q=80",
+  "https://images.unsplash.com/photo-1570172619644-dfd03ed5d881?w=600&q=80",
+  "https://images.unsplash.com/photo-1487412947147-5cebf100ffc2?w=600&q=80",
+  "https://images.unsplash.com/photo-1519014816548-bf5fe059798b?w=600&q=80",
 ];
 
 // ─── Dani Alves story chapters ────────────────────────────────────────────────
 const storyChapters = [
   {
     title: "O Começo",
-    text: "Daniella Alves começou sua jornada há mais de 8 anos, quando ainda era uma jovem apaixonada por beleza e cuidado. Com muita determinação e um sonho grande, abriu sua primeira esmalteria em um pequeno espaço, mas com um coração enorme.",
+    text: "Daniella Alves começou sua jornada há mais de 8 anos, quando ainda era uma jovem apaixonada por beleza e cuidado. Com muita determinação e um sonho grande, abriu seu primeiro salão em um pequeno espaço, mas com um coração enorme.",
   },
   {
     title: "A Paixão pelo Ofício",
-    text: "Cada cliente era tratada como única. Daniella se especializou em técnicas avançadas de esmaltação, manicure e nail art, buscando sempre cursos e treinamentos para oferecer o que havia de melhor no mercado da beleza.",
+    text: "Cada cliente era tratada como única. Daniella se especializou em técnicas avançadas de coloração, cortes e tratamentos capilares, buscando sempre cursos e treinamentos para oferecer o que havia de melhor no mercado da beleza.",
   },
   {
     title: "Crescimento e Expansão",
-    text: "O boca a boca foi inevitável. Em poucos anos, a Esmalteria Daniella Alves cresceu e se expandiu para múltiplas unidades, levando o mesmo cuidado e dedicação para muito mais mulheres que mereciam se sentir especiais.",
+    text: "O boca a boca foi inevitável. Em poucos anos, o Salão Daniella Alves cresceu e se expandiu para múltiplas unidades, levando o mesmo cuidado e dedicação para muito mais mulheres que mereciam se sentir especiais.",
   },
   {
     title: "Nossa Missão",
@@ -170,7 +170,7 @@ export default function LandingPage() {
       ═══════════════════════════════════════════════════════════ */}
       <header className="sticky top-0 z-50 glass border-b border-border/40">
         <div className="max-w-6xl mx-auto px-6 h-16 flex items-center justify-between">
-          <img src={logoDark} alt="Esmalteria Daniella Alves" className="h-9 object-contain" />
+          <img src={logoDark} alt="Salão Daniella Alves" className="h-9 object-contain" />
           <nav className="hidden md:flex items-center gap-8 text-sm font-medium text-muted-foreground">
             <a href="#depoimentos" className="hover:text-foreground transition-colors">Depoimentos</a>
             <a href="#historia" className="hover:text-foreground transition-colors">Nossa História</a>
@@ -202,12 +202,12 @@ export default function LandingPage() {
               </Badge>
 
               <h1 className="font-serif text-4xl md:text-6xl font-bold leading-tight text-balance">
-                Unhas perfeitas,{" "}
+                Cabelos perfeitos,{" "}
                 <span className="gradient-gold-text">experiência inesquecível</span>
               </h1>
 
               <p className="text-lg text-muted-foreground max-w-md text-balance">
-                A Esmalteria Daniella Alves combina técnicas exclusivas, produtos premium e um atendimento
+                O Salão Daniella Alves combina técnicas exclusivas, produtos premium e um atendimento
                 que faz você se sentir especial. Agende online em segundos.
               </p>
 
@@ -527,7 +527,7 @@ export default function LandingPage() {
         <div className="max-w-6xl mx-auto px-6">
           <div className="grid grid-cols-1 md:grid-cols-3 gap-10 mb-10">
             <div>
-              <img src={logoDark} alt="Esmalteria Daniella Alves" className="h-10 object-contain mb-4" />
+              <img src={logoDark} alt="Salão Daniella Alves" className="h-10 object-contain mb-4" />
               <p className="text-sm text-muted-foreground max-w-xs">
                 Beleza, cuidado e exclusividade em cada detalhe. Visite uma de nossas unidades e sinta a diferença.
               </p>
@@ -565,7 +565,7 @@ export default function LandingPage() {
             </div>
           </div>
           <div className="border-t border-border/40 pt-6 flex flex-col md:flex-row items-center justify-between gap-4 text-xs text-muted-foreground">
-            <p>© {new Date().getFullYear()} Esmalteria Daniella Alves. Todos os direitos reservados.</p>
+            <p>© {new Date().getFullYear()} Salão Daniella Alves. Todos os direitos reservados.</p>
             <button onClick={() => navigate("/politica-e-termos")} className="hover:text-foreground transition-colors">
               Política de Privacidade & Termos de Uso
             </button>
