@@ -139,6 +139,13 @@ export default function LandingPage() {
   const nextChapter = useCallback(() =>
     setActiveChapter((c) => (c === storyChapters.length - 1 ? 0 : c + 1)), []);
 
+  useEffect(() => {
+    const interval = setInterval(() => {
+      setActiveChapter((c) => (c === storyChapters.length - 1 ? 0 : c + 1));
+    }, 4000);
+    return () => clearInterval(interval);
+  }, []);
+
   const formatPrice = (price: number) =>
     price.toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
 
