@@ -39,6 +39,11 @@ import logoLight from "@/assets/logo_light.png";
 import logoDark from "@/assets/logo_dark.png";
 import { supabase } from "@/integrations/supabase/client";
 import logo from "@/assets/logo-dani-alves.jpg";
+import gallery1 from "@/assets/gallery-1.jpeg";
+import gallery2 from "@/assets/gallery-2.png";
+import gallery3 from "@/assets/gallery-3.png";
+import gallery4 from "@/assets/gallery-4.jpeg";
+import gallery5 from "@/assets/gallery-5.png";
 
 // ─── Constants ───────────────────────────────────────────────────────────────
 
@@ -61,16 +66,16 @@ const testimonials = [
 ];
 
 const galleryImages = [
-  "https://images.unsplash.com/photo-1522337360788-8b13dee7a37e?auto=format&fit=crop&w=700&q=80",
-  "https://images.unsplash.com/photo-1560066984-138daaa0f9b6?auto=format&fit=crop&w=700&q=80",
-  "https://images.unsplash.com/photo-1522337660009-5d2c7b8c7f8e?auto=format&fit=crop&w=700&q=80",
-  "https://images.unsplash.com/photo-1607779097040-26e80aa78e66?auto=format&fit=crop&w=700&q=80",
-  "https://images.unsplash.com/photo-1562322140-8baeececf3df?auto=format&fit=crop&w=700&q=80",
-  "https://images.unsplash.com/photo-1519014816548-bf5fe059798b?auto=format&fit=crop&w=700&q=80",
-  "https://images.unsplash.com/photo-1595476108010-b4d1f102b1b1?auto=format&fit=crop&w=700&q=80",
-  "https://images.unsplash.com/photo-1580618672591-eb180b1a973f?auto=format&fit=crop&w=700&q=80",
-  "https://images.unsplash.com/photo-1571290274554-6a2eaa771e5f?auto=format&fit=crop&w=700&q=80",
-  "https://images.unsplash.com/photo-1527799820374-dcf8d9d4a388?auto=format&fit=crop&w=700&q=80",
+  gallery1,
+  gallery2,
+  gallery3,
+  gallery4,
+  gallery5,
+  gallery1,
+  gallery3,
+  gallery5,
+  gallery2,
+  gallery4,
 ];
 
 const storyChapters = [
