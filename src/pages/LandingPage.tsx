@@ -396,7 +396,23 @@ function SubscriptionModal({
           {/* ── STEP 3: TERMS ── */}
           {step === "terms" && (
             <div className="space-y-4">
-              <ScrollArea className="h-52 rounded-lg border border-border/60 bg-muted/20 p-4 text-sm text-muted-foreground leading-relaxed">
+
+              {/* ⚠️ Aviso de cobrança recorrente */}
+              <div className="flex items-start gap-3 rounded-xl border-2 border-primary/40 bg-primary/8 px-4 py-3.5">
+                <span className="text-xl shrink-0 mt-0.5">🔄</span>
+                <div>
+                  <p className="text-sm font-bold text-foreground leading-tight mb-0.5">Assinatura com cobrança recorrente</p>
+                  <p className="text-xs text-muted-foreground leading-relaxed">
+                    Ao confirmar, você autoriza a cobrança de{" "}
+                    <span className="font-semibold text-foreground">
+                      {selectedPlan ? Number(selectedPlan.price).toLocaleString("pt-BR", { style: "currency", currency: "BRL" }) : ""}/mês
+                    </span>{" "}
+                    de forma automática todo mês até o cancelamento. Você pode cancelar quando quiser pelo portal do cliente, sem multa.
+                  </p>
+                </div>
+              </div>
+
+              <ScrollArea className="h-44 rounded-lg border border-border/60 bg-muted/20 p-4 text-sm text-muted-foreground leading-relaxed">
                 <p className="font-semibold text-foreground mb-2">Termos de Uso — Salão Daniella Alves</p>
                 <p className="mb-3">Ao assinar um plano, você concorda com os seguintes termos:</p>
                 <ul className="list-disc pl-4 space-y-2">
