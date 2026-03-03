@@ -6,8 +6,12 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useToast } from "@/hooks/use-toast";
-import { Crown, Check, AlertTriangle, Sparkles, ArrowRightLeft, CreditCard, Settings } from "lucide-react";
+import { Crown, Check, AlertTriangle, Sparkles, CreditCard, Settings, FileText, ExternalLink } from "lucide-react";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
+import { Checkbox } from "@/components/ui/checkbox";
+import { ScrollArea } from "@/components/ui/scroll-area";
+import { Link } from "react-router-dom";
 import { useSearchParams } from "react-router-dom";
 
 export default function ClientPlans() {
@@ -20,6 +24,12 @@ export default function ClientPlans() {
   const [actionLoading, setActionLoading] = useState(false);
   const [searchParams] = useSearchParams();
 
+  // Terms modal state
+  const [termsModalOpen, setTermsModalOpen] = useState(false);
+  const [pendingPlanId, setPendingPlanId] = useState<string | null>(null);
+  const [termsAccepted, setTermsAccepted] = useState(false);
+  const [alreadyAccepted, setAlreadyAccepted] = useState(false);
+
   const fetchPlans = async () => {
     const { data } = await supabase.from("plans").select("*").eq("active", true).order("price");
     setPlans(data || []);
@@ -31,7 +41,6 @@ export default function ClientPlans() {
       if (error) throw error;
       setStripeSubscription(data);
       if (data?.subscribed && data?.plan_id) {
-        // Refresh local subscription from DB (synced by edge function)
         const { data: subData } = await supabase
           .from("subscriptions")
           .select("*, plans(*)")
@@ -103,6 +112,41 @@ export default function ClientPlans() {
     } finally {
       setActionLoading(false);
     }
+  };
+
+  // Called when user clicks "Assinar" — open terms modal first
+  const initiateCheckout = async (planId: string) => {
+    if (!user || actionLoading) return;
+    // Check if user already accepted terms
+    const { data: profile } = await supabase
+      .from("profiles")
+      .select("terms_accepted_at")
+      .eq("user_id", user.id)
+      .maybeSingle();
+    const accepted = !!(profile as any)?.terms_accepted_at;
+    setAlreadyAccepted(accepted);
+    setTermsAccepted(accepted);
+    setPendingPlanId(planId);
+    setTermsModalOpen(true);
+  };
+
+  // Called after user confirms terms
+  const confirmCheckout = async () => {
+    if (!pendingPlanId || !user) return;
+    if (!termsAccepted) {
+      toast({ title: "Aceite os termos para continuar", variant: "destructive" });
+      return;
+    }
+    setTermsModalOpen(false);
+    // Save acceptance if not already saved
+    if (!alreadyAccepted) {
+      await supabase
+        .from("profiles")
+        .update({ terms_accepted_at: new Date().toISOString() } as any)
+        .eq("user_id", user.id);
+    }
+    await handleCheckout(pendingPlanId);
+    setPendingPlanId(null);
   };
 
   const handleManageSubscription = async () => {
@@ -248,7 +292,7 @@ export default function ClientPlans() {
                     <Button
                       className={`w-full`}
                       variant={isMidPlan ? "default" : "outline"}
-                      onClick={() => handleCheckout(p.id)}
+                      onClick={() => initiateCheckout(p.id)}
                       disabled={actionLoading}
                     >
                       <CreditCard className="mr-2 h-4 w-4" />
@@ -270,6 +314,69 @@ export default function ClientPlans() {
           </CardContent>
         </Card>
       )}
+
+      {/* Terms of Service Modal */}
+      <Dialog open={termsModalOpen} onOpenChange={(open) => { if (!open) { setTermsModalOpen(false); setPendingPlanId(null); } }}>
+        <DialogContent className="max-w-lg">
+          <DialogHeader>
+            <DialogTitle className="font-serif flex items-center gap-2">
+              <FileText className="h-5 w-5 text-primary" />
+              Termos de Serviço
+            </DialogTitle>
+          </DialogHeader>
+
+          <p className="text-sm text-muted-foreground">
+            Antes de prosseguir com a assinatura, leia e aceite nossos termos de serviço.
+          </p>
+
+          <ScrollArea className="h-52 rounded-lg border border-border/60 bg-muted/20 p-4 text-sm text-muted-foreground leading-relaxed">
+            <p className="font-semibold text-foreground mb-2">Termos de Uso — Salão Daniella Alves</p>
+            <p className="mb-3">Ao assinar um plano, você concorda com os seguintes termos:</p>
+            <ul className="list-disc pl-4 space-y-2">
+              <li>A assinatura é mensal e renovada automaticamente via Stripe até ser cancelada.</li>
+              <li>O cancelamento pode ser realizado a qualquer momento pelo portal do cliente, mas sem reembolso proporcional do mês vigente.</li>
+              <li>Os créditos de serviços incluídos no plano são mensais e não acumulam entre períodos.</li>
+              <li>Agendamentos devem ser realizados com antecedência mínima de 24 horas.</li>
+              <li>O salão reserva-se o direito de reagendar ou cancelar atendimentos em casos de força maior.</li>
+              <li>Dados pessoais são tratados conforme nossa Política de Privacidade.</li>
+            </ul>
+            <p className="mt-3">
+              Para ler a versão completa, acesse nossa{" "}
+              <Link to="/politica-e-termos" target="_blank" className="text-primary underline inline-flex items-center gap-1">
+                página de Política & Termos <ExternalLink className="h-3 w-3" />
+              </Link>.
+            </p>
+          </ScrollArea>
+
+          <div className="flex items-start gap-3 pt-1">
+            <Checkbox
+              id="accept-terms"
+              checked={termsAccepted}
+              onCheckedChange={(v) => setTermsAccepted(!!v)}
+              disabled={alreadyAccepted}
+            />
+            <label htmlFor="accept-terms" className="text-sm cursor-pointer leading-snug">
+              {alreadyAccepted
+                ? "Você já aceitou os termos anteriormente."
+                : "Li e concordo com os Termos de Serviço e Política de Privacidade."}
+            </label>
+          </div>
+
+          <DialogFooter className="gap-2 flex-col sm:flex-row">
+            <Button variant="outline" onClick={() => { setTermsModalOpen(false); setPendingPlanId(null); }}>
+              Cancelar
+            </Button>
+            <Button
+              onClick={confirmCheckout}
+              disabled={!termsAccepted || actionLoading}
+              className="gradient-gold border-0 text-primary-foreground"
+            >
+              <CreditCard className="mr-2 h-4 w-4" />
+              {actionLoading ? "Processando..." : "Confirmar e assinar"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
