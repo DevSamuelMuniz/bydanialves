@@ -292,7 +292,7 @@ export default function LandingPage() {
             <div className="flex flex-col gap-4">
               {/* Filial Principal */}
               <a
-                href="https://www.google.com/maps/search/?api=1&query=Av.+Domingos+Ferreira,+2215+Empresarial+Santa+Sicilia+Sala+308+Recife"
+                href="https://www.google.com/maps/search/?api=1&query=Av.+Domingos+Ferreira,+2215+Empresarial+Santa+Sicilia+Sala+308+terceiro+andar+Recife+PE"
                 target="_blank"
                 rel="noopener noreferrer"
                 className="group relative rounded-2xl overflow-hidden border border-border/60 hover:border-primary/40 hover:shadow-elevated transition-all duration-300 flex-1 cursor-pointer block"
@@ -315,7 +315,7 @@ export default function LandingPage() {
               </a>
               {/* Filial Centro Sul */}
               <a
-                href="https://www.google.com/maps/search/?api=1&query=R.+Padre+Roma,+639+104+Parnamirim+Recife+PE"
+                href="https://www.google.com/maps/search/?api=1&query=Praça+Dr.+Lula+Cabral+de+Melo,+68+Parnamirim+Recife+PE+52060-141"
                 target="_blank"
                 rel="noopener noreferrer"
                 className="group relative rounded-2xl overflow-hidden border border-border/60 hover:border-primary/40 hover:shadow-elevated transition-all duration-300 flex-1 cursor-pointer block"
@@ -333,7 +333,7 @@ export default function LandingPage() {
                     <MapPin className="h-4 w-4 text-primary shrink-0" />
                     <span className="text-white font-bold text-sm">Filial Centro Sul</span>
                   </div>
-                  <p className="text-white/70 text-xs pl-6">R. Padre Roma, 639 — Parnamirim, Recife</p>
+                  <p className="text-white/70 text-xs pl-6">Praça Dr. Lula Cabral de Melo, 68 — Parnamirim, Recife</p>
                 </div>
               </a>
             </div>
@@ -342,7 +342,7 @@ export default function LandingPage() {
             <div className="rounded-2xl overflow-hidden border border-border/60 shadow-elegant" style={{ minHeight: "432px" }}>
               <iframe
                 title="Localização das filiais"
-                src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d3657.1!2d-46.6333!3d-23.5505!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x0%3A0x0!2zMjPCsDMzJzAxLjgiUyA0NsKwMzgnMDAuMCJX!5e0!3m2!1spt-BR!2sbr!4v1"
+                src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d15468.4!2d-34.9186!3d-8.0476!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x7ab196d4b3e5f3b%3A0x0!2zQXYuIERvbWluZ29zIEZlcnJlaXJhLCAyMjE1LCBSZWN0ZQ!5e0!3m2!1spt-BR!2sbr!4v1&q=Av.+Domingos+Ferreira,+2215+Recife+PE"
                 width="100%"
                 height="100%"
                 style={{ border: 0, display: "block", minHeight: "432px" }}
