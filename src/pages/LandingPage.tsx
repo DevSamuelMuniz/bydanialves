@@ -19,6 +19,7 @@ import {
   CheckCircle2,
   AlertCircle,
 } from "lucide-react";
+import logoLight from "@/assets/logo_light.png";
 import logoDark from "@/assets/logo_dark.png";
 import { supabase } from "@/integrations/supabase/client";
 
@@ -160,7 +161,7 @@ export default function LandingPage() {
       <header className={`sticky top-0 z-50 border-b transition-all duration-300 ${scrolled ? "bg-background/95 backdrop-blur-md shadow-md border-border/60" : "glass border-border/40"}`}>
         <div className="max-w-6xl mx-auto px-6 h-16 flex items-center justify-between">
           <button onClick={() => window.scrollTo({ top: 0, behavior: "smooth" })} className="focus:outline-none">
-            <img src={logoDark} alt="Salão Daniella Alves" className="h-9 object-contain cursor-pointer" />
+            <img src={logoLight} alt="Salão Daniella Alves" className="h-9 object-contain cursor-pointer" />
           </button>
           <nav className="hidden md:flex items-center gap-8 text-sm font-medium text-muted-foreground">
             <button onClick={() => scrollTo("depoimentos")} className="hover:text-foreground transition-colors">Depoimentos</button>
