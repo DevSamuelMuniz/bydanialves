@@ -620,7 +620,7 @@ export default function LandingPage() {
                 </Button>
                 <Button size="lg" variant="outline"
                   onClick={() => document.getElementById("planos")?.scrollIntoView({ behavior: "smooth" })}
-                  className="text-base font-semibold px-8 border-primary-foreground/40 text-primary-foreground hover:bg-primary-foreground/10">
+                  className="text-base font-semibold px-8 border-primary-foreground/40 text-black hover:bg-primary-foreground/10 dark:text-black">
                   Ver planos
                 </Button>
               </div>
