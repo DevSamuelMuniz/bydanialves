@@ -567,7 +567,7 @@ export default function LandingPage() {
             style={{ background: "radial-gradient(circle, hsl(var(--primary)), transparent)" }} />
         </div>
         <div className="relative max-w-6xl mx-auto px-6">
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-12 items-center">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-12 items-start">
             {/* Left */}
             <div className="flex flex-col gap-6">
               <Badge className="self-start gradient-gold text-primary-foreground border-0 shadow-gold px-4 py-1.5 text-xs font-medium tracking-widest uppercase">
@@ -605,7 +605,7 @@ export default function LandingPage() {
               </div>
             </div>
             {/* Right */}
-            <div className="relative rounded-3xl overflow-hidden aspect-[9/16] shadow-elevated max-h-[480px] mx-auto w-full max-w-[270px]">
+            <div className="relative rounded-3xl overflow-hidden aspect-square shadow-elevated self-start">
               <img
                 src={heroImage}
                 alt="Salão Daniella Alves"
