@@ -97,42 +97,36 @@ const differentials = [
     title: "Escovas Mensais Inclusas",
     desc: "Progressivas e modelagens já cobertas pelo plano — sem custo extra, todo mês.",
     highlight: "Incluso no plano",
-    emoji: "✂️",
   },
   {
     icon: <Star className="h-6 w-6" />,
     title: "Prioridade no Agendamento",
     desc: "Assinantes escolhem os horários primeiro. Garanta sua vaga nos dias mais disputados.",
     highlight: "Acesso exclusivo",
-    emoji: "⭐",
   },
   {
     icon: <Tag className="h-6 w-6" />,
     title: "Desconto em Serviços Avulsos",
     desc: "Fora do plano? Ainda assim você paga menos. Desconto especial em qualquer procedimento do salão.",
     highlight: "Economia real",
-    emoji: "🏷️",
   },
   {
     icon: <Gift className="h-6 w-6" />,
     title: "Mimos e Brindes Exclusivos",
     desc: "Produtos premium, amostras de marcas selecionadas e surpresas mensais só para assinantes.",
     highlight: "Só para membros",
-    emoji: "🎁",
   },
   {
     icon: <CreditCard className="h-6 w-6" />,
     title: "Valor Fixo, Sem Surpresas",
     desc: "Uma mensalidade previsível que cobre tudo do seu plano. Zero taxas ocultas.",
     highlight: "Previsibilidade",
-    emoji: "💳",
   },
   {
     icon: <Bell className="h-6 w-6" />,
     title: "Cancele Quando Quiser",
     desc: "Sem fidelidade forçada. Cancele ou troque de plano a qualquer momento, sem burocracia.",
     highlight: "Sem compromisso",
-    emoji: "🔓",
   },
 ];
 
@@ -640,13 +634,12 @@ export default function LandingPage() {
                   {String(i + 1).padStart(2, "0")}
                 </span>
 
-                {/* Icon + emoji */}
+                {/* Icon */}
                 <div className="relative flex items-center gap-3">
                   <div className="h-12 w-12 rounded-xl gradient-gold flex items-center justify-center text-primary-foreground shadow-gold
                     group-hover:scale-110 group-hover:rotate-3 transition-transform duration-300">
                     {d.icon}
                   </div>
-                  <span className="text-2xl group-hover:animate-bounce">{d.emoji}</span>
                 </div>
 
                 {/* Content */}
