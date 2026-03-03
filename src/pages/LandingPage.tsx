@@ -3,6 +3,13 @@ import { useState, useCallback, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent } from "@/components/ui/card";
+import { Dialog, DialogContent } from "@/components/ui/dialog";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Checkbox } from "@/components/ui/checkbox";
+import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
+import { ScrollArea } from "@/components/ui/scroll-area";
+import { PasswordInput } from "@/components/PasswordInput";
 import {
   Calendar,
   Star,
@@ -21,10 +28,17 @@ import {
   Tag,
   Scissors,
   Gift,
+  Check,
+  Crown,
+  ArrowLeft,
+  Loader2,
+  User,
+  LogIn,
 } from "lucide-react";
 import logoLight from "@/assets/logo_light.png";
 import logoDark from "@/assets/logo_dark.png";
 import { supabase } from "@/integrations/supabase/client";
+import logo from "@/assets/logo-dani-alves.jpg";
 
 // ─── Constants ───────────────────────────────────────────────────────────────
 
@@ -120,12 +134,337 @@ function SectionHeader({ badge, title, subtitle }: { badge: string; title: React
   );
 }
 
+// ─── Subscription Modal ───────────────────────────────────────────────────────
+type ModalStep = "auth" | "plan-details" | "terms" | "processing";
+type AuthMode = "login" | "signup";
+
+function SubscriptionModal({
+  open,
+  onClose,
+  selectedPlan,
+}: {
+  open: boolean;
+  onClose: () => void;
+  selectedPlan: any | null;
+}) {
+  const navigate = useNavigate();
+  const [step, setStep] = useState<ModalStep>("auth");
+  const [authMode, setAuthMode] = useState<AuthMode>("signup");
+  const [loading, setLoading] = useState(false);
+  const [termsAccepted, setTermsAccepted] = useState(false);
+
+  // Auth fields
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [confirmPassword, setConfirmPassword] = useState("");
+  const [fullName, setFullName] = useState("");
+  const [phone, setPhone] = useState("");
+  const [gender, setGender] = useState("female");
+
+  // Reset on open
+  useEffect(() => {
+    if (open) {
+      setStep("auth");
+      setTermsAccepted(false);
+      setLoading(false);
+    }
+  }, [open]);
+
+  const handleLogin = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setLoading(true);
+    const { data, error } = await supabase.auth.signInWithPassword({ email, password });
+    setLoading(false);
+    if (error) {
+      alert(error.message);
+      return;
+    }
+    if (data.user) setStep("plan-details");
+  };
+
+  const handleSignUp = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (password !== confirmPassword) { alert("Senhas não coincidem."); return; }
+    if (!phone.trim()) { alert("Informe seu WhatsApp."); return; }
+    setLoading(true);
+    const { data: signUpData, error } = await supabase.auth.signUp({
+      email, password,
+      options: { data: { full_name: fullName }, emailRedirectTo: window.location.origin }
+    });
+    if (error) { alert(error.message); setLoading(false); return; }
+    if (signUpData.user) {
+      await supabase.from("profiles").update({ phone, gender } as any).eq("user_id", signUpData.user.id);
+    }
+    setLoading(false);
+    setStep("plan-details");
+  };
+
+  const handleConfirmTerms = async () => {
+    if (!termsAccepted) return;
+    setStep("processing");
+    // Save terms acceptance
+    const { data: { user } } = await supabase.auth.getUser();
+    if (user) {
+      const { data: profile } = await supabase.from("profiles").select("terms_accepted_at").eq("user_id", user.id).maybeSingle();
+      if (!(profile as any)?.terms_accepted_at) {
+        await supabase.from("profiles").update({ terms_accepted_at: new Date().toISOString() } as any).eq("user_id", user.id);
+      }
+      // Trigger checkout
+      try {
+        const { data, error } = await supabase.functions.invoke("create-checkout", {
+          body: { planId: selectedPlan.id },
+        });
+        if (error) throw error;
+        if (data?.url) {
+          onClose();
+          window.open(data.url, "_blank");
+          // After checkout returns, redirect to /client
+          const checkInterval = setInterval(async () => {
+            const { data: { session } } = await supabase.auth.getSession();
+            if (session) {
+              clearInterval(checkInterval);
+              navigate("/client");
+            }
+          }, 2000);
+        }
+      } catch (err: any) {
+        alert("Erro ao iniciar pagamento: " + err.message);
+        setStep("terms");
+      }
+    }
+  };
+
+  const includes = selectedPlan?.includes
+    ? selectedPlan.includes.split(/[,;\n•]+/).map((s: string) => s.trim()).filter(Boolean)
+    : [];
+
+  return (
+    <Dialog open={open} onOpenChange={(v) => { if (!v) onClose(); }}>
+      <DialogContent className="max-w-md p-0 overflow-hidden gap-0">
+        {/* Header */}
+        <div className="gradient-gold p-5 flex items-center gap-3">
+          <img src={logo} alt="Dani Alves" className="h-10 w-10 rounded-full object-cover border-2 border-white/30 shadow" />
+          <div>
+            <p className="text-primary-foreground font-serif font-bold text-lg leading-tight">Dani Alves Studio</p>
+            <p className="text-primary-foreground/80 text-xs">
+              {step === "auth" ? (authMode === "signup" ? "Criar sua conta" : "Entrar na sua conta") :
+               step === "plan-details" ? "Detalhes do plano" :
+               step === "terms" ? "Termos de serviço" : "Processando..."}
+            </p>
+          </div>
+          {/* Steps indicator */}
+          <div className="ml-auto flex gap-1.5">
+            {(["auth", "plan-details", "terms"] as ModalStep[]).map((s, i) => (
+              <div key={s} className={`h-2 rounded-full transition-all duration-300 ${step === s ? "w-6 bg-white" : (["auth","plan-details","terms"].indexOf(step) > i ? "w-2 bg-white/60" : "w-2 bg-white/30")}`} />
+            ))}
+          </div>
+        </div>
+
+        <div className="p-6">
+          {/* ── STEP 1: AUTH ── */}
+          {step === "auth" && (
+            <div className="space-y-4">
+              {/* Toggle */}
+              <div className="flex bg-muted rounded-lg p-1 gap-1">
+                <button
+                  onClick={() => setAuthMode("signup")}
+                  className={`flex-1 flex items-center justify-center gap-2 text-sm font-medium py-2 rounded-md transition-all ${authMode === "signup" ? "bg-background shadow text-foreground" : "text-muted-foreground hover:text-foreground"}`}
+                >
+                  <User className="h-4 w-4" /> Criar conta
+                </button>
+                <button
+                  onClick={() => setAuthMode("login")}
+                  className={`flex-1 flex items-center justify-center gap-2 text-sm font-medium py-2 rounded-md transition-all ${authMode === "login" ? "bg-background shadow text-foreground" : "text-muted-foreground hover:text-foreground"}`}
+                >
+                  <LogIn className="h-4 w-4" /> Já tenho conta
+                </button>
+              </div>
+
+              {authMode === "login" ? (
+                <form onSubmit={handleLogin} className="space-y-3">
+                  <div className="space-y-1.5">
+                    <Label htmlFor="m-email">E-mail</Label>
+                    <Input id="m-email" type="email" value={email} onChange={e => setEmail(e.target.value)} required placeholder="seu@email.com" />
+                  </div>
+                  <div className="space-y-1.5">
+                    <Label htmlFor="m-pass">Senha</Label>
+                    <PasswordInput id="m-pass" value={password} onChange={e => setPassword(e.target.value)} required placeholder="Sua senha" />
+                  </div>
+                  <Button type="submit" className="w-full gradient-gold border-0 text-primary-foreground" disabled={loading}>
+                    {loading ? <><Loader2 className="h-4 w-4 mr-2 animate-spin" /> Entrando...</> : "Entrar e continuar"}
+                  </Button>
+                </form>
+              ) : (
+                <form onSubmit={handleSignUp} className="space-y-3">
+                  <div className="space-y-1.5">
+                    <Label htmlFor="m-name">Nome completo</Label>
+                    <Input id="m-name" value={fullName} onChange={e => setFullName(e.target.value)} required placeholder="Seu nome" />
+                  </div>
+                  <div className="grid grid-cols-2 gap-3">
+                    <div className="space-y-1.5">
+                      <Label htmlFor="m-phone">WhatsApp *</Label>
+                      <Input id="m-phone" type="tel" value={phone} onChange={e => setPhone(e.target.value)} required placeholder="(00) 00000-0000" />
+                    </div>
+                    <div className="space-y-1.5">
+                      <Label>Gênero</Label>
+                      <RadioGroup value={gender} onValueChange={setGender} className="flex gap-3 pt-1">
+                        <div className="flex items-center gap-1.5">
+                          <RadioGroupItem value="female" id="m-fem" />
+                          <Label htmlFor="m-fem" className="font-normal text-xs cursor-pointer">Fem.</Label>
+                        </div>
+                        <div className="flex items-center gap-1.5">
+                          <RadioGroupItem value="male" id="m-masc" />
+                          <Label htmlFor="m-masc" className="font-normal text-xs cursor-pointer">Masc.</Label>
+                        </div>
+                      </RadioGroup>
+                    </div>
+                  </div>
+                  <div className="space-y-1.5">
+                    <Label htmlFor="m-email2">E-mail</Label>
+                    <Input id="m-email2" type="email" value={email} onChange={e => setEmail(e.target.value)} required placeholder="seu@email.com" />
+                  </div>
+                  <div className="grid grid-cols-2 gap-3">
+                    <div className="space-y-1.5">
+                      <Label htmlFor="m-pw">Senha</Label>
+                      <PasswordInput id="m-pw" value={password} onChange={e => setPassword(e.target.value)} required minLength={6} placeholder="Mín. 6 caracteres" />
+                    </div>
+                    <div className="space-y-1.5">
+                      <Label htmlFor="m-cpw">Confirmar</Label>
+                      <PasswordInput id="m-cpw" value={confirmPassword} onChange={e => setConfirmPassword(e.target.value)} required placeholder="Repita a senha" />
+                    </div>
+                  </div>
+                  <Button type="submit" className="w-full gradient-gold border-0 text-primary-foreground" disabled={loading}>
+                    {loading ? <><Loader2 className="h-4 w-4 mr-2 animate-spin" /> Criando conta...</> : "Criar conta e continuar"}
+                  </Button>
+                </form>
+              )}
+            </div>
+          )}
+
+          {/* ── STEP 2: PLAN DETAILS ── */}
+          {step === "plan-details" && selectedPlan && (
+            <div className="space-y-4">
+              <div className="rounded-2xl border border-border/60 bg-muted/30 p-5 space-y-4">
+                <div className="flex items-center gap-3">
+                  <div className="h-10 w-10 rounded-xl gradient-gold flex items-center justify-center shadow-gold">
+                    <Crown className="h-5 w-5 text-primary-foreground" />
+                  </div>
+                  <div>
+                    <p className="font-serif font-bold text-lg leading-tight">{selectedPlan.name}</p>
+                    {selectedPlan.description && <p className="text-xs text-muted-foreground">{selectedPlan.description}</p>}
+                  </div>
+                </div>
+
+                <div className="flex items-end gap-1">
+                  <span className="font-serif text-3xl font-bold gradient-gold-text">
+                    {Number(selectedPlan.price).toLocaleString("pt-BR", { style: "currency", currency: "BRL" })}
+                  </span>
+                  <span className="text-muted-foreground text-sm mb-1">/mês</span>
+                </div>
+
+                <div className="border-t border-border/40 pt-3">
+                  <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-2">O que está incluso:</p>
+                  <ul className="space-y-2">
+                    {includes.map((item: string, i: number) => (
+                      <li key={i} className="flex items-start gap-2 text-sm">
+                        <Check className="h-4 w-4 text-primary mt-0.5 shrink-0" />
+                        <span>{item}</span>
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+
+                {selectedPlan.restriction && (
+                  <p className="text-xs text-muted-foreground flex items-start gap-1.5 bg-muted rounded-lg px-3 py-2">
+                    <AlertCircle className="h-3.5 w-3.5 shrink-0 mt-0.5" /> {selectedPlan.restriction}
+                  </p>
+                )}
+              </div>
+
+              <Button
+                className="w-full gradient-gold border-0 text-primary-foreground font-semibold"
+                onClick={() => setStep("terms")}
+              >
+                Continuar para termos <ChevronRight className="ml-1 h-4 w-4" />
+              </Button>
+              <button onClick={() => setStep("auth")} className="w-full text-xs text-muted-foreground hover:text-foreground flex items-center justify-center gap-1">
+                <ArrowLeft className="h-3 w-3" /> Voltar
+              </button>
+            </div>
+          )}
+
+          {/* ── STEP 3: TERMS ── */}
+          {step === "terms" && (
+            <div className="space-y-4">
+              <ScrollArea className="h-52 rounded-lg border border-border/60 bg-muted/20 p-4 text-sm text-muted-foreground leading-relaxed">
+                <p className="font-semibold text-foreground mb-2">Termos de Uso — Salão Daniella Alves</p>
+                <p className="mb-3">Ao assinar um plano, você concorda com os seguintes termos:</p>
+                <ul className="list-disc pl-4 space-y-2">
+                  <li>A assinatura é mensal e renovada automaticamente via Stripe até ser cancelada.</li>
+                  <li>O cancelamento pode ser realizado a qualquer momento pelo portal do cliente, sem reembolso proporcional do mês vigente.</li>
+                  <li>Os créditos de serviços incluídos no plano são mensais e não acumulam entre períodos.</li>
+                  <li>Agendamentos devem ser realizados com antecedência mínima de 24 horas.</li>
+                  <li>O salão reserva-se o direito de reagendar ou cancelar atendimentos em casos de força maior.</li>
+                  <li>Dados pessoais são tratados conforme nossa Política de Privacidade.</li>
+                </ul>
+              </ScrollArea>
+
+              <div className="flex items-start gap-3">
+                <Checkbox
+                  id="lp-terms"
+                  checked={termsAccepted}
+                  onCheckedChange={(v) => setTermsAccepted(!!v)}
+                />
+                <label htmlFor="lp-terms" className="text-sm cursor-pointer leading-snug text-muted-foreground">
+                  Li e concordo com os{" "}
+                  <a href="/termosdeservico" target="_blank" className="text-primary underline underline-offset-2">Termos de Serviço</a>{" "}
+                  e a{" "}
+                  <a href="/politicadeprivacidade" target="_blank" className="text-primary underline underline-offset-2">Política de Privacidade</a>.
+                </label>
+              </div>
+
+              <Button
+                className="w-full gradient-gold border-0 text-primary-foreground font-semibold"
+                disabled={!termsAccepted}
+                onClick={handleConfirmTerms}
+              >
+                <CreditCard className="mr-2 h-4 w-4" /> Confirmar e ir para pagamento
+              </Button>
+              <button onClick={() => setStep("plan-details")} className="w-full text-xs text-muted-foreground hover:text-foreground flex items-center justify-center gap-1">
+                <ArrowLeft className="h-3 w-3" /> Voltar
+              </button>
+            </div>
+          )}
+
+          {/* ── STEP 4: PROCESSING ── */}
+          {step === "processing" && (
+            <div className="py-8 flex flex-col items-center gap-4 text-center">
+              <div className="h-14 w-14 rounded-full gradient-gold flex items-center justify-center shadow-gold animate-pulse">
+                <CreditCard className="h-7 w-7 text-primary-foreground" />
+              </div>
+              <p className="font-serif text-lg font-bold">Redirecionando para o pagamento...</p>
+              <p className="text-sm text-muted-foreground">Você será direcionado para a página segura do Stripe. Após confirmar, retorne para continuar.</p>
+            </div>
+          )}
+        </div>
+      </DialogContent>
+    </Dialog>
+  );
+}
+
 // ─── Component ───────────────────────────────────────────────────────────────
 export default function LandingPage() {
   const navigate = useNavigate();
   const [plans, setPlans] = useState<any[]>([]);
   const [activeChapter, setActiveChapter] = useState(0);
   const [scrolled, setScrolled] = useState(false);
+  const [subscribeModalOpen, setSubscribeModalOpen] = useState(false);
+  const [selectedPlan, setSelectedPlan] = useState<any | null>(null);
+
+  const openSubscribeModal = (plan: any) => {
+    setSelectedPlan(plan);
+    setSubscribeModalOpen(true);
+  };
 
   useEffect(() => {
     const onScroll = () => setScrolled(window.scrollY > 20);
@@ -158,6 +497,12 @@ export default function LandingPage() {
     document.getElementById(id)?.scrollIntoView({ behavior: "smooth" });
 
   return (
+    <>
+    <SubscriptionModal
+      open={subscribeModalOpen}
+      onClose={() => setSubscribeModalOpen(false)}
+      selectedPlan={selectedPlan}
+    />
     <div className="min-h-screen bg-background text-foreground">
       <style>{`body { overflow-x: hidden; }`}</style>
 
@@ -423,7 +768,7 @@ export default function LandingPage() {
                             ? "gradient-gold border-0 text-primary-foreground shadow-gold hover:scale-[1.03] hover:shadow-[0_8px_32px_hsl(var(--primary)/0.5)] active:scale-[0.98]"
                             : "border border-primary/40 bg-transparent text-foreground hover:gradient-gold hover:text-primary-foreground hover:border-transparent hover:scale-[1.03] hover:shadow-gold active:scale-[0.98]"
                         }`}
-                        onClick={() => navigate("/auth")}
+                        onClick={() => openSubscribeModal(plan)}
                       >
                         Assinar agora
                       </Button>
@@ -630,5 +975,6 @@ export default function LandingPage() {
         </div>
       </footer>
     </div>
+    </>
   );
 }
