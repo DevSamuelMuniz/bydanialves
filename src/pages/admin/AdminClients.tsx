@@ -22,6 +22,7 @@ interface ClientProfile {
   full_name: string;
   phone: string | null;
   blocked: boolean;
+  block_reason?: string | null;
   created_at: string;
   gender?: string | null;
   branch_id?: string | null;
@@ -61,6 +62,7 @@ export default function AdminClients() {
   const [editForm, setEditForm] = useState({ full_name: "", phone: "", gender: "male" });
   const [blockModal, setBlockModal] = useState<{ client: ClientProfile } | null>(null);
   const [blockReason, setBlockReason] = useState("");
+  const [unblockModal, setUnblockModal] = useState<{ client: ClientProfile } | null>(null);
 
   const fetchClients = async () => {
     let query = supabase.from("profiles").select("*").order("full_name");
@@ -136,18 +138,8 @@ export default function AdminClients() {
       setBlockModal({ client });
       return;
     }
-    // Unblock directly
-    const { error } = await supabase
-      .from("profiles")
-      .update({ blocked: false } as any)
-      .eq("id", client.id);
-    if (error) {
-      toast({ title: "Erro", description: error.message, variant: "destructive" });
-    } else {
-      toast({ title: "Cliente desbloqueado" });
-      fetchClients();
-      if (selectedClient?.id === client.id) setSelectedClient({ ...client, blocked: false });
-    }
+    // Open unblock confirmation modal
+    setUnblockModal({ client });
   };
 
   const confirmBlock = async () => {
@@ -155,17 +147,34 @@ export default function AdminClients() {
     const client = blockModal.client;
     const { error } = await supabase
       .from("profiles")
-      .update({ blocked: true } as any)
+      .update({ blocked: true, block_reason: blockReason || null } as any)
       .eq("id", client.id);
     if (error) {
       toast({ title: "Erro", description: error.message, variant: "destructive" });
     } else {
       toast({ title: "Cliente bloqueado", description: blockReason || undefined });
       fetchClients();
-      if (selectedClient?.id === client.id) setSelectedClient({ ...client, blocked: true });
+      if (selectedClient?.id === client.id) setSelectedClient({ ...client, blocked: true, block_reason: blockReason || null });
     }
     setBlockModal(null);
     setBlockReason("");
+  };
+
+  const confirmUnblock = async () => {
+    if (!unblockModal) return;
+    const client = unblockModal.client;
+    const { error } = await supabase
+      .from("profiles")
+      .update({ blocked: false, block_reason: null } as any)
+      .eq("id", client.id);
+    if (error) {
+      toast({ title: "Erro", description: error.message, variant: "destructive" });
+    } else {
+      toast({ title: "Cliente desbloqueado" });
+      fetchClients();
+      if (selectedClient?.id === client.id) setSelectedClient({ ...client, blocked: false, block_reason: null });
+    }
+    setUnblockModal(null);
   };
 
   const saveEdit = async () => {
@@ -329,23 +338,34 @@ export default function AdminClients() {
                 </div>
 
                 {!isProfessional && (
-                  <Button
-                    variant={selectedClient.blocked ? "default" : "destructive"}
-                    size="sm"
-                    onClick={() => toggleBlock(selectedClient)}
-                  >
-                    {selectedClient.blocked ? (
-                      <>
-                        <CheckCircle className="mr-1 h-3 w-3" />
-                        Desbloquear
-                      </>
-                    ) : (
-                      <>
-                        <Ban className="mr-1 h-3 w-3" />
-                        Bloquear Cliente
-                      </>
+                  <div className="space-y-2">
+                    {selectedClient.blocked && selectedClient.block_reason && (
+                      <div className="flex items-start gap-2 rounded-lg bg-destructive/10 border border-destructive/20 px-3 py-2.5">
+                        <Ban className="h-4 w-4 text-destructive shrink-0 mt-0.5" />
+                        <div>
+                          <p className="text-xs font-semibold text-destructive mb-0.5">Motivo do bloqueio</p>
+                          <p className="text-xs text-muted-foreground">{selectedClient.block_reason}</p>
+                        </div>
+                      </div>
                     )}
-                  </Button>
+                    <Button
+                      variant={selectedClient.blocked ? "default" : "destructive"}
+                      size="sm"
+                      onClick={() => toggleBlock(selectedClient)}
+                    >
+                      {selectedClient.blocked ? (
+                        <>
+                          <CheckCircle className="mr-1 h-3 w-3" />
+                          Desbloquear
+                        </>
+                      ) : (
+                        <>
+                          <Ban className="mr-1 h-3 w-3" />
+                          Bloquear Cliente
+                        </>
+                      )}
+                    </Button>
+                  </div>
                 )}
               </div>
 
@@ -417,6 +437,42 @@ export default function AdminClients() {
               <Button variant="destructive" size="sm" onClick={confirmBlock}>
                 <Ban className="mr-1.5 h-3.5 w-3.5" />
                 Confirmar bloqueio
+              </Button>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* ─── Unblock Confirmation Modal ─── */}
+      <Dialog open={!!unblockModal} onOpenChange={(open) => { if (!open) setUnblockModal(null); }}>
+        <DialogContent className="max-w-sm">
+          <DialogHeader>
+            <DialogTitle className="font-serif flex items-center gap-2">
+              <CheckCircle className="h-5 w-5 text-primary" />
+              Desbloquear Cliente
+            </DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4 pt-1">
+            <p className="text-sm text-muted-foreground">
+              Você está prestes a desbloquear{" "}
+              <span className="font-semibold text-foreground">{unblockModal?.client.full_name || "este cliente"}</span>.
+            </p>
+            {unblockModal?.client.block_reason && (
+              <div className="flex items-start gap-2 rounded-lg bg-destructive/10 border border-destructive/20 px-3 py-2.5">
+                <Ban className="h-4 w-4 text-destructive shrink-0 mt-0.5" />
+                <div>
+                  <p className="text-xs font-semibold text-destructive mb-0.5">Motivo do bloqueio</p>
+                  <p className="text-xs text-muted-foreground">{unblockModal.client.block_reason}</p>
+                </div>
+              </div>
+            )}
+            <div className="flex gap-2 justify-end">
+              <Button variant="outline" size="sm" onClick={() => setUnblockModal(null)}>
+                Cancelar
+              </Button>
+              <Button size="sm" onClick={confirmUnblock}>
+                <CheckCircle className="mr-1.5 h-3.5 w-3.5" />
+                Confirmar desbloqueio
               </Button>
             </div>
           </div>
