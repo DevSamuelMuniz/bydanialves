@@ -155,10 +155,11 @@ export default function LandingPage() {
     document.getElementById(id)?.scrollIntoView({ behavior: "smooth" });
 
   return (
-    <div className="min-h-screen bg-background text-foreground overflow-x-hidden">
+    <div className="min-h-screen bg-background text-foreground">
+      <style>{`body { overflow-x: hidden; }`}</style>
 
       {/* ═══ NAV ═══ */}
-      <header className={`sticky top-0 z-50 border-b transition-all duration-300 ${scrolled ? "bg-background/95 backdrop-blur-md shadow-md border-border/60" : "glass border-border/40"}`}>
+      <header className={`fixed top-0 left-0 right-0 z-50 border-b transition-all duration-300 ${scrolled ? "bg-background/95 backdrop-blur-md shadow-md border-border/60" : "glass border-border/40"}`}>
         <div className="max-w-6xl mx-auto px-6 h-16 flex items-center justify-between">
           <button onClick={() => window.scrollTo({ top: 0, behavior: "smooth" })} className="focus:outline-none">
             <img src={logoLight} alt="Salão Daniella Alves" className="h-14 object-contain cursor-pointer" />
@@ -176,7 +177,7 @@ export default function LandingPage() {
       </header>
 
       {/* ═══ SEÇÃO 1 — HERO ═══ */}
-      <section className="relative overflow-hidden py-20 md:py-32">
+      <section className="relative overflow-hidden py-20 md:py-32 pt-36 md:pt-48">
         <div className="pointer-events-none absolute inset-0 overflow-hidden">
           <div className="absolute -top-32 -right-32 h-[500px] w-[500px] rounded-full opacity-10"
             style={{ background: "radial-gradient(circle, hsl(var(--primary)), transparent)" }} />
