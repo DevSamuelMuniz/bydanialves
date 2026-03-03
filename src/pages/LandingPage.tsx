@@ -129,6 +129,13 @@ export default function LandingPage() {
   const navigate = useNavigate();
   const [plans, setPlans] = useState<any[]>([]);
   const [activeChapter, setActiveChapter] = useState(0);
+  const [scrolled, setScrolled] = useState(false);
+
+  useEffect(() => {
+    const onScroll = () => setScrolled(window.scrollY > 20);
+    window.addEventListener("scroll", onScroll, { passive: true });
+    return () => window.removeEventListener("scroll", onScroll);
+  }, []);
 
   // Gallery: continuous marquee (no Embla needed)
 
@@ -159,7 +166,7 @@ export default function LandingPage() {
       {/* ═══════════════════════════════════════════════════════════
           NAV
       ═══════════════════════════════════════════════════════════ */}
-      <header className="sticky top-0 z-50 glass border-b border-border/40">
+      <header className={`sticky top-0 z-50 border-b transition-all duration-300 ${scrolled ? "bg-background/95 backdrop-blur-md shadow-md border-border/60" : "glass border-border/40"}`}>
         <div className="max-w-6xl mx-auto px-6 h-16 flex items-center justify-between">
           <img src={logoDark} alt="Salão Daniella Alves" className="h-9 object-contain" />
           <nav className="hidden md:flex items-center gap-8 text-sm font-medium text-muted-foreground">
