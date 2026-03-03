@@ -18,6 +18,9 @@ import {
   Building2,
   CheckCircle2,
   AlertCircle,
+  Tag,
+  Scissors,
+  Gift,
 } from "lucide-react";
 import logoLight from "@/assets/logo_light.png";
 import logoDark from "@/assets/logo_dark.png";
@@ -73,34 +76,34 @@ const storyChapters = [
 
 const differentials = [
   {
-    icon: <Calendar className="h-6 w-6" />,
-    title: "Agendamento Online 24h",
-    desc: "Agende seus horários a qualquer momento, de onde estiver, sem precisar ligar.",
+    icon: <Tag className="h-6 w-6" />,
+    title: "Economia Real Todo Mês",
+    desc: "Pague um valor fixo mensal e economize até 40% em comparação ao preço avulso dos serviços.",
   },
   {
-    icon: <CreditCard className="h-6 w-6" />,
-    title: "Planos por Assinatura",
-    desc: "Serviços mensais com valor fixo e economia real para quem é cliente frequente.",
+    icon: <Star className="h-6 w-6" />,
+    title: "Prioridade no Agendamento",
+    desc: "Assinantes têm acesso antecipado aos melhores horários antes de qualquer outro cliente.",
   },
   {
-    icon: <Clock className="h-6 w-6" />,
-    title: "Histórico de Atendimentos",
-    desc: "Acompanhe todos os seus agendamentos passados e futuros em um só lugar.",
+    icon: <Scissors className="h-6 w-6" />,
+    title: "Serviços Ilimitados no Plano",
+    desc: "Use os serviços incluídos no seu plano quantas vezes quiser dentro do período contratado.",
   },
   {
-    icon: <Building2 className="h-6 w-6" />,
-    title: "Múltiplas Unidades",
-    desc: "Escolha a unidade mais próxima de você entre todas as nossas filiais.",
+    icon: <Gift className="h-6 w-6" />,
+    title: "Benefícios Exclusivos",
+    desc: "Descontos em produtos, brindes especiais e ofertas que só assinantes têm acesso.",
   },
   {
     icon: <Bell className="h-6 w-6" />,
-    title: "Notificações e Lembretes",
-    desc: "Nunca perca um horário. Receba lembretes automáticos antes de cada atendimento.",
+    title: "Lembretes Automáticos",
+    desc: "Nunca esqueça um horário. Receba notificações personalizadas antes de cada visita.",
   },
   {
-    icon: <BarChart3 className="h-6 w-6" />,
-    title: "CRM Administrativo",
-    desc: "Painel completo para gestão de clientes, finanças, serviços e relatórios.",
+    icon: <CreditCard className="h-6 w-6" />,
+    title: "Cancele Quando Quiser",
+    desc: "Sem fidelidade forçada. Você tem total liberdade para cancelar ou trocar de plano a qualquer momento.",
   },
 ];
 
