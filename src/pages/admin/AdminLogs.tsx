@@ -257,6 +257,14 @@ export default function AdminLogs() {
                         >
                           {actionLabels[log.action] || log.action}
                         </Badge>
+                        {/* Quem realizou a ação */}
+                        <span className="text-xs text-muted-foreground/70 italic shrink-0">
+                          {["profile_blocked", "profile_unblocked", "appointment_status_changed"].includes(log.action)
+                            ? "por administrador"
+                            : ["appointment_created", "subscription_created"].includes(log.action)
+                            ? "pelo próprio usuário"
+                            : "por sistema"}
+                        </span>
                       </div>
                       {log.details && (
                         <p className="text-xs text-muted-foreground mt-0.5 truncate">
