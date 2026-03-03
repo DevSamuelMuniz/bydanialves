@@ -39,6 +39,7 @@ import logoLight from "@/assets/logo_light.png";
 import logoDark from "@/assets/logo_dark.png";
 import { supabase } from "@/integrations/supabase/client";
 import logo from "@/assets/logo-dani-alves.jpg";
+import heroImage from "@/assets/hero-image.jpg";
 import gallery1 from "@/assets/gallery-1.jpeg";
 import gallery2 from "@/assets/gallery-2.png";
 import gallery3 from "@/assets/gallery-3.png";
@@ -606,7 +607,7 @@ export default function LandingPage() {
             {/* Right */}
             <div className="relative rounded-3xl overflow-hidden aspect-[4/3] shadow-elevated">
               <img
-                src="https://images.unsplash.com/photo-1522337360788-8b13dee7a37e?auto=format&fit=crop&w=800&q=80"
+                src={heroImage}
                 alt="Salão Daniella Alves"
                 className="w-full h-full object-cover"
               />
