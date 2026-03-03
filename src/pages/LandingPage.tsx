@@ -291,7 +291,12 @@ export default function LandingPage() {
             {/* Esquerda — fotos empilhadas */}
             <div className="flex flex-col gap-4">
               {/* Filial Principal */}
-              <div className="group relative rounded-2xl overflow-hidden border border-border/60 hover:border-primary/40 hover:shadow-elevated transition-all duration-300 flex-1">
+              <a
+                href="https://www.google.com/maps/search/?api=1&query=Av.+Domingos+Ferreira,+2215+Empresarial+Santa+Sicilia+Sala+308+Recife"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="group relative rounded-2xl overflow-hidden border border-border/60 hover:border-primary/40 hover:shadow-elevated transition-all duration-300 flex-1 cursor-pointer block"
+              >
                 <div className="h-52 overflow-hidden">
                   <img
                     src="https://vugesuaephjbygtpyese.supabase.co/storage/v1/object/public/branch-images/branch-1772306240857.jpeg"
@@ -305,11 +310,16 @@ export default function LandingPage() {
                     <MapPin className="h-4 w-4 text-primary shrink-0" />
                     <span className="text-white font-bold text-sm">Filial Principal</span>
                   </div>
-                  <p className="text-white/70 text-xs pl-6">Rua lá em baixo</p>
+                  <p className="text-white/70 text-xs pl-6">Av. Domingos Ferreira, 2215 — Sala 308</p>
                 </div>
-              </div>
+              </a>
               {/* Filial Centro Sul */}
-              <div className="group relative rounded-2xl overflow-hidden border border-border/60 hover:border-primary/40 hover:shadow-elevated transition-all duration-300 flex-1">
+              <a
+                href="https://www.google.com/maps/search/?api=1&query=R.+Padre+Roma,+639+104+Parnamirim+Recife+PE"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="group relative rounded-2xl overflow-hidden border border-border/60 hover:border-primary/40 hover:shadow-elevated transition-all duration-300 flex-1 cursor-pointer block"
+              >
                 <div className="h-52 overflow-hidden">
                   <img
                     src="https://vugesuaephjbygtpyese.supabase.co/storage/v1/object/public/branch-images/branch-1772306249342.jpeg"
@@ -323,9 +333,9 @@ export default function LandingPage() {
                     <MapPin className="h-4 w-4 text-primary shrink-0" />
                     <span className="text-white font-bold text-sm">Filial Centro Sul</span>
                   </div>
-                  <p className="text-white/70 text-xs pl-6">Rua beco escuro</p>
+                  <p className="text-white/70 text-xs pl-6">R. Padre Roma, 639 — Parnamirim, Recife</p>
                 </div>
-              </div>
+              </a>
             </div>
 
             {/* Direita — mapa único ocupando toda a altura */}
