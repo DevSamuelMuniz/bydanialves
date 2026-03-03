@@ -3,14 +3,15 @@ import { AppSidebar, NavItem } from "@/components/AppSidebar";
 import { NavLink } from "@/components/NavLink";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
-import { Crown, AlertTriangle, LayoutDashboard, CalendarPlus, History, User } from "lucide-react";
+import { Crown, AlertTriangle, LayoutDashboard, CalendarPlus, History, User, Clock } from "lucide-react";
 
 const items: NavItem[] = [
-  { title: "Dashboard",         url: "/client",          icon: LayoutDashboard },
-  { title: "Novo Agendamento",  url: "/client/booking",  icon: CalendarPlus },
-  { title: "Histórico",         url: "/client/history",  icon: History },
-  { title: "Meu Plano",         url: "/client/plans",    icon: Crown },
-  { title: "Perfil",            url: "/client/profile",  icon: User },
+  { title: "Dashboard",              url: "/client",          icon: LayoutDashboard },
+  { title: "Novo Agendamento",       url: "/client/booking",  icon: CalendarPlus },
+  { title: "Aguardando Confirmação", url: "/client/pending",  icon: Clock },
+  { title: "Histórico",              url: "/client/history",  icon: History },
+  { title: "Meu Plano",              url: "/client/plans",    icon: Crown },
+  { title: "Perfil",                 url: "/client/profile",  icon: User },
 ];
 
 export function ClientSidebar() {
