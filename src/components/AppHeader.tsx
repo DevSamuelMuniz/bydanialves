@@ -3,9 +3,9 @@ import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { SidebarTrigger } from "@/components/ui/sidebar";
-import { Input } from "@/components/ui/input";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { Search, User, Settings, LogOut, Bell, Moon, Sun, FileText } from "lucide-react";
+import { GlobalSearch } from "@/components/GlobalSearch";
+import { User, Settings, LogOut, Bell, Moon, Sun, FileText } from "lucide-react";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -24,16 +24,14 @@ import {
 interface AppHeaderProps {
   title: string;
   profilePath: string;
-  onSearch?: (query: string) => void;
 }
 
-export function AppHeader({ title, profilePath, onSearch }: AppHeaderProps) {
+export function AppHeader({ title, profilePath }: AppHeaderProps) {
   const { user, signOut } = useAuth();
   const navigate = useNavigate();
   const [profileName, setProfileName] = useState("");
   const [profileEmail, setProfileEmail] = useState("");
   const [avatarUrl, setAvatarUrl] = useState<string | null>(null);
-  const [search, setSearch] = useState("");
   const [isDark, setIsDark] = useState(() =>
     document.documentElement.classList.contains("dark")
   );
@@ -75,20 +73,7 @@ export function AppHeader({ title, profilePath, onSearch }: AppHeaderProps) {
         <SidebarTrigger />
 
         {/* Search bar */}
-        <div className="flex-1 max-w-xs">
-          <div className="relative">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-            <Input
-              placeholder="Buscar..."
-              value={search}
-              onChange={(e) => {
-                setSearch(e.target.value);
-                onSearch?.(e.target.value);
-              }}
-              className="pl-9 h-9 bg-secondary/50 border-border/40"
-            />
-          </div>
-        </div>
+        <GlobalSearch isAdmin={profilePath.startsWith("/admin")} />
 
         <div className="ml-auto flex items-center gap-1">
           {/* Dark mode toggle */}
