@@ -76,34 +76,34 @@ const storyChapters = [
 
 const differentials = [
   {
-    icon: <Tag className="h-6 w-6" />,
-    title: "Economia Real Todo Mês",
-    desc: "Pague um valor fixo mensal e economize até 40% em comparação ao preço avulso dos serviços.",
+    icon: <Scissors className="h-6 w-6" />,
+    title: "Escovas Mensais Inclusas",
+    desc: "Dependendo do plano, escovas progressivas e modelagens já estão cobertas — sem custo extra.",
   },
   {
     icon: <Star className="h-6 w-6" />,
     title: "Prioridade no Agendamento",
-    desc: "Assinantes têm acesso antecipado aos melhores horários antes de qualquer outro cliente.",
+    desc: "Assinantes escolhem os horários primeiro. Garanta sua vaga nos dias mais disputados com exclusividade.",
   },
   {
-    icon: <Scissors className="h-6 w-6" />,
-    title: "Serviços Ilimitados no Plano",
-    desc: "Use os serviços incluídos no seu plano quantas vezes quiser dentro do período contratado.",
+    icon: <Tag className="h-6 w-6" />,
+    title: "Desconto em Serviços Avulsos",
+    desc: "Além dos serviços incluídos, assine e ganhe desconto especial em qualquer outro procedimento do salão.",
   },
   {
     icon: <Gift className="h-6 w-6" />,
-    title: "Benefícios Exclusivos",
-    desc: "Descontos em produtos, brindes especiais e ofertas que só assinantes têm acesso.",
-  },
-  {
-    icon: <Bell className="h-6 w-6" />,
-    title: "Lembretes Automáticos",
-    desc: "Nunca esqueça um horário. Receba notificações personalizadas antes de cada visita.",
+    title: "Mimos e Brindes Exclusivos",
+    desc: "Produtos de beleza, amostras de marcas premium e surpresas mensais só para quem é assinante.",
   },
   {
     icon: <CreditCard className="h-6 w-6" />,
+    title: "Valor Fixo, Sem Surpresas",
+    desc: "Uma mensalidade previsível que cobre tudo do seu plano. Sem taxas ocultas ou cobranças extras.",
+  },
+  {
+    icon: <Bell className="h-6 w-6" />,
     title: "Cancele Quando Quiser",
-    desc: "Sem fidelidade forçada. Você tem total liberdade para cancelar ou trocar de plano a qualquer momento.",
+    desc: "Sem fidelidade forçada. Cancele ou troque de plano a qualquer momento, sem burocracia.",
   },
 ];
 
