@@ -14,6 +14,7 @@ import { useAdminPermissions } from "@/hooks/use-admin-permissions";
 import { cn } from "@/lib/utils";
 import Avatar3D from "@/components/ui/avatar-3d";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
+import { Textarea } from "@/components/ui/textarea";
 
 interface ClientProfile {
   id: string;
@@ -58,6 +59,8 @@ export default function AdminClients() {
   const [loadingDetail, setLoadingDetail] = useState(false);
   const [editing, setEditing] = useState(false);
   const [editForm, setEditForm] = useState({ full_name: "", phone: "", gender: "male" });
+  const [blockModal, setBlockModal] = useState<{ client: ClientProfile } | null>(null);
+  const [blockReason, setBlockReason] = useState("");
 
   const fetchClients = async () => {
     let query = supabase.from("profiles").select("*").order("full_name");
@@ -127,20 +130,42 @@ export default function AdminClients() {
   };
 
   const toggleBlock = async (client: ClientProfile) => {
-    const newBlocked = !client.blocked;
+    if (!client.blocked) {
+      // Opening block modal for confirmation + reason
+      setBlockReason("");
+      setBlockModal({ client });
+      return;
+    }
+    // Unblock directly
     const { error } = await supabase
       .from("profiles")
-      .update({ blocked: newBlocked } as any)
+      .update({ blocked: false } as any)
       .eq("id", client.id);
     if (error) {
       toast({ title: "Erro", description: error.message, variant: "destructive" });
     } else {
-      toast({ title: newBlocked ? "Cliente bloqueado" : "Cliente desbloqueado" });
+      toast({ title: "Cliente desbloqueado" });
       fetchClients();
-      if (selectedClient?.id === client.id) {
-        setSelectedClient({ ...client, blocked: newBlocked });
-      }
+      if (selectedClient?.id === client.id) setSelectedClient({ ...client, blocked: false });
     }
+  };
+
+  const confirmBlock = async () => {
+    if (!blockModal) return;
+    const client = blockModal.client;
+    const { error } = await supabase
+      .from("profiles")
+      .update({ blocked: true } as any)
+      .eq("id", client.id);
+    if (error) {
+      toast({ title: "Erro", description: error.message, variant: "destructive" });
+    } else {
+      toast({ title: "Cliente bloqueado", description: blockReason || undefined });
+      fetchClients();
+      if (selectedClient?.id === client.id) setSelectedClient({ ...client, blocked: true });
+    }
+    setBlockModal(null);
+    setBlockReason("");
   };
 
   const saveEdit = async () => {
@@ -356,6 +381,45 @@ export default function AdminClients() {
               </div>
             </div>
           )}
+        </DialogContent>
+      </Dialog>
+
+      {/* ─── Block Confirmation Modal ─── */}
+      <Dialog open={!!blockModal} onOpenChange={(open) => { if (!open) { setBlockModal(null); setBlockReason(""); } }}>
+        <DialogContent className="max-w-sm">
+          <DialogHeader>
+            <DialogTitle className="font-serif flex items-center gap-2">
+              <Ban className="h-5 w-5 text-destructive" />
+              Bloquear Cliente
+            </DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4 pt-1">
+            <p className="text-sm text-muted-foreground">
+              Você está prestes a bloquear{" "}
+              <span className="font-semibold text-foreground">{blockModal?.client.full_name || "este cliente"}</span>.
+              Todos os agendamentos pendentes serão cancelados automaticamente.
+            </p>
+            <div className="space-y-1.5">
+              <Label htmlFor="block-reason">Motivo do bloqueio <span className="text-muted-foreground font-normal">(opcional)</span></Label>
+              <Textarea
+                id="block-reason"
+                placeholder="Descreva o motivo do bloqueio..."
+                value={blockReason}
+                onChange={(e) => setBlockReason(e.target.value)}
+                rows={3}
+                className="resize-none"
+              />
+            </div>
+            <div className="flex gap-2 justify-end">
+              <Button variant="outline" size="sm" onClick={() => { setBlockModal(null); setBlockReason(""); }}>
+                Cancelar
+              </Button>
+              <Button variant="destructive" size="sm" onClick={confirmBlock}>
+                <Ban className="mr-1.5 h-3.5 w-3.5" />
+                Confirmar bloqueio
+              </Button>
+            </div>
+          </div>
         </DialogContent>
       </Dialog>
     </div>
