@@ -1,97 +1,78 @@
 
-# Filiais como Sistemas Independentes
+## Reestruturação Completa da Landing Page
 
-## Objetivo
+### Visão Geral
 
-Cada funcionário (Atendente, Profissional) deve ver somente os dados da filial onde trabalha. Gerente e CEO têm visão global de todas as filiais.
-
----
-
-## 1. Banco de Dados — Vincular Funcionários a Filiais
-
-Hoje, `profiles` já tem `branch_id` (filial do cliente). Precisamos associar também os **funcionários** admin a uma filial.
-
-A tabela `user_roles` é o lugar correto para isso (é a tabela de papéis admin). Adicionaremos uma coluna `branch_id` nela:
-
-```sql
-ALTER TABLE public.user_roles ADD COLUMN branch_id uuid REFERENCES public.branches(id);
-```
-
-O CEO e Gerente ficarão com `branch_id = null` (acesso global).  
-Atendentes e Profissionais terão um `branch_id` definido.
+A LP será reescrita com 6 seções distintas, mantendo o header atual e o footer. Os dados dos planos virão do banco de dados real via Supabase (PLANO BASIC CHIC R$129,90, PLANO FASHION R$149,90, PLANO GLAMOUR R$179,90).
 
 ---
 
-## 2. AuthContext — Expor a Filial do Funcionário
+### Seção 1 — Hero Split + Carrossel automático
 
-O `AuthContext` já carrega `adminLevel`. Vamos adicionar `adminBranchId` ao contexto, lido de `user_roles.branch_id`.
+**Layout:**
+- Div em `grid grid-cols-2`: lado esquerdo com título, descrição e 2 CTAs; lado direito com imagem decorativa (placeholder de salão de beleza via unsplash).
+- Abaixo do grid, um carrossel automático de imagens (auto-play a cada 3s) com fotos de unhas/serviços, usando `embla-carousel-react` já instalado no projeto.
 
-```tsx
-// AuthContext.tsx
-adminBranchId: string | null;
-```
-
-Assim, qualquer componente pode chamar `useAuth().adminBranchId` para saber a filial do funcionário logado.
-
----
-
-## 3. Agenda Admin — Filtrar por Filial
-
-Atendentes/Profissionais (`r < 3`) verão **somente** agendamentos da sua filial.  
-Gerentes/CEO (`r >= 3`) verão todos, com um **seletor de filial** opcional para filtrar.
-
-Mudança em `AdminAgenda.tsx`:
-```ts
-// Se adminBranchId existe, filtra automaticamente
-if (adminBranchId) query = query.eq("branch_id", adminBranchId);
-```
+**CTAs:**
+1. "Fazer meu agendamento" → `/auth`
+2. "Ver planos e preços" → scroll `#planos`
 
 ---
 
-## 4. Meus Atendimentos — Filtrar por Filial
+### Seção 2 — Depoimentos + Carrossel de Produtos
 
-Mesma lógica em `AdminMyAppointments.tsx`: se o funcionário tem filial, só carrega atendimentos daquela filial.
+**Reutiliza** o bloco de testimonials já existente ("O que dizem nossas clientes").
 
----
-
-## 5. Dashboard — KPIs Isolados por Filial
-
-- **Atendente/Profissional**: vê KPIs apenas da sua filial (total de agendamentos do dia/semana).
-- **Gerente/CEO**: vê KPIs globais + seção comparativa por filial já implementada.
+Abaixo, um carrossel automático horizontal com logos/nomes de produtos tipicamente usados em salão de beleza (OPI, Essie, Sally Hansen, CND Shellac, Gelish, Morgan Taylor, Kiesque, Nail Tek) — cards com ícone + nome da marca, auto-scroll contínuo (CSS `animation: scroll` infinite).
 
 ---
 
-## 6. Gestão de Usuários — Atribuir Filial ao Funcionário
+### Seção 3 — História de Dani Alves (Split: carrossel de texto + vídeo)
 
-Na página `AdminUsers.tsx`, ao criar ou editar um funcionário admin, o Gerente/CEO poderá definir a filial dele no campo de edição de perfil.
-
----
-
-## 7. Gestão de Filiais — Exibir Funcionários por Filial
-
-Em `AdminBranches.tsx`, adicionar uma listagem de quantos funcionários estão associados a cada filial.
+**Layout split 50/50:**
+- **Esquerda:** carrossel de "capítulos" com botões de navegação lateral. Cada slide tem um título + parágrafo contando um trecho da história (ex: "O Começo", "A Paixão pelo Ofício", "Crescimento e Expansão", "Nossa Missão").
+- **Direita:** `<iframe>` do YouTube embutido (placeholder com uma URL genérica de apresentação) ou um `<video>` com poster, com aspect ratio 16:9.
 
 ---
 
-## Arquivos Modificados
+### Seção 4 — "Somos mais que um salão de beleza"
 
-| Arquivo | O que muda |
-|---|---|
-| Migration SQL | `ALTER TABLE user_roles ADD COLUMN branch_id` |
-| `src/contexts/AuthContext.tsx` | Expõe `adminBranchId` |
-| `src/pages/admin/AdminAgenda.tsx` | Filtra por filial automaticamente |
-| `src/pages/admin/AdminMyAppointments.tsx` | Filtra por filial automaticamente |
-| `src/pages/admin/AdminDashboard.tsx` | KPIs filtrados por filial |
-| `src/pages/admin/AdminUsers.tsx` | Campo de filial ao editar funcionário |
-| `src/pages/admin/AdminBranches.tsx` | Contagem de funcionários por filial |
+Cards com diferenciais do sistema, ex:
+- Agendamento online 24h
+- Sistema de planos por assinatura
+- Histórico de atendimentos
+- Múltiplas unidades
+- Notificações e lembretes
+- CRM Administrativo completo
+
+Grid de 3 colunas com ícone gradient-gold, título e descrição.
 
 ---
 
-## Regras de Acesso Resumidas
+### Seção 5 — Planos (dados reais do banco)
 
-| Nível | Vê agendamentos de | Vê financeiro de |
-|---|---|---|
-| Atendente | Só sua filial | Não tem acesso |
-| Profissional | Só sua filial | Não tem acesso |
-| Gerente | Todas as filiais | Sua filial |
-| CEO | Todas as filiais | Todas |
+**Dados reais:**
+- PLANO BASIC CHIC — R$ 129,90/mês — 04 escovas por mês
+- PLANO FASHION — R$ 149,90/mês — 06 escovas por mês (destaque)
+- PLANO GLAMOUR — R$ 179,90/mês — 08 escovas por mês
+
+Cards com o mesmo estilo visual já existente (gradient-gold no destacado), CTA "Assinar agora" → `/auth`.
+
+---
+
+### Seção 6 — Banner CTA chamativo
+
+Banner com fundo `gradient-gold`, texto grande impactante, subtítulo e botão de destaque.
+
+---
+
+### Detalhes Técnicos
+
+**Arquivo modificado:** `src/pages/LandingPage.tsx`
+
+- Import do `useEffect` e `useState` para controle dos carrosséis e fetch de planos do Supabase.
+- Import do `supabase` client para buscar planos reais.
+- Import do `useEmblaCarousel` para os carrosséis automáticos.
+- Os carrosséis de imagens e produtos usarão `setInterval` + `emblaApi.scrollNext()` para auto-play.
+- O carrossel de história da Dani Alves usará estado local `activeSlide` com navegação manual por botões.
+- Planos buscados diretamente da tabela `plans` (já tem RLS pública para `active = true`).
