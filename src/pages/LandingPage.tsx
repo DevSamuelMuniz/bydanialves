@@ -61,12 +61,14 @@ const testimonials = [
 ];
 
 const galleryImages = [
-  "https://images.unsplash.com/photo-1560066984-138daaa0f9b6?w=600&q=80",
-  "https://images.unsplash.com/photo-1522337360788-8b13dee7a37e?w=600&q=80",
-  "https://images.unsplash.com/photo-1595476108010-b4d1f102b1b1?w=600&q=80",
-  "https://images.unsplash.com/photo-1570172619644-dfd03ed5d881?w=600&q=80",
-  "https://images.unsplash.com/photo-1487412947147-5cebf100ffc2?w=600&q=80",
-  "https://images.unsplash.com/photo-1519014816548-bf5fe059798b?w=600&q=80",
+  "https://images.unsplash.com/photo-1560066984-138daaa0f9b6?auto=format&fit=crop&w=600&q=80",
+  "https://images.unsplash.com/photo-1522337360788-8b13dee7a37e?auto=format&fit=crop&w=600&q=80",
+  "https://images.unsplash.com/photo-1595476108010-b4d1f102b1b1?auto=format&fit=crop&w=600&q=80",
+  "https://images.unsplash.com/photo-1570172619644-dfd03ed5d881?auto=format&fit=crop&w=600&q=80",
+  "https://images.unsplash.com/photo-1562322140-8baeececf3df?auto=format&fit=crop&w=600&q=80",
+  "https://images.unsplash.com/photo-1521590832167-7bcbfaa6381f?auto=format&fit=crop&w=600&q=80",
+  "https://images.unsplash.com/photo-1600948836101-f9ffda59d250?auto=format&fit=crop&w=600&q=80",
+  "https://images.unsplash.com/photo-1519014816548-bf5fe059798b?auto=format&fit=crop&w=600&q=80",
 ];
 
 const storyChapters = [
@@ -587,7 +589,7 @@ export default function LandingPage() {
             {/* Right */}
             <div className="relative rounded-3xl overflow-hidden aspect-[4/3] shadow-elevated">
               <img
-                src="https://images.unsplash.com/photo-1522337360788-8b13dee7a37e?w=800&q=80"
+                src="https://images.unsplash.com/photo-1522337360788-8b13dee7a37e?auto=format&fit=crop&w=800&q=80"
                 alt="Salão Daniella Alves"
                 className="w-full h-full object-cover"
               />
