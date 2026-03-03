@@ -412,64 +412,127 @@ export default function LandingPage() {
           </div>
 
           {plans.length > 0 ? (
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-8 items-stretch">
               {plans.map((p, idx) => {
-                const isHighlight = idx === 1; // middle plan highlighted
+                const isHighlight = idx === 1;
+                const tierLabels = ["Iniciante", "Mais Popular", "Premium"];
+                const tierIcons = ["✦", "⭐", "👑"];
+                const escovasCount = p.includes.match(/\d+/)?.[0];
+                const escovaLabel = escovasCount ? `${escovasCount}x escovas/mês` : p.includes;
+
                 return (
                   <div key={p.id}
-                    className={`relative rounded-2xl p-6 flex flex-col gap-4 border transition-all duration-300 ${
+                    className={`relative rounded-3xl flex flex-col border transition-all duration-300 overflow-hidden group ${
                       isHighlight
-                        ? "gradient-gold text-primary-foreground shadow-gold border-transparent scale-[1.03]"
-                        : "bg-card border-border/60 hover:border-primary/30"
+                        ? "gradient-gold text-primary-foreground shadow-gold border-transparent"
+                        : "bg-card border-border/60 hover:border-primary/40 hover:shadow-elevated"
                     }`}>
-                    {isHighlight && (
-                      <div className="absolute -top-3 left-1/2 -translate-x-1/2">
-                        <Badge className="bg-foreground text-background border-0 text-xs px-3 py-1">
-                          ⭐ Mais popular
-                        </Badge>
-                      </div>
-                    )}
-                    <div>
-                      <p className={`text-sm font-semibold uppercase tracking-wide ${isHighlight ? "text-primary-foreground/80" : "text-muted-foreground"}`}>
+
+                    {/* Top bar decorative */}
+                    <div className={`h-1.5 w-full ${isHighlight ? "bg-foreground/20" : "bg-gradient-to-r from-primary/40 to-primary/10"}`} />
+
+                    {/* Badge tier */}
+                    <div className="px-7 pt-7 pb-0">
+                      <span className={`inline-flex items-center gap-1.5 text-xs font-semibold uppercase tracking-widest px-3 py-1 rounded-full ${
+                        isHighlight ? "bg-foreground/20 text-primary-foreground" : "bg-primary/10 text-primary"
+                      }`}>
+                        {tierIcons[idx]} {tierLabels[idx]}
+                      </span>
+                    </div>
+
+                    {/* Plan name + price */}
+                    <div className="px-7 pt-5 pb-4">
+                      <h3 className={`text-lg font-bold uppercase tracking-wide leading-tight ${isHighlight ? "text-primary-foreground" : "text-foreground"}`}>
                         {p.name}
-                      </p>
-                      <div className="flex items-end gap-1 mt-2">
-                        <span className="font-serif text-4xl font-bold">{formatPrice(p.price)}</span>
-                        <span className={`text-sm pb-1 ${isHighlight ? "text-primary-foreground/70" : "text-muted-foreground"}`}>/mês</span>
-                      </div>
+                      </h3>
                       {p.description && (
-                        <p className={`text-sm mt-2 ${isHighlight ? "text-primary-foreground/80" : "text-muted-foreground"}`}>
+                        <p className={`text-sm mt-1 ${isHighlight ? "text-primary-foreground/80" : "text-muted-foreground"}`}>
                           {p.description}
                         </p>
                       )}
+                      <div className="flex items-end gap-1.5 mt-4">
+                        <span className="font-serif text-5xl font-bold leading-none">{formatPrice(p.price)}</span>
+                        <span className={`text-sm pb-1.5 ${isHighlight ? "text-primary-foreground/70" : "text-muted-foreground"}`}>/mês</span>
+                      </div>
                     </div>
 
-                    <ul className="flex flex-col gap-2.5 flex-1">
+                    {/* Divider */}
+                    <div className={`mx-7 border-t ${isHighlight ? "border-primary-foreground/20" : "border-border/50"}`} />
+
+                    {/* Highlight stat */}
+                    <div className={`mx-7 my-5 rounded-2xl px-4 py-3 text-center ${isHighlight ? "bg-foreground/15" : "bg-primary/5 border border-primary/10"}`}>
+                      <span className={`text-3xl font-bold font-serif ${isHighlight ? "text-primary-foreground" : "text-primary"}`}>
+                        {escovasCount}
+                      </span>
+                      <p className={`text-xs uppercase tracking-wide mt-0.5 ${isHighlight ? "text-primary-foreground/80" : "text-muted-foreground"}`}>
+                        Escovas por mês
+                      </p>
+                    </div>
+
+                    {/* Includes list */}
+                    <ul className="flex flex-col gap-3 px-7 pb-4 flex-1">
                       {p.includes.split(",").map((feature: string) => (
-                        <li key={feature} className="flex items-start gap-2 text-sm">
+                        <li key={feature} className="flex items-start gap-2.5 text-sm">
                           <CheckCircle2 className={`h-4 w-4 mt-0.5 shrink-0 ${isHighlight ? "text-primary-foreground" : "text-primary"}`} />
                           <span className={isHighlight ? "text-primary-foreground/90" : "text-foreground/80"}>
                             {feature.trim()}
                           </span>
                         </li>
                       ))}
+                      {/* Agendamento prioritário */}
+                      <li className="flex items-start gap-2.5 text-sm">
+                        <CheckCircle2 className={`h-4 w-4 mt-0.5 shrink-0 ${isHighlight ? "text-primary-foreground" : "text-primary"}`} />
+                        <span className={isHighlight ? "text-primary-foreground/90" : "text-foreground/80"}>
+                          Agendamento prioritário 24h
+                        </span>
+                      </li>
+                      <li className="flex items-start gap-2.5 text-sm">
+                        <CheckCircle2 className={`h-4 w-4 mt-0.5 shrink-0 ${isHighlight ? "text-primary-foreground" : "text-primary"}`} />
+                        <span className={isHighlight ? "text-primary-foreground/90" : "text-foreground/80"}>
+                          Cancelamento a qualquer momento
+                        </span>
+                      </li>
+                      {idx >= 1 && (
+                        <li className="flex items-start gap-2.5 text-sm">
+                          <CheckCircle2 className={`h-4 w-4 mt-0.5 shrink-0 ${isHighlight ? "text-primary-foreground" : "text-primary"}`} />
+                          <span className={isHighlight ? "text-primary-foreground/90" : "text-foreground/80"}>
+                            Acesso a promoções exclusivas
+                          </span>
+                        </li>
+                      )}
                     </ul>
 
-                    <Button
-                      onClick={() => navigate("/auth")}
-                      variant={isHighlight ? "secondary" : "default"}
-                      className="w-full mt-2">
-                      Assinar agora
-                    </Button>
+                    {/* Restriction note */}
+                    {p.restriction && (
+                      <div className={`mx-7 mb-4 text-xs px-3 py-2 rounded-xl ${
+                        isHighlight ? "bg-foreground/10 text-primary-foreground/70" : "bg-muted text-muted-foreground"
+                      }`}>
+                        ⚠️ {p.restriction}
+                      </div>
+                    )}
+
+                    {/* CTA Button */}
+                    <div className="px-7 pb-7">
+                      <Button
+                        onClick={() => navigate("/auth")}
+                        variant={isHighlight ? "secondary" : "default"}
+                        className={`w-full transition-all duration-300 ${
+                          isHighlight
+                            ? "hover:scale-[1.03] hover:shadow-lg active:scale-[0.97]"
+                            : "hover:scale-[1.03] hover:shadow-gold hover:brightness-110 active:scale-[0.97]"
+                        }`}>
+                        Assinar agora
+                      </Button>
+                    </div>
                   </div>
                 );
               })}
             </div>
           ) : (
             /* Fallback skeleton */
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
               {[0, 1, 2].map((i) => (
-                <div key={i} className="rounded-2xl bg-card border border-border/60 p-6 h-72 animate-pulse" />
+                <div key={i} className="rounded-3xl bg-card border border-border/60 p-6 h-96 animate-pulse" />
               ))}
             </div>
           )}
