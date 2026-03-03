@@ -44,6 +44,7 @@ import gallery2 from "@/assets/gallery-2.png";
 import gallery3 from "@/assets/gallery-3.png";
 import gallery4 from "@/assets/gallery-4.jpeg";
 import gallery5 from "@/assets/gallery-5.png";
+import gallery6 from "@/assets/gallery-6.jpg";
 
 // ─── Constants ───────────────────────────────────────────────────────────────
 
@@ -71,9 +72,11 @@ const galleryImages = [
   gallery3,
   gallery4,
   gallery5,
+  gallery6,
   gallery1,
   gallery3,
   gallery5,
+  gallery6,
   gallery2,
   gallery4,
 ];
