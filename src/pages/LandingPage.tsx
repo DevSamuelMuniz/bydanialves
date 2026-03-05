@@ -1,5 +1,6 @@
 import { useNavigate } from "react-router-dom";
 import { useState, useCallback, useEffect } from "react";
+import { ParticlesBackground } from "@/components/ParticlesBackground";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent } from "@/components/ui/card";
@@ -584,6 +585,7 @@ export default function LandingPage() {
 
   return (
     <>
+    <ParticlesBackground />
     <SubscriptionModal
         open={subscribeModalOpen}
         onClose={() => setSubscribeModalOpen(false)}
