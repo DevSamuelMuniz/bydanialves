@@ -137,7 +137,7 @@ export default function Auth() {
         <div className="w-full max-w-md space-y-6 my-auto">
           <div className="text-center">
             <img alt="Dani Alves" className="mx-auto h-auto w-48 mb-4" src="/lovable-uploads/956e4a55-f6ac-453a-9a05-199bec11fa7f.png" />
-            <h1 className="font-serif text-2xl font-bold tracking-tight">Dani Alves Studio</h1>
+            
             <p className="text-muted-foreground mt-1">Agende seus serviços com elegância</p>
           </div>
 
