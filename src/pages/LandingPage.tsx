@@ -430,17 +430,68 @@ function SubscriptionModal({
                 </div>
               </div>
 
-              <ScrollArea className="h-44 rounded-lg border border-border/60 bg-muted/20 p-4 text-sm text-muted-foreground leading-relaxed">
-                <p className="font-semibold text-foreground mb-2">Termos de Uso — Salão Daniella Alves</p>
-                <p className="mb-3">Ao assinar um plano, você concorda com os seguintes termos:</p>
-                <ul className="list-disc pl-4 space-y-2">
-                  <li>A assinatura é mensal e renovada automaticamente via Stripe até ser cancelada.</li>
-                  <li>O cancelamento pode ser realizado a qualquer momento pelo portal do cliente, sem reembolso proporcional do mês vigente.</li>
-                  <li>Os créditos de serviços incluídos no plano são mensais e não acumulam entre períodos.</li>
-                  <li>Agendamentos devem ser realizados com antecedência mínima de 24 horas.</li>
-                  <li>O salão reserva-se o direito de reagendar ou cancelar atendimentos em casos de força maior.</li>
-                  <li>Dados pessoais são tratados conforme nossa Política de Privacidade.</li>
+              <ScrollArea className="h-64 rounded-lg border border-border/60 bg-muted/20 p-4 text-sm text-muted-foreground leading-relaxed">
+                <p className="font-bold text-foreground text-center mb-3">✨ REGRAS DA ESCOVA POR ASSINATURA – BY DANI ALVES ✨</p>
+                <p className="mb-4 text-xs">Para evitar dúvidas, seguem as principais informações do plano:</p>
+
+                <p className="font-semibold text-foreground mb-1">📌 1. Como funciona o plano</p>
+                <ul className="list-disc pl-4 space-y-1 mb-4 text-xs">
+                  <li>A assinatura é mensal, com renovação automática.</li>
+                  <li>O uso é pessoal, intransferível e não cumulativo.</li>
+                  <li>O ciclo tem duração de 30 dias, sendo que o primeiro dia é a data da contratação.</li>
+                  <li>As escovas devem ser utilizadas dentro desse período de 30 dias.</li>
+                  <li>Escovas não utilizadas não acumulam para o mês seguinte.</li>
                 </ul>
+
+                <p className="font-semibold text-foreground mb-1">📌 2. Agendamento</p>
+                <ul className="list-disc pl-4 space-y-1 mb-4 text-xs">
+                  <li>Deve ser feito pelo link enviado ou pelo WhatsApp.</li>
+                  <li>Atendimento somente com horário agendado.</li>
+                  <li>Não há encaixe.</li>
+                  <li>Tolerância máxima de atraso: 15 minutos. Após esse prazo, o atendimento poderá não ser realizado.</li>
+                  <li>Em caso de não comparecimento no dia do agendamento, a escova será considerada utilizada, por ter ocupado um horário que poderia ser destinado a outra assinante.</li>
+                  <li>Não atendemos clientes fora do horário agendado.</li>
+                </ul>
+
+                <p className="font-semibold text-foreground mb-1">📌 3. Funcionamento</p>
+                <ul className="list-disc pl-4 space-y-1 mb-4 text-xs">
+                  <li>Funcionamento de terça a sábado, das 8h às 17h.</li>
+                  <li>O primeiro agendamento do dia é às 8h e o último às 17h.</li>
+                  <li>Não funciona às segundas-feiras e nem em feriados (mesmo que o salão esteja aberto).</li>
+                </ul>
+
+                <p className="font-semibold text-foreground mb-1">📌 4. Pagamento</p>
+                <ul className="list-disc pl-4 space-y-1 mb-4 text-xs">
+                  <li>Pagamento exclusivamente via cartão de crédito ou cartão de débito, com renovação automática.</li>
+                  <li>O sistema não permite contratação por PIX ou boleto.</li>
+                  <li>Em caso de o cartão cadastrado na contratação não autorizar o pagamento, o plano será automaticamente suspenso até a regularização.</li>
+                </ul>
+
+                <p className="font-semibold text-foreground mb-1">📌 5. Cancelamento</p>
+                <ul className="list-disc pl-4 space-y-1 mb-4 text-xs">
+                  <li>O cancelamento pode ser solicitado pela contratante a qualquer momento.</li>
+                  <li>Orientamos que utilize todas as escovas do ciclo antes de solicitar o cancelamento.</li>
+                  <li>O cancelamento precisa ser solicitado antes de completar os 30 dias (contados a partir da data da contratação), para evitar nova cobrança automática.</li>
+                  <li>Em caso de cancelamento antecipado, antes de finalizar as escovas do ciclo, a contratante perderá as escovas restantes.</li>
+                </ul>
+
+                <p className="font-semibold text-foreground mb-1">📌 6. Direito de arrependimento</p>
+                <ul className="list-disc pl-4 space-y-1 mb-4 text-xs">
+                  <li>Você pode desistir em até 7 dias após a compra ou renovação, desde que não tenha utilizado o serviço.</li>
+                </ul>
+
+                <p className="font-semibold text-foreground mb-1">📌 7. Serviços, Atendimento e Benefícios</p>
+                <p className="text-xs mb-2">Os serviços incluídos na ESCOVA POR ASSINATURA compreendem:</p>
+                <ul className="list-disc pl-4 space-y-1 mb-3 text-xs">
+                  <li>Lavagem simples;</li>
+                  <li>Aplicação de proteção térmica;</li>
+                  <li>Finalização à escolha da cliente: escovação lisa ou modelada.</li>
+                </ul>
+                <p className="text-xs mb-2">⏳ <span className="font-semibold text-foreground">Tempo de atendimento:</span> O tempo médio de execução é de aproximadamente 30 minutos. Contudo, recomendamos considerar permanência de até 1 hora no salão, a depender do volume e comprimento do cabelo.</p>
+                <p className="text-xs mb-2">💇‍♀️ <span className="font-semibold text-foreground">Produtos pessoais:</span> Não será permitido ao assinante levar produtos próprios para aplicação, com exceção de shampoo e condicionador.</p>
+                <p className="text-xs mb-4">⚠️ <span className="font-semibold text-foreground">Condições do cabelo:</span> Não será realizado atendimento em cabelos com qualquer tipo de química recém-aplicada ou incompatível com o serviço. O salão não se responsabiliza por reações decorrentes de produtos externos ou previamente utilizados pela cliente.</p>
+
+                <p className="text-xs text-center text-foreground/70">Qualquer dúvida estamos à disposição 💛<br /><span className="font-semibold">Equipe By Dani Alves ✨</span></p>
               </ScrollArea>
 
               <div className="flex items-start gap-3">
