@@ -190,6 +190,7 @@ export default function ClientHistory() {
             const branchAddress = appt.branches?.address;
             const canReview = appt.status === "completed" && !reviewedIds.has(appt.id);
             const hasReview = appt.status === "completed" && reviewedIds.has(appt.id);
+            const canReschedule = appt.status === "completed" || appt.status === "cancelled";
 
             return (
               <div
