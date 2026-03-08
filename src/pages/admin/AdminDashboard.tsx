@@ -56,6 +56,8 @@ export default function AdminDashboard() {
   const [branchKpis, setBranchKpis] = useState<{ name: string; count: number; revenue: number }[]>([]);
   const [branches, setBranches] = useState<{ id: string; name: string }[]>([]);
   const [branchFilter, setBranchFilter] = useState<string>("all");
+  const [avgRating, setAvgRating] = useState<number | null>(null);
+  const [reviewCount, setReviewCount] = useState(0);
 
   const [loading, setLoading] = useState(true);
 
