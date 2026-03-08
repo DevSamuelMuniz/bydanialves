@@ -14,8 +14,9 @@ import {
   DialogFooter,
   DialogDescription,
 } from "@/components/ui/dialog";
-import { Clock, Filter, MapPin, Scissors, CalendarDays, BanknoteIcon, StickyNote, Timer, Star } from "lucide-react";
+import { Clock, Filter, MapPin, Scissors, CalendarDays, BanknoteIcon, StickyNote, Timer, Star, RotateCcw } from "lucide-react";
 import { toast } from "sonner";
+import { useNavigate } from "react-router-dom";
 
 const statusLabels: Record<string, string> = {
   pending: "Pendente",
@@ -66,6 +67,7 @@ function StarRating({ value, onChange }: { value: number; onChange: (v: number) 
 
 export default function ClientHistory() {
   const { user } = useAuth();
+  const navigate = useNavigate();
   const [appointments, setAppointments] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [statusFilter, setStatusFilter] = useState("all");
@@ -188,6 +190,7 @@ export default function ClientHistory() {
             const branchAddress = appt.branches?.address;
             const canReview = appt.status === "completed" && !reviewedIds.has(appt.id);
             const hasReview = appt.status === "completed" && reviewedIds.has(appt.id);
+            const canReschedule = appt.status === "completed" || appt.status === "cancelled";
 
             return (
               <div
@@ -283,6 +286,19 @@ export default function ClientHistory() {
                       <Star className="h-3 w-3 fill-success" />
                       Avaliação enviada
                     </div>
+                  )}
+
+                  {/* Reagendar button */}
+                  {canReschedule && appt.service_id && (
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      className="w-full gap-1.5 border-border/60 text-muted-foreground hover:border-primary/40 hover:text-primary hover:bg-primary/5 text-xs"
+                      onClick={() => navigate(`/client/booking?serviceId=${appt.service_id}`)}
+                    >
+                      <RotateCcw className="h-3.5 w-3.5" />
+                      Reagendar
+                    </Button>
                   )}
                 </div>
               </div>

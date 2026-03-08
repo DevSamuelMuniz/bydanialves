@@ -10,11 +10,12 @@ import { Badge } from "@/components/ui/badge";
 import {
   Check, ChevronLeft, ShieldX, MessageCircle, Building2, MapPin,
   Scissors, Clock, CalendarDays, Timer, DollarSign, Star, Sparkles,
-  ChevronRight
+  ChevronRight, RotateCcw
 } from "lucide-react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from "@/components/ui/dialog";
 import { ptBR } from "date-fns/locale";
 import { format } from "date-fns";
+import { useSearchParams } from "react-router-dom";
 
 interface Branch { id: string; name: string; address: string | null; image_url: string | null; }
 
@@ -79,6 +80,9 @@ function isSlotAvailable(
 export default function NewBooking() {
   const { user } = useAuth();
   const { toast } = useToast();
+  const [searchParams] = useSearchParams();
+  const preselectedServiceId = searchParams.get("serviceId");
+
   const [step, setStep] = useState(1);
   const [branches, setBranches] = useState<Branch[]>([]);
   const [selectedBranch, setSelectedBranch] = useState<Branch | null>(null);
@@ -161,6 +165,16 @@ export default function NewBooking() {
     };
     loadData();
   }, [user]);
+
+  // Pre-select service from URL param and jump to step 2 (after services load)
+  useEffect(() => {
+    if (!preselectedServiceId || services.length === 0) return;
+    const found = services.find((s) => s.id === preselectedServiceId);
+    if (found) {
+      setSelectedServices([found]);
+      setStep(2);
+    }
+  }, [preselectedServiceId, services]);
 
   useEffect(() => {
     if (!selectedDate || !selectedBranch) return;
@@ -283,6 +297,7 @@ export default function NewBooking() {
 
   // Step labels
   const STEP_LABELS = ["Filial", "Serviços", "Data", "Horário", "Confirmação"];
+  const isRescheduling = !!preselectedServiceId;
 
   return (
     <div className="w-full space-y-6">
@@ -294,7 +309,16 @@ export default function NewBooking() {
           </Button>
         )}
         <div>
-          <h1 className="font-serif text-2xl tracking-tight">Novo Agendamento</h1>
+          <div className="flex items-center gap-2">
+            <h1 className="font-serif text-2xl tracking-tight">
+              {isRescheduling ? "Reagendar" : "Novo Agendamento"}
+            </h1>
+            {isRescheduling && (
+              <span className="inline-flex items-center gap-1 text-xs font-medium text-primary bg-primary/10 border border-primary/20 rounded-full px-2 py-0.5">
+                <RotateCcw className="h-3 w-3" /> Reagendamento
+              </span>
+            )}
+          </div>
           <p className="text-sm text-muted-foreground">{STEP_LABELS[step - 1]}</p>
         </div>
       </div>
