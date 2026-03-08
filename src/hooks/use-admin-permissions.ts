@@ -66,6 +66,9 @@ export function useAdminPermissions() {
     canViewDashboard: r >= 2 && adminLevel !== "professional",
     canViewDashboardFinancials: r >= 4,
     canViewBranchKpis: r >= 3,
+
+    // ── TV de Fila ─────────────────────────────────────
+    canViewQueueTV: adminLevel === "attendant" || adminLevel === "manager" || adminLevel === "ceo",
   };
 }
 

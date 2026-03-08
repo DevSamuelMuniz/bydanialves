@@ -29,6 +29,7 @@ import AdminLogs from "./pages/admin/AdminLogs";
 import AdminBranches from "./pages/admin/AdminBranches";
 import AdminCoupons from "./pages/admin/AdminCoupons";
 import AdminReviews from "./pages/admin/AdminReviews";
+import QueueTV from "./pages/admin/QueueTV";
 import TermosDeServico from "./pages/TermosDeServico";
 import PoliticaDePrivacidade from "./pages/PoliticaDePrivacidade";
 import PoliticaETermos from "./pages/PoliticaETermos";
@@ -76,6 +77,7 @@ const App = () => (
               <Route path="users" element={<AdminUsers />} />
               <Route path="profile" element={<AdminProfile />} />
               <Route path="logs" element={<AdminLogs />} />
+              <Route path="queue-tv" element={<QueueTV />} />
             </Route>
 
             <Route path="*" element={<NotFound />} />

@@ -4,7 +4,7 @@ import { useAuth } from "@/contexts/AuthContext";
 import { Badge } from "@/components/ui/badge";
 import {
   LayoutDashboard, Users, Calendar, Scissors, DollarSign,
-  BarChart3, ShieldCheck, Crown, Activity, ClipboardList, Building2, Tag, Star,
+  BarChart3, ShieldCheck, Crown, Activity, ClipboardList, Building2, Tag, Star, Tv2,
 } from "lucide-react";
 
 export function AdminSidebar() {
@@ -23,6 +23,7 @@ export function AdminSidebar() {
     { title: "Usuários",           url: "/admin/users",          icon: ShieldCheck,     tourId: "sidebar-admin-users" },
     { title: "Cupons",             url: "/admin/coupons",        icon: Tag,             tourId: "sidebar-admin-coupons" },
     { title: "Avaliações",         url: "/admin/reviews",        icon: Star,            tourId: "sidebar-admin-reviews" },
+    { title: "TV de Fila",         url: "/admin/queue-tv",       icon: Tv2,             tourId: "sidebar-admin-queue-tv" },
     { title: "Logs",               url: "/admin/logs",           icon: Activity,        tourId: "sidebar-admin-logs" },
   ].filter((item) => {
     const map: Record<string, boolean> = {
@@ -37,6 +38,7 @@ export function AdminSidebar() {
       "/admin/users":           perms.canViewUsers,
       "/admin/coupons":         perms.canManageCoupons,
       "/admin/reviews":         perms.canViewServices,
+      "/admin/queue-tv":        perms.canViewQueueTV,
       "/admin/logs":            perms.canViewLogs,
     };
     return map[item.url] ?? false;
