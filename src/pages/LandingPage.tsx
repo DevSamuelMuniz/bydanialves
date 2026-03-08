@@ -1203,9 +1203,8 @@ export default function LandingPage() {
           </div>
         </div>
       )}
-    
-      </footer>
-    </div>
-    </>);
+    </>
+  );
+}
 
 }
