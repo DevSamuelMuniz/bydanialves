@@ -67,33 +67,29 @@ export default function AdminDashboard() {
   }, [isManager]);
 
   useEffect(() => {
+    const today = new Date().toISOString().split("T")[0];
     const monthStart = startOfMonth(new Date()).toISOString().split("T")[0];
     const weekStart = format(subDays(new Date(), 6), "yyyy-MM-dd");
     const last30Start = format(subDays(new Date(), 29), "yyyy-MM-dd");
 
-    // Build queries — staff with a branch see only their branch data
+    // Determine which branch ID to filter by:
+    // - Staff with a fixed branch → always use adminBranchId
+    // - Manager/CEO → use branchFilter dropdown (or null for all)
+    const activeBranchId = adminBranchId
+      ? adminBranchId
+      : (isManager && branchFilter !== "all" ? branchFilter : null);
+
+    // Helper to optionally add branch filter
+    const withBranch = (q: any) => activeBranchId ? q.eq("branch_id", activeBranchId) : q;
+
     const apptBase = supabase.from("appointments");
-    const todayQ = adminBranchId
-      ? apptBase.select("*, services(name), profiles!appointments_client_profile_fkey(full_name)").eq("appointment_date", today).eq("branch_id", adminBranchId).order("appointment_time")
-      : apptBase.select("*, services(name), profiles!appointments_client_profile_fkey(full_name)").eq("appointment_date", today).order("appointment_time");
-    const pendingQ = adminBranchId
-      ? supabase.from("appointments").select("id", { count: "exact", head: true }).eq("status", "pending").eq("branch_id", adminBranchId)
-      : supabase.from("appointments").select("id", { count: "exact", head: true }).eq("status", "pending");
-    const weekQ = adminBranchId
-      ? supabase.from("appointments").select("id", { count: "exact", head: true }).gte("appointment_date", weekStart).lte("appointment_date", today).eq("branch_id", adminBranchId)
-      : supabase.from("appointments").select("id", { count: "exact", head: true }).gte("appointment_date", weekStart).lte("appointment_date", today);
-    const completedQ = adminBranchId
-      ? supabase.from("appointments").select("id", { count: "exact", head: true }).eq("status", "completed").eq("branch_id", adminBranchId)
-      : supabase.from("appointments").select("id", { count: "exact", head: true }).eq("status", "completed");
-    const servicesQ = adminBranchId
-      ? supabase.from("appointments").select("service_id, services(name)").gte("appointment_date", last30Start).neq("status", "cancelled").eq("branch_id", adminBranchId)
-      : supabase.from("appointments").select("service_id, services(name)").gte("appointment_date", last30Start).neq("status", "cancelled");
-    const hoursQ = adminBranchId
-      ? supabase.from("appointments").select("appointment_time").eq("status", "completed").eq("branch_id", adminBranchId).limit(500)
-      : supabase.from("appointments").select("appointment_time").eq("status", "completed").limit(500);
-    const rateQ = adminBranchId
-      ? supabase.from("appointments").select("status").gte("appointment_date", last30Start).eq("branch_id", adminBranchId)
-      : supabase.from("appointments").select("status").gte("appointment_date", last30Start);
+    const todayQ   = withBranch(apptBase.select("*, services(name), profiles!appointments_client_profile_fkey(full_name)").eq("appointment_date", today)).order("appointment_time");
+    const pendingQ = withBranch(supabase.from("appointments").select("id", { count: "exact", head: true }).eq("status", "pending"));
+    const weekQ    = withBranch(supabase.from("appointments").select("id", { count: "exact", head: true }).gte("appointment_date", weekStart).lte("appointment_date", today));
+    const completedQ = withBranch(supabase.from("appointments").select("id", { count: "exact", head: true }).eq("status", "completed"));
+    const servicesQ  = withBranch(supabase.from("appointments").select("service_id, services(name)").gte("appointment_date", last30Start).neq("status", "cancelled"));
+    const hoursQ     = withBranch(supabase.from("appointments").select("appointment_time").eq("status", "completed")).limit(500);
+    const rateQ      = withBranch(supabase.from("appointments").select("status").gte("appointment_date", last30Start));
 
     Promise.all([
       todayQ,
@@ -166,7 +162,7 @@ export default function AdminDashboard() {
       setLoading(false);
     });
 
-    // Branch KPIs separate async load (global only — no branch filter here)
+    // Branch KPIs (always global — shows all branches for CEO/Gerente comparison)
     (async () => {
       const monthStart2 = startOfMonth(new Date()).toISOString().split("T")[0];
       const [branchAppts, branchFin, branchListRes] = await Promise.all([
@@ -187,7 +183,7 @@ export default function AdminDashboard() {
       }
       setBranchKpis(Object.values(branchMap).sort((a, b) => b.count - a.count));
     })();
-  }, [adminBranchId]);
+  }, [adminBranchId, branchFilter, isManager]);
 
   if (loading) return (
     <div className="space-y-6">
