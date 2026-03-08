@@ -12,17 +12,17 @@ export function AdminSidebar() {
   const perms = useAdminPermissions();
 
   const items: NavItem[] = [
-    { title: "Dashboard",          url: "/admin",                icon: LayoutDashboard },
-    { title: "Agenda",             url: "/admin/agenda",         icon: Calendar },
-    { title: "Meus Atendimentos",  url: "/admin/my-appointments",icon: ClipboardList },
-    { title: "Clientes",           url: "/admin/clients",        icon: Users },
-    { title: "Serviços",           url: "/admin/services",       icon: Scissors },
-    { title: "Planos",             url: "/admin/plans",          icon: Crown },
-    { title: "Financeiro",         url: "/admin/finance",        icon: DollarSign },
-    { title: "Filiais",            url: "/admin/branches",       icon: Building2 },
-    { title: "Usuários",           url: "/admin/users",          icon: ShieldCheck },
-    { title: "Cupons",             url: "/admin/coupons",        icon: Tag },
-    { title: "Logs",               url: "/admin/logs",           icon: Activity },
+    { title: "Dashboard",          url: "/admin",                icon: LayoutDashboard, tourId: "sidebar-admin-dashboard" },
+    { title: "Agenda",             url: "/admin/agenda",         icon: Calendar,        tourId: "sidebar-admin-agenda" },
+    { title: "Meus Atendimentos",  url: "/admin/my-appointments",icon: ClipboardList,   tourId: "sidebar-admin-my-appointments" },
+    { title: "Clientes",           url: "/admin/clients",        icon: Users,           tourId: "sidebar-admin-clients" },
+    { title: "Serviços",           url: "/admin/services",       icon: Scissors,        tourId: "sidebar-admin-services" },
+    { title: "Planos",             url: "/admin/plans",          icon: Crown,           tourId: "sidebar-admin-plans" },
+    { title: "Financeiro",         url: "/admin/finance",        icon: DollarSign,      tourId: "sidebar-admin-finance" },
+    { title: "Filiais",            url: "/admin/branches",       icon: Building2,       tourId: "sidebar-admin-branches" },
+    { title: "Usuários",           url: "/admin/users",          icon: ShieldCheck,     tourId: "sidebar-admin-users" },
+    { title: "Cupons",             url: "/admin/coupons",        icon: Tag,             tourId: "sidebar-admin-coupons" },
+    { title: "Logs",               url: "/admin/logs",           icon: Activity,        tourId: "sidebar-admin-logs" },
   ].filter((item) => {
     const map: Record<string, boolean> = {
       "/admin":                 perms.canViewDashboard,
