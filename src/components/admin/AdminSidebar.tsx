@@ -22,6 +22,7 @@ export function AdminSidebar() {
     { title: "Filiais",            url: "/admin/branches",       icon: Building2,       tourId: "sidebar-admin-branches" },
     { title: "Usuários",           url: "/admin/users",          icon: ShieldCheck,     tourId: "sidebar-admin-users" },
     { title: "Cupons",             url: "/admin/coupons",        icon: Tag,             tourId: "sidebar-admin-coupons" },
+    { title: "Avaliações",         url: "/admin/reviews",        icon: Star,            tourId: "sidebar-admin-reviews" },
     { title: "Logs",               url: "/admin/logs",           icon: Activity,        tourId: "sidebar-admin-logs" },
   ].filter((item) => {
     const map: Record<string, boolean> = {
