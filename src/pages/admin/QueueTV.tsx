@@ -134,6 +134,19 @@ export default function QueueTV() {
   const [editLabel, setEditLabel] = useState("");
   const [editBranchId, setEditBranchId] = useState<string>("all");
 
+  // QR code expand state
+  const [qrOpenId, setQrOpenId] = useState<string | null>(null);
+
+  const downloadQr = (token: QueueToken) => {
+    const canvas = document.getElementById(`qr-canvas-${token.id}`) as HTMLCanvasElement | null;
+    if (!canvas) return;
+    const url = canvas.toDataURL("image/png");
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = `qr-${token.label.replace(/\s+/g, "-").toLowerCase()}.png`;
+    a.click();
+  };
+
   // Track which IDs are "new" for animation/flash
   const [newIds, setNewIds] = useState<Set<string>>(new Set());
   const [pendingFlash, setPendingFlash] = useState(false);
