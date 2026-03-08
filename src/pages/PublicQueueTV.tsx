@@ -157,6 +157,7 @@ export default function PublicQueueTV() {
 
       setAppointments(appts);
       setLabel(json.label || "TV de Fila");
+      setBranchName(json.branch_name || null);
       setLastUpdate(new Date());
       setError(null);
     } catch {
