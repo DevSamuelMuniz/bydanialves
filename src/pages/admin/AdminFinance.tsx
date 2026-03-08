@@ -72,8 +72,11 @@ export default function AdminFinance() {
   const { toast } = useToast();
   const perms = useAdminPermissions();
 
+  const isManager = perms.adminLevel === "manager" || perms.adminLevel === "ceo";
+
   const [records, setRecords]           = useState<any[]>([]);
   const [completedAppointments, setCompletedAppointments] = useState<any[]>([]);
+  const [branches, setBranches]         = useState<any[]>([]);
   const [loading, setLoading]           = useState(true);
   const [dialogOpen, setDialogOpen]     = useState(false);
   const [editingRecord, setEditingRecord] = useState<any | null>(null);
@@ -90,10 +93,18 @@ export default function AdminFinance() {
   });
 
   // Filters
-  const [dateFrom, setDateFrom]   = useState<Date | undefined>(undefined);
-  const [dateTo, setDateTo]       = useState<Date | undefined>(undefined);
-  const [typeFilter, setTypeFilter] = useState<string>("all");
-  const [tab, setTab]             = useState("overview");
+  const [dateFrom, setDateFrom]         = useState<Date | undefined>(undefined);
+  const [dateTo, setDateTo]             = useState<Date | undefined>(undefined);
+  const [typeFilter, setTypeFilter]     = useState<string>("all");
+  const [branchFilter, setBranchFilter] = useState<string>("all");
+  const [tab, setTab]                   = useState("overview");
+
+  // ─── Fetch branches (for manager/ceo filter) ────────────
+  useEffect(() => {
+    if (!isManager) return;
+    supabase.from("branches").select("id, name").eq("active", true).order("name")
+      .then(({ data }) => setBranches(data || []));
+  }, [isManager]);
 
   // ─── Fetch ──────────────────────────────────────────────
   const fetchRecords = useCallback(async () => {
@@ -108,23 +119,29 @@ export default function AdminFinance() {
     if (dateFrom) query = query.gte("created_at", format(dateFrom, "yyyy-MM-dd"));
     if (dateTo)   query = query.lte("created_at", format(dateTo, "yyyy-MM-dd") + "T23:59:59");
     if (typeFilter !== "all") query = query.eq("type", typeFilter as any);
+    // Filter by branch name for manager/ceo
+    if (isManager && branchFilter !== "all") {
+      const selectedBranch = branches.find((b) => b.id === branchFilter);
+      if (selectedBranch) query = query.eq("branch", selectedBranch.name);
+    }
     const { data } = await query;
     setRecords(data || []);
 
     // Fetch completed appointments with service prices and client profiles
     let apptQuery = supabase
       .from("appointments")
-      .select("id, appointment_date, appointment_time, created_at, notes, client_id, profiles(full_name), services(name, price, is_system)")
+      .select("id, appointment_date, appointment_time, created_at, notes, client_id, branch_id, profiles(full_name), services(name, price, is_system)")
       .eq("status", "completed")
       .order("appointment_date", { ascending: false })
       .limit(500);
     if (dateFrom) apptQuery = apptQuery.gte("appointment_date", format(dateFrom, "yyyy-MM-dd"));
     if (dateTo)   apptQuery = apptQuery.lte("appointment_date", format(dateTo, "yyyy-MM-dd"));
+    if (isManager && branchFilter !== "all") apptQuery = apptQuery.eq("branch_id", branchFilter);
     const { data: apptData } = await apptQuery;
     setCompletedAppointments(apptData || []);
 
     setLoading(false);
-  }, [dateFrom, dateTo, typeFilter]);
+  }, [dateFrom, dateTo, typeFilter, branchFilter, isManager, branches]);
 
   useEffect(() => { fetchRecords(); }, [fetchRecords]);
 
