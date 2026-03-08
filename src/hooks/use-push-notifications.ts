@@ -43,7 +43,11 @@ export function usePushNotifications() {
     permissionRequested.current = true;
 
     if (Notification.permission === "default") {
-      Notification.requestPermission();
+      Notification.requestPermission().then((result) => {
+        console.log("[PushNotifications] Permission result:", result);
+      });
+    } else {
+      console.log("[PushNotifications] Permission already:", Notification.permission);
     }
   }, [user]);
 
