@@ -34,6 +34,7 @@ import TermosDeServico from "./pages/TermosDeServico";
 import PoliticaDePrivacidade from "./pages/PoliticaDePrivacidade";
 import PoliticaETermos from "./pages/PoliticaETermos";
 import LandingPage from "./pages/LandingPage";
+import PublicQueueTV from "./pages/PublicQueueTV";
 const queryClient = new QueryClient();
 
 const App = () => (
