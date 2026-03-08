@@ -360,6 +360,33 @@ export type Database = {
           },
         ]
       }
+      queue_tv_tokens: {
+        Row: {
+          active: boolean
+          created_at: string
+          created_by: string
+          id: string
+          label: string
+          token: string
+        }
+        Insert: {
+          active?: boolean
+          created_at?: string
+          created_by: string
+          id?: string
+          label?: string
+          token?: string
+        }
+        Update: {
+          active?: boolean
+          created_at?: string
+          created_by?: string
+          id?: string
+          label?: string
+          token?: string
+        }
+        Relationships: []
+      }
       reviews: {
         Row: {
           appointment_id: string
