@@ -68,6 +68,10 @@ const testimonials = [
 }];
 
 
+// Unique images for lightbox navigation
+const galleryUniqueImages = [gallery1, gallery2, gallery3, gallery4, gallery5, gallery6];
+
+// Doubled for infinite marquee
 const galleryImages = [
 gallery1,
 gallery2,
