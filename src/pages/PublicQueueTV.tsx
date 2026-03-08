@@ -101,6 +101,13 @@ export default function PublicQueueTV() {
   const [lastUpdate, setLastUpdate] = useState(new Date());
   const [isFullscreen, setIsFullscreen] = useState(false);
   const [isDark, setIsDark] = useState(true);
+  const [muted, setMuted] = useState(false);
+  const [newIds, setNewIds] = useState<Set<string>>(new Set());
+  const [pendingFlash, setPendingFlash] = useState(false);
+  const prevPendingIdsRef = useRef<Set<string>>(new Set());
+  const isFirstFetch = useRef(true);
+  const mutedRef = useRef(muted);
+  useEffect(() => { mutedRef.current = muted; }, [muted]);
   const containerRef = useRef<HTMLDivElement>(null);
 
   const fetchData = useCallback(async () => {
