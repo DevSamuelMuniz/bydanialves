@@ -256,7 +256,7 @@ export default function PublicQueueTV() {
             <div>
               <h1 className="text-2xl font-serif font-bold tracking-tight">TV de Fila</h1>
               <p className="text-sm text-muted-foreground">
-                {branchName ? `📍 ${branchName}` : label || "Atendimentos de hoje"}
+                {label || "Atendimentos de hoje"}
               </p>
             </div>
           </div>
@@ -300,6 +300,17 @@ export default function PublicQueueTV() {
             </div>
           </div>
         </header>
+
+        {/* Branch banner — only shown when filtered to a specific branch */}
+        {branchName && (
+          <div className="shrink-0 flex items-center justify-center gap-3 px-8 py-2.5 bg-primary/10 border-b border-primary/20">
+            <div className="h-2 w-2 rounded-full bg-primary animate-pulse" />
+            <span className="text-sm font-semibold text-primary tracking-wide uppercase">
+              {branchName}
+            </span>
+            <div className="h-2 w-2 rounded-full bg-primary animate-pulse" />
+          </div>
+        )}
 
         {/* Columns */}
         {loading ? (
