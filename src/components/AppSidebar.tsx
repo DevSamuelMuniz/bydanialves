@@ -24,6 +24,7 @@ export interface NavItem {
   url: string;
   icon: LucideIcon;
   tourId?: string;
+  badge?: number;
 }
 
 interface AppSidebarProps {
