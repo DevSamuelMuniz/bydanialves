@@ -9,7 +9,8 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Label } from "@/components/ui/label";
 import { useToast } from "@/hooks/use-toast";
-import { Search, Ban, CheckCircle, Calendar, DollarSign, Edit2, Save, X, MessageCircle, MapPin } from "lucide-react";
+import { Search, Ban, CheckCircle, Calendar, DollarSign, Edit2, Save, X, MessageCircle, MapPin, Download } from "lucide-react";
+import { downloadCSV } from "@/lib/csv";
 import { useAdminPermissions } from "@/hooks/use-admin-permissions";
 import { cn } from "@/lib/utils";
 import Avatar3D from "@/components/ui/avatar-3d";
@@ -219,7 +220,25 @@ export default function AdminClients() {
 
   return (
     <div className="space-y-6">
-      <h1 className="font-serif text-2xl">Gestão de Clientes</h1>
+      <div className="flex items-center justify-between gap-2 flex-wrap">
+        <h1 className="font-serif text-2xl">Gestão de Clientes</h1>
+        <Button variant="outline" size="sm" onClick={() => {
+          const headers = ["Nome", "Email", "Telefone", "Gênero", "Bloqueado", "Filial Frequente", "Cadastrado em"];
+          const rows = filtered.map((c) => [
+            c.full_name,
+            emails[c.user_id]?.email ?? "",
+            c.phone ?? "",
+            c.gender === "female" ? "Feminino" : c.gender === "male" ? "Masculino" : "",
+            c.blocked ? "Sim" : "Não",
+            clientFreqBranch[c.user_id] ?? "",
+            new Date(c.created_at).toLocaleDateString("pt-BR"),
+          ]);
+          downloadCSV(`clientes${search ? "_busca-" + search.replace(/\s+/g, "_") : ""}`, headers, rows);
+        }}>
+          <Download className="mr-2 h-4 w-4" />
+          Exportar CSV
+        </Button>
+      </div>
       <div className="relative">
         <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
         <Input
