@@ -81,7 +81,7 @@ export default function AdminAgenda() {
     setLoading(false);
   }, [dateFrom, dateTo, serviceFilter, adminBranchId, branchFilter, isManager]);
 
-  useEffect(() => { fetchServices(); }, []);
+  useEffect(() => { fetchServices(); fetchBranches(); }, []);
   useEffect(() => { fetchAppointments(); }, [fetchAppointments]);
 
   useEffect(() => {
