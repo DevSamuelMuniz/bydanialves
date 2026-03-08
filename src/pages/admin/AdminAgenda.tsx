@@ -143,7 +143,7 @@ export default function AdminAgenda() {
   };
 
   const resetFilters = () => {
-    setDateFrom(undefined); setDateTo(undefined); setServiceFilter("all");
+    setDateFrom(undefined); setDateTo(undefined); setServiceFilter("all"); setBranchFilter("all");
   };
 
   // Split into columns
