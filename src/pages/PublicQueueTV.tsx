@@ -100,6 +100,7 @@ export default function PublicQueueTV() {
 
   const [appointments, setAppointments] = useState<Appointment[]>([]);
   const [label, setLabel] = useState("");
+  const [branchName, setBranchName] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [lastUpdate, setLastUpdate] = useState(new Date());
