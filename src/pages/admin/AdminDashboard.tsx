@@ -7,7 +7,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { CalendarDays, Users, Clock, AlertCircle, TrendingUp, CheckCircle2, Scissors, Building2 } from "lucide-react";
+import { CalendarDays, Users, Clock, AlertCircle, TrendingUp, CheckCircle2, Scissors, Building2, Star } from "lucide-react";
 import {
   AreaChart, Area, BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer,
   CartesianGrid, Cell,
@@ -56,6 +56,8 @@ export default function AdminDashboard() {
   const [branchKpis, setBranchKpis] = useState<{ name: string; count: number; revenue: number }[]>([]);
   const [branches, setBranches] = useState<{ id: string; name: string }[]>([]);
   const [branchFilter, setBranchFilter] = useState<string>("all");
+  const [avgRating, setAvgRating] = useState<number | null>(null);
+  const [reviewCount, setReviewCount] = useState(0);
 
   const [loading, setLoading] = useState(true);
 
@@ -161,6 +163,18 @@ export default function AdminDashboard() {
 
       setLoading(false);
     });
+
+    // Reviews average
+    (async () => {
+      const { data: reviewsData } = await (supabase as any)
+        .from("reviews")
+        .select("rating");
+      if (reviewsData && reviewsData.length > 0) {
+        const avg = reviewsData.reduce((s: number, r: any) => s + r.rating, 0) / reviewsData.length;
+        setAvgRating(Math.round(avg * 10) / 10);
+        setReviewCount(reviewsData.length);
+      }
+    })();
 
     // Branch KPIs (always global — shows all branches for CEO/Gerente comparison)
     (async () => {
@@ -362,12 +376,12 @@ export default function AdminDashboard() {
               </div>
             </div>
             <div className="grid grid-cols-2 gap-3 w-full mt-1">
-              <div className="rounded-lg bg-emerald-500/8 border border-emerald-500/20 px-3 py-2 text-center">
-                <p className="text-lg font-bold text-emerald-600">{completedCount}</p>
+              <div className="rounded-lg bg-success/10 border border-success/20 px-3 py-2 text-center">
+                <p className="text-lg font-bold text-success">{completedCount}</p>
                 <p className="text-[10px] text-muted-foreground">Concluídos</p>
               </div>
-              <div className="rounded-lg bg-amber-500/8 border border-amber-500/20 px-3 py-2 text-center">
-                <p className="text-lg font-bold text-amber-600">{pendingCount}</p>
+              <div className="rounded-lg bg-warning/10 border border-warning/20 px-3 py-2 text-center">
+                <p className="text-lg font-bold text-warning">{pendingCount}</p>
                 <p className="text-[10px] text-muted-foreground">Pendentes</p>
               </div>
             </div>
@@ -402,29 +416,59 @@ export default function AdminDashboard() {
         </Card>
       </div>
 
-      {/* Row 3: Últimos clientes */}
-      <Card className="border-border/60 animate-slide-up" style={{ animationDelay: "0.4s" }}>
-        <CardContent className="pt-6">
-          <h3 className="font-serif text-base font-medium mb-4 tracking-tight">Últimos Clientes Cadastrados</h3>
-          {recentClients.length === 0 ? (
-            <p className="text-sm text-muted-foreground py-4 text-center">Nenhum cliente.</p>
-          ) : (
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-3">
-              {recentClients.map((c, i) => (
-                <div key={i} className="flex items-center gap-3 p-3 rounded-xl bg-muted/40 border border-border/40 hover:border-primary/20 transition-colors">
-                  <div className="h-9 w-9 rounded-full bg-primary/10 flex items-center justify-center text-xs font-bold text-primary shrink-0">
-                    {(c.full_name || "?").charAt(0).toUpperCase()}
-                  </div>
-                  <div className="min-w-0">
-                    <p className="text-sm font-medium truncate">{c.full_name || "Sem nome"}</p>
-                    <p className="text-xs text-muted-foreground">{new Date(c.created_at).toLocaleDateString("pt-BR")}</p>
-                  </div>
-                </div>
-              ))}
+      {/* Row 3: Avaliações + Últimos clientes */}
+      <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
+        {/* Avaliações */}
+        <Card className="border-border/60 animate-slide-up" style={{ animationDelay: "0.4s" }}>
+          <CardContent className="pt-6 flex flex-col items-center justify-center gap-3 h-full">
+            <div className="flex items-center gap-2 self-start">
+              <Star className="h-4 w-4 text-primary" />
+              <h3 className="font-serif text-base font-medium tracking-tight">Avaliações</h3>
             </div>
-          )}
-        </CardContent>
-      </Card>
+            <p className="text-xs text-muted-foreground self-start -mt-2">Média geral dos atendimentos</p>
+            {avgRating !== null ? (
+              <>
+                <p className="text-5xl font-serif font-bold text-primary">{avgRating.toFixed(1)}</p>
+                <div className="flex gap-0.5">
+                  {[1, 2, 3, 4, 5].map((s) => (
+                    <Star
+                      key={s}
+                      className={`h-5 w-5 ${s <= Math.round(avgRating!) ? "fill-primary text-primary" : "text-muted-foreground/30"}`}
+                    />
+                  ))}
+                </div>
+                <p className="text-xs text-muted-foreground">{reviewCount} avaliação{reviewCount !== 1 ? "ões" : ""}</p>
+              </>
+            ) : (
+              <p className="text-sm text-muted-foreground text-center py-4">Sem avaliações ainda.</p>
+            )}
+          </CardContent>
+        </Card>
+
+        {/* Últimos clientes */}
+        <Card className="lg:col-span-3 border-border/60 animate-slide-up" style={{ animationDelay: "0.42s" }}>
+          <CardContent className="pt-6">
+            <h3 className="font-serif text-base font-medium mb-4 tracking-tight">Últimos Clientes Cadastrados</h3>
+            {recentClients.length === 0 ? (
+              <p className="text-sm text-muted-foreground py-4 text-center">Nenhum cliente.</p>
+            ) : (
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+                {recentClients.map((c, i) => (
+                  <div key={i} className="flex items-center gap-3 p-3 rounded-xl bg-muted/40 border border-border/40 hover:border-primary/20 transition-colors">
+                    <div className="h-9 w-9 rounded-full bg-primary/10 flex items-center justify-center text-xs font-bold text-primary shrink-0">
+                      {(c.full_name || "?").charAt(0).toUpperCase()}
+                    </div>
+                    <div className="min-w-0">
+                      <p className="text-sm font-medium truncate">{c.full_name || "Sem nome"}</p>
+                      <p className="text-xs text-muted-foreground">{new Date(c.created_at).toLocaleDateString("pt-BR")}</p>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </CardContent>
+        </Card>
+      </div>
 
       {/* Row 4: KPIs por Filial (Gerente e CEO) */}
       {canViewBranchKpis && branchKpis.length > 0 && (

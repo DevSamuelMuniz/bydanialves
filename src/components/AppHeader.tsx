@@ -5,7 +5,8 @@ import { useAuth } from "@/contexts/AuthContext";
 import { SidebarTrigger } from "@/components/ui/sidebar";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { GlobalSearch } from "@/components/GlobalSearch";
-import { User, Settings, LogOut, Bell, Moon, Sun, FileText } from "lucide-react";
+import { NotificationBell } from "@/components/NotificationBell";
+import { User, Settings, LogOut, Moon, Sun, FileText } from "lucide-react";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -105,14 +106,7 @@ export function AppHeader({ title, profilePath }: AppHeaderProps) {
           </Tooltip>
 
           {/* Notification bell */}
-          <Tooltip>
-            <TooltipTrigger asChild>
-              <button className="h-9 w-9 flex items-center justify-center rounded-lg hover:bg-secondary/60 transition-colors text-muted-foreground hover:text-foreground">
-                <Bell className="h-4 w-4" />
-              </button>
-            </TooltipTrigger>
-            <TooltipContent>Notificações</TooltipContent>
-          </Tooltip>
+          <NotificationBell />
 
           {/* Avatar dropdown */}
           <DropdownMenu>
