@@ -380,7 +380,7 @@ export default function QueueTV() {
                 {isDark ? "☀️ Claro" : "🌙 Escuro"}
               </button>
               <button
-                onClick={() => { setShareOpen(true); fetchTokens(); }}
+                onClick={() => { setShareOpen(true); fetchTokens(); fetchBranches(); }}
                 className="h-9 px-3 rounded-lg flex items-center gap-1.5 bg-primary/10 hover:bg-primary/20 transition-colors text-primary text-xs font-medium"
               >
                 <Share2 className="h-3.5 w-3.5" />
