@@ -5,8 +5,10 @@ import { ClientHeader } from "@/components/client/ClientHeader";
 import { WhatsAppButton } from "@/components/WhatsAppButton";
 import { WelcomeModal } from "@/components/client/WelcomeModal";
 import { OnboardingTour } from "@/components/OnboardingTour";
+import { usePushNotifications } from "@/hooks/use-push-notifications";
 
-export default function ClientLayout() {
+function ClientLayoutInner() {
+  usePushNotifications();
   return (
     <SidebarProvider>
       <div className="min-h-screen flex w-full bg-background">
@@ -23,4 +25,8 @@ export default function ClientLayout() {
       <OnboardingTour role="client" />
     </SidebarProvider>
   );
+}
+
+export default function ClientLayout() {
+  return <ClientLayoutInner />;
 }
