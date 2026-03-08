@@ -116,7 +116,39 @@ export default function PublicQueueTV() {
       const res = await fetch(`${EDGE_FUNCTION_URL}?token=${encodeURIComponent(token)}`);
       const json = await res.json();
       if (!res.ok) { setError(json.error || "Erro ao carregar dados."); setLoading(false); return; }
-      setAppointments(json.appointments || []);
+      const appts: Appointment[] = json.appointments || [];
+
+      // Detect new pending entries
+      const currentPendingIds = new Set(
+        appts.filter((a) => a.status === "pending").map((a) => a.id)
+      );
+      if (!isFirstFetch.current) {
+        const freshIds = [...currentPendingIds].filter(
+          (id) => !prevPendingIdsRef.current.has(id)
+        );
+        if (freshIds.length > 0) {
+          if (!mutedRef.current) playChime();
+          setPendingFlash(true);
+          setTimeout(() => setPendingFlash(false), 1200);
+          setNewIds((prev) => {
+            const next = new Set(prev);
+            freshIds.forEach((id) => next.add(id));
+            return next;
+          });
+          setTimeout(() => {
+            setNewIds((prev) => {
+              const next = new Set(prev);
+              freshIds.forEach((id) => next.delete(id));
+              return next;
+            });
+          }, 5000);
+        }
+      } else {
+        isFirstFetch.current = false;
+      }
+      prevPendingIdsRef.current = currentPendingIds;
+
+      setAppointments(appts);
       setLabel(json.label || "TV de Fila");
       setLastUpdate(new Date());
       setError(null);
