@@ -28,6 +28,7 @@ import AdminProfile from "./pages/admin/AdminProfile";
 import AdminLogs from "./pages/admin/AdminLogs";
 import AdminBranches from "./pages/admin/AdminBranches";
 import AdminCoupons from "./pages/admin/AdminCoupons";
+import AdminReviews from "./pages/admin/AdminReviews";
 import TermosDeServico from "./pages/TermosDeServico";
 import PoliticaDePrivacidade from "./pages/PoliticaDePrivacidade";
 import PoliticaETermos from "./pages/PoliticaETermos";
