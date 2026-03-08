@@ -166,6 +166,16 @@ export default function NewBooking() {
     loadData();
   }, [user]);
 
+  // Pre-select service from URL param and jump to step 2 (after services load)
+  useEffect(() => {
+    if (!preselectedServiceId || services.length === 0) return;
+    const found = services.find((s) => s.id === preselectedServiceId);
+    if (found) {
+      setSelectedServices([found]);
+      setStep(2);
+    }
+  }, [preselectedServiceId, services]);
+
   useEffect(() => {
     if (!selectedDate || !selectedBranch) return;
     const dateStr = selectedDate.toISOString().split("T")[0];
