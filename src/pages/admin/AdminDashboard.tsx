@@ -376,12 +376,12 @@ export default function AdminDashboard() {
               </div>
             </div>
             <div className="grid grid-cols-2 gap-3 w-full mt-1">
-              <div className="rounded-lg bg-emerald-500/8 border border-emerald-500/20 px-3 py-2 text-center">
-                <p className="text-lg font-bold text-emerald-600">{completedCount}</p>
+              <div className="rounded-lg bg-success/10 border border-success/20 px-3 py-2 text-center">
+                <p className="text-lg font-bold text-success">{completedCount}</p>
                 <p className="text-[10px] text-muted-foreground">Concluídos</p>
               </div>
-              <div className="rounded-lg bg-amber-500/8 border border-amber-500/20 px-3 py-2 text-center">
-                <p className="text-lg font-bold text-amber-600">{pendingCount}</p>
+              <div className="rounded-lg bg-warning/10 border border-warning/20 px-3 py-2 text-center">
+                <p className="text-lg font-bold text-warning">{pendingCount}</p>
                 <p className="text-[10px] text-muted-foreground">Pendentes</p>
               </div>
             </div>
