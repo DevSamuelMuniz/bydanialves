@@ -1215,8 +1215,6 @@ export default function LandingPage() {
     </>
   );
 }
-
-      {/* ═══ LIGHTBOX ═══ */}
       {lightboxOpen && lightboxIndex !== null && (
         <div
           className="fixed inset-0 z-[200] bg-black/95 backdrop-blur-md flex items-center justify-center"
