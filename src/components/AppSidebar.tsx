@@ -7,6 +7,7 @@ import {
   SidebarGroup,
   SidebarGroupContent,
   SidebarGroupLabel,
+  SidebarHeader,
   SidebarMenu,
   SidebarMenuButton,
   SidebarMenuItem,
@@ -15,7 +16,6 @@ import {
 } from "@/components/ui/sidebar";
 import { LogOut, LucideIcon } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { useTheme } from "next-themes";
 import logoLight from "@/assets/logo_light.png";
 import logoDark from "@/assets/logo_dark.png";
 
@@ -36,34 +36,22 @@ interface AppSidebarProps {
 
 export function AppSidebar({ items, groupLabel, topBadge, bottomSlot }: AppSidebarProps) {
   const { signOut } = useAuth();
-  const { resolvedTheme } = useTheme();
   const { state } = useSidebar();
   const collapsed = state === "collapsed";
-  const logoSrc = resolvedTheme === "dark" ? logoLight : logoDark;
+  const imgClass = collapsed ? "w-8 h-8 object-contain rounded-md" : "w-32 h-auto object-contain";
 
   return (
     <Sidebar collapsible="icon" className="border-r border-sidebar-border/60">
       {/* Logo */}
-      <div className={`flex items-center border-b border-sidebar-border/40 transition-all duration-200 ${collapsed ? "justify-center p-3" : "justify-center p-4 pb-3"}`}>
-        {collapsed ? (
-          <img
-            src={logoSrc}
-            alt="Dani Alves Esmalteria"
-            className="w-8 h-8 object-contain rounded-md"
-          />
-        ) : (
-          <img
-            src={logoSrc}
-            alt="Dani Alves Esmalteria"
-            className="w-32 h-auto object-contain"
-          />
+      <SidebarHeader className={`border-b border-sidebar-border/40 transition-all duration-200 ${collapsed ? "items-center p-3" : "items-center p-4 pb-3"}`}>
+        {/* Show light logo on dark backgrounds, dark logo on light backgrounds */}
+        <img src={logoLight} alt="Salão Daniella Alves" className={`${imgClass} hidden dark:block`} />
+        <img src={logoDark}  alt="Salão Daniella Alves" className={`${imgClass} block dark:hidden`} />
+        {/* Optional badge (e.g. admin level) */}
+        {topBadge && !collapsed && (
+          <div className="w-full pt-1">{topBadge}</div>
         )}
-      </div>
-
-      {/* Optional badge (e.g. admin level) */}
-      {topBadge && !collapsed && (
-        <div className="px-4 pt-3 pb-1">{topBadge}</div>
-      )}
+      </SidebarHeader>
 
       <SidebarContent className="flex-1">
         <SidebarGroup>
