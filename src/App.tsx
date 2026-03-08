@@ -28,6 +28,7 @@ import AdminProfile from "./pages/admin/AdminProfile";
 import AdminLogs from "./pages/admin/AdminLogs";
 import AdminBranches from "./pages/admin/AdminBranches";
 import AdminCoupons from "./pages/admin/AdminCoupons";
+import AdminReviews from "./pages/admin/AdminReviews";
 import TermosDeServico from "./pages/TermosDeServico";
 import PoliticaDePrivacidade from "./pages/PoliticaDePrivacidade";
 import PoliticaETermos from "./pages/PoliticaETermos";
@@ -71,6 +72,7 @@ const App = () => (
               <Route path="finance" element={<AdminFinance />} />
               <Route path="branches" element={<AdminBranches />} />
               <Route path="coupons" element={<AdminCoupons />} />
+              <Route path="reviews" element={<AdminReviews />} />
               <Route path="users" element={<AdminUsers />} />
               <Route path="profile" element={<AdminProfile />} />
               <Route path="logs" element={<AdminLogs />} />
