@@ -106,14 +106,7 @@ export function AppHeader({ title, profilePath }: AppHeaderProps) {
           </Tooltip>
 
           {/* Notification bell */}
-          <Tooltip>
-            <TooltipTrigger asChild>
-              <button className="h-9 w-9 flex items-center justify-center rounded-lg hover:bg-secondary/60 transition-colors text-muted-foreground hover:text-foreground">
-                <Bell className="h-4 w-4" />
-              </button>
-            </TooltipTrigger>
-            <TooltipContent>Notificações</TooltipContent>
-          </Tooltip>
+          <NotificationBell />
 
           {/* Avatar dropdown */}
           <DropdownMenu>
