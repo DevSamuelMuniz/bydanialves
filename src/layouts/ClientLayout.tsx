@@ -4,6 +4,7 @@ import { ClientSidebar } from "@/components/client/ClientSidebar";
 import { ClientHeader } from "@/components/client/ClientHeader";
 import { WhatsAppButton } from "@/components/WhatsAppButton";
 import { WelcomeModal } from "@/components/client/WelcomeModal";
+import { OnboardingTour } from "@/components/OnboardingTour";
 
 export default function ClientLayout() {
   return (
@@ -19,6 +20,7 @@ export default function ClientLayout() {
       </div>
       <WhatsAppButton />
       <WelcomeModal />
+      <OnboardingTour role="client" />
     </SidebarProvider>
   );
 }
