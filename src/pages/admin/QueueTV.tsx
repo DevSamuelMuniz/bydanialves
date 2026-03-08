@@ -596,76 +596,125 @@ export default function QueueTV() {
                 </div>
               ) : (
                 <div className="space-y-3">
-                  {tokens.map((t) => (
-                    <div
-                      key={t.id}
-                      className={`rounded-xl border p-4 space-y-3 ${t.active ? "border-border/60 bg-card" : "border-border/30 bg-muted/30 opacity-60"}`}
-                    >
-                      <div className="flex items-center justify-between gap-2">
-                        <div className="flex items-center gap-2 min-w-0">
-                          <div className={`h-2 w-2 rounded-full shrink-0 ${t.active ? "bg-success" : "bg-muted-foreground/40"}`} />
-                          <div className="min-w-0">
-                            <p className="font-medium text-sm truncate">{t.label}</p>
-                            {t.branch_name ? (
-                              <span className="inline-flex items-center gap-1 text-xs text-primary/80 bg-primary/10 px-1.5 py-0.5 rounded mt-0.5">
-                                <GitBranch className="h-3 w-3" />
-                                {t.branch_name}
-                              </span>
-                            ) : (
-                              <span className="text-xs text-muted-foreground/50">Todas as filiais</span>
-                            )}
+                  {tokens.map((t) => {
+                    const isEditing = editingId === t.id;
+                    return (
+                      <div
+                        key={t.id}
+                        className={`rounded-xl border p-4 space-y-3 transition-colors ${t.active ? "border-border/60 bg-card" : "border-border/30 bg-muted/30 opacity-60"} ${isEditing ? "border-primary/40 ring-1 ring-primary/20" : ""}`}
+                      >
+                        {isEditing ? (
+                          /* ── Inline edit mode ── */
+                          <div className="space-y-2">
+                            <Input
+                              value={editLabel}
+                              onChange={(e) => setEditLabel(e.target.value)}
+                              onKeyDown={(e) => { if (e.key === "Enter") saveEdit(); if (e.key === "Escape") cancelEdit(); }}
+                              placeholder="Nome do link"
+                              className="h-8 text-sm"
+                              autoFocus
+                            />
+                            <Select value={editBranchId} onValueChange={setEditBranchId}>
+                              <SelectTrigger className="h-8 text-sm">
+                                <div className="flex items-center gap-1.5">
+                                  <GitBranch className="h-3.5 w-3.5 text-muted-foreground" />
+                                  <SelectValue placeholder="Filtrar por filial" />
+                                </div>
+                              </SelectTrigger>
+                              <SelectContent>
+                                <SelectItem value="all">Todas as filiais</SelectItem>
+                                {branches.map((b) => (
+                                  <SelectItem key={b.id} value={b.id}>{b.name}</SelectItem>
+                                ))}
+                              </SelectContent>
+                            </Select>
+                            <div className="flex gap-2 pt-1">
+                              <Button size="sm" className="h-7 text-xs flex-1" onClick={saveEdit}>
+                                <Check className="h-3.5 w-3.5 mr-1" /> Salvar
+                              </Button>
+                              <Button size="sm" variant="ghost" className="h-7 text-xs" onClick={cancelEdit}>
+                                <X className="h-3.5 w-3.5 mr-1" /> Cancelar
+                              </Button>
+                            </div>
                           </div>
-                          {!t.active && (
-                            <span className="text-xs text-muted-foreground bg-muted px-1.5 py-0.5 rounded shrink-0">Revogado</span>
-                          )}
-                        </div>
-                        <div className="flex items-center gap-1 shrink-0">
-                          {t.active && (
-                            <>
-                              <button
-                                onClick={() => window.open(buildLink(t.token), "_blank")}
-                                className="h-7 w-7 rounded-lg flex items-center justify-center hover:bg-secondary/60 transition-colors text-muted-foreground hover:text-foreground"
-                              >
-                                <ExternalLink className="h-3.5 w-3.5" />
-                              </button>
-                              <button
-                                onClick={() => copyLink(t)}
-                                className="h-7 w-7 rounded-lg flex items-center justify-center hover:bg-secondary/60 transition-colors text-muted-foreground hover:text-foreground"
-                              >
-                                {copiedId === t.id ? <Check className="h-3.5 w-3.5 text-success" /> : <Copy className="h-3.5 w-3.5" />}
-                              </button>
-                              <button
-                                onClick={() => revokeToken(t.id)}
-                                className="h-7 px-2 rounded-lg flex items-center gap-1 hover:bg-warning/10 transition-colors text-muted-foreground hover:text-warning text-xs"
-                              >
-                                Revogar
-                              </button>
-                            </>
-                          )}
-                          <button
-                            onClick={() => deleteToken(t.id)}
-                            className="h-7 w-7 rounded-lg flex items-center justify-center hover:bg-destructive/10 transition-colors text-muted-foreground hover:text-destructive"
-                          >
-                            <Trash2 className="h-3.5 w-3.5" />
-                          </button>
-                        </div>
-                      </div>
+                        ) : (
+                          /* ── Normal display mode ── */
+                          <>
+                            <div className="flex items-center justify-between gap-2">
+                              <div className="flex items-center gap-2 min-w-0">
+                                <div className={`h-2 w-2 rounded-full shrink-0 ${t.active ? "bg-success" : "bg-muted-foreground/40"}`} />
+                                <div className="min-w-0">
+                                  <p className="font-medium text-sm truncate">{t.label}</p>
+                                  {t.branch_name ? (
+                                    <span className="inline-flex items-center gap-1 text-xs text-primary/80 bg-primary/10 px-1.5 py-0.5 rounded mt-0.5">
+                                      <GitBranch className="h-3 w-3" />
+                                      {t.branch_name}
+                                    </span>
+                                  ) : (
+                                    <span className="text-xs text-muted-foreground/50">Todas as filiais</span>
+                                  )}
+                                </div>
+                                {!t.active && (
+                                  <span className="text-xs text-muted-foreground bg-muted px-1.5 py-0.5 rounded shrink-0">Revogado</span>
+                                )}
+                              </div>
+                              <div className="flex items-center gap-1 shrink-0">
+                                {t.active && (
+                                  <>
+                                    <button
+                                      onClick={() => startEdit(t)}
+                                      className="h-7 w-7 rounded-lg flex items-center justify-center hover:bg-secondary/60 transition-colors text-muted-foreground hover:text-foreground"
+                                      title="Renomear"
+                                    >
+                                      <Pencil className="h-3.5 w-3.5" />
+                                    </button>
+                                    <button
+                                      onClick={() => window.open(buildLink(t.token), "_blank")}
+                                      className="h-7 w-7 rounded-lg flex items-center justify-center hover:bg-secondary/60 transition-colors text-muted-foreground hover:text-foreground"
+                                    >
+                                      <ExternalLink className="h-3.5 w-3.5" />
+                                    </button>
+                                    <button
+                                      onClick={() => copyLink(t)}
+                                      className="h-7 w-7 rounded-lg flex items-center justify-center hover:bg-secondary/60 transition-colors text-muted-foreground hover:text-foreground"
+                                    >
+                                      {copiedId === t.id ? <Check className="h-3.5 w-3.5 text-success" /> : <Copy className="h-3.5 w-3.5" />}
+                                    </button>
+                                    <button
+                                      onClick={() => revokeToken(t.id)}
+                                      className="h-7 px-2 rounded-lg flex items-center gap-1 hover:bg-warning/10 transition-colors text-muted-foreground hover:text-warning text-xs"
+                                    >
+                                      Revogar
+                                    </button>
+                                  </>
+                                )}
+                                <button
+                                  onClick={() => deleteToken(t.id)}
+                                  className="h-7 w-7 rounded-lg flex items-center justify-center hover:bg-destructive/10 transition-colors text-muted-foreground hover:text-destructive"
+                                >
+                                  <Trash2 className="h-3.5 w-3.5" />
+                                </button>
+                              </div>
+                            </div>
 
-                      {t.active && (
-                        <div className="flex items-center gap-2 bg-muted/60 rounded-lg px-3 py-2">
-                          <p className="text-xs text-muted-foreground font-mono truncate flex-1">
-                            {buildLink(t.token)}
-                          </p>
-                          <button
-                            onClick={() => copyLink(t)}
-                            className="shrink-0 text-xs text-primary hover:text-primary/80 font-medium transition-colors"
-                          >
-                            {copiedId === t.id ? "Copiado!" : "Copiar"}
-                          </button>
-                        </div>
-                      )}
-                    </div>
-                  ))}
+                            {t.active && (
+                              <div className="flex items-center gap-2 bg-muted/60 rounded-lg px-3 py-2">
+                                <p className="text-xs text-muted-foreground font-mono truncate flex-1">
+                                  {buildLink(t.token)}
+                                </p>
+                                <button
+                                  onClick={() => copyLink(t)}
+                                  className="shrink-0 text-xs text-primary hover:text-primary/80 font-medium transition-colors"
+                                >
+                                  {copiedId === t.id ? "Copiado!" : "Copiar"}
+                                </button>
+                              </div>
+                            )}
+                          </>
+                        )}
+                      </div>
+                    );
+                  })}
                 </div>
               )}
             </div>
