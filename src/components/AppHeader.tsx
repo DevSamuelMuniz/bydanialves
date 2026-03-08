@@ -73,7 +73,9 @@ export function AppHeader({ title, profilePath }: AppHeaderProps) {
         <SidebarTrigger />
 
         {/* Search bar */}
-        <GlobalSearch isAdmin={profilePath.startsWith("/admin")} />
+        <div id="header-search" className="flex-1">
+          <GlobalSearch isAdmin={profilePath.startsWith("/admin")} />
+        </div>
 
         <div className="ml-auto flex items-center gap-1">
           {/* Dark mode toggle */}

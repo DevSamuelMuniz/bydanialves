@@ -23,6 +23,7 @@ export interface NavItem {
   title: string;
   url: string;
   icon: LucideIcon;
+  tourId?: string;
 }
 
 interface AppSidebarProps {
