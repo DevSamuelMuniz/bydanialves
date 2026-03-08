@@ -742,7 +742,6 @@ export default function QueueTV() {
                                     value={buildLink(t.token)}
                                     size={180}
                                     level="M"
-                                    marginSize={1}
                                   />
                                 </div>
                                 <div className="text-center space-y-0.5">
