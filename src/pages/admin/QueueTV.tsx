@@ -683,8 +683,16 @@ export default function QueueTV() {
                                       <Pencil className="h-3.5 w-3.5" />
                                     </button>
                                     <button
+                                      onClick={() => setQrOpenId(qrOpenId === t.id ? null : t.id)}
+                                      className={`h-7 w-7 rounded-lg flex items-center justify-center transition-colors ${qrOpenId === t.id ? "bg-primary/10 text-primary" : "hover:bg-secondary/60 text-muted-foreground hover:text-foreground"}`}
+                                      title="Ver QR Code"
+                                    >
+                                      <QrCode className="h-3.5 w-3.5" />
+                                    </button>
+                                    <button
                                       onClick={() => window.open(buildLink(t.token), "_blank")}
                                       className="h-7 w-7 rounded-lg flex items-center justify-center hover:bg-secondary/60 transition-colors text-muted-foreground hover:text-foreground"
+                                      title="Abrir em nova aba"
                                     >
                                       <ExternalLink className="h-3.5 w-3.5" />
                                     </button>
@@ -721,6 +729,34 @@ export default function QueueTV() {
                                   className="shrink-0 text-xs text-primary hover:text-primary/80 font-medium transition-colors"
                                 >
                                   {copiedId === t.id ? "Copiado!" : "Copiar"}
+                                </button>
+                              </div>
+                            )}
+
+                            {/* QR Code panel */}
+                            {t.active && qrOpenId === t.id && (
+                              <div className="flex flex-col items-center gap-3 pt-1 pb-1">
+                                <div className="bg-white rounded-xl p-3 shadow-sm border border-border/30">
+                                  <QRCodeCanvas
+                                    id={`qr-canvas-${t.id}`}
+                                    value={buildLink(t.token)}
+                                    size={180}
+                                    level="M"
+                                    marginSize={1}
+                                  />
+                                </div>
+                                <div className="text-center space-y-0.5">
+                                  <p className="text-xs font-medium text-foreground">{t.label}</p>
+                                  {t.branch_name && (
+                                    <p className="text-xs text-muted-foreground">{t.branch_name}</p>
+                                  )}
+                                </div>
+                                <button
+                                  onClick={() => downloadQr(t)}
+                                  className="flex items-center gap-1.5 text-xs font-medium text-primary hover:text-primary/80 transition-colors"
+                                >
+                                  <Download className="h-3.5 w-3.5" />
+                                  Baixar QR Code
                                 </button>
                               </div>
                             )}
