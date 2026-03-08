@@ -1,0 +1,1 @@
+ALTER TABLE public.queue_tv_tokens ADD COLUMN IF NOT EXISTS branch_id uuid REFERENCES public.branches(id) ON DELETE SET NULL;
