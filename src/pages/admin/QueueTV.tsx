@@ -30,6 +30,13 @@ interface QueueToken {
   label: string;
   active: boolean;
   created_at: string;
+  branch_id: string | null;
+  branch_name?: string | null;
+}
+
+interface Branch {
+  id: string;
+  name: string;
 }
 
 const STATUS_CONFIG = {
