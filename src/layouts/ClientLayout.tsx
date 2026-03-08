@@ -28,20 +28,5 @@ function ClientLayoutInner() {
 }
 
 export default function ClientLayout() {
-  return (
-    <SidebarProvider>
-      <div className="min-h-screen flex w-full bg-background">
-        <ClientSidebar />
-        <main className="flex-1 flex flex-col">
-          <ClientHeader />
-          <div className="flex-1 p-4 md:p-8 animate-fade-in overflow-auto w-full">
-            <Outlet />
-          </div>
-        </main>
-      </div>
-      <WhatsAppButton />
-      <WelcomeModal />
-      <OnboardingTour role="client" />
-    </SidebarProvider>
-  );
+  return <ClientLayoutInner />;
 }
