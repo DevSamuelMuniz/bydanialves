@@ -84,15 +84,15 @@ export default function ClientPendingAppointments() {
   const statusConfig = {
     pending: {
       label: "Aguardando confirmação",
-      badgeClass: "bg-amber-100 text-amber-700 border-amber-300 dark:bg-amber-950/40 dark:text-amber-400",
-      icon: <AlertCircle className="h-4 w-4 text-amber-500" />,
-      barClass: "bg-amber-400",
+      badgeClass: "bg-warning/15 text-warning border-warning/30",
+      icon: <AlertCircle className="h-4 w-4 text-warning" />,
+      barClass: "bg-warning",
     },
     confirmed: {
       label: "Confirmado! ✓",
-      badgeClass: "bg-green-100 text-green-700 border-green-300 dark:bg-green-950/40 dark:text-green-400",
-      icon: <CheckCircle2 className="h-4 w-4 text-green-500" />,
-      barClass: "bg-green-400",
+      badgeClass: "bg-success/15 text-success border-success/30",
+      icon: <CheckCircle2 className="h-4 w-4 text-success" />,
+      barClass: "bg-success",
     },
   } as const;
 
