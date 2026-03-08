@@ -80,6 +80,9 @@ function isSlotAvailable(
 export default function NewBooking() {
   const { user } = useAuth();
   const { toast } = useToast();
+  const [searchParams] = useSearchParams();
+  const preselectedServiceId = searchParams.get("serviceId");
+
   const [step, setStep] = useState(1);
   const [branches, setBranches] = useState<Branch[]>([]);
   const [selectedBranch, setSelectedBranch] = useState<Branch | null>(null);
