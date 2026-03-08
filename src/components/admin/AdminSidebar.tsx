@@ -4,7 +4,7 @@ import { useAuth } from "@/contexts/AuthContext";
 import { Badge } from "@/components/ui/badge";
 import {
   LayoutDashboard, Users, Calendar, Scissors, DollarSign,
-  BarChart3, ShieldCheck, Crown, Activity, ClipboardList, Building2, Tag,
+  BarChart3, ShieldCheck, Crown, Activity, ClipboardList, Building2, Tag, Star,
 } from "lucide-react";
 
 export function AdminSidebar() {
