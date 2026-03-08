@@ -416,29 +416,59 @@ export default function AdminDashboard() {
         </Card>
       </div>
 
-      {/* Row 3: Últimos clientes */}
-      <Card className="border-border/60 animate-slide-up" style={{ animationDelay: "0.4s" }}>
-        <CardContent className="pt-6">
-          <h3 className="font-serif text-base font-medium mb-4 tracking-tight">Últimos Clientes Cadastrados</h3>
-          {recentClients.length === 0 ? (
-            <p className="text-sm text-muted-foreground py-4 text-center">Nenhum cliente.</p>
-          ) : (
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-3">
-              {recentClients.map((c, i) => (
-                <div key={i} className="flex items-center gap-3 p-3 rounded-xl bg-muted/40 border border-border/40 hover:border-primary/20 transition-colors">
-                  <div className="h-9 w-9 rounded-full bg-primary/10 flex items-center justify-center text-xs font-bold text-primary shrink-0">
-                    {(c.full_name || "?").charAt(0).toUpperCase()}
-                  </div>
-                  <div className="min-w-0">
-                    <p className="text-sm font-medium truncate">{c.full_name || "Sem nome"}</p>
-                    <p className="text-xs text-muted-foreground">{new Date(c.created_at).toLocaleDateString("pt-BR")}</p>
-                  </div>
-                </div>
-              ))}
+      {/* Row 3: Avaliações + Últimos clientes */}
+      <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
+        {/* Avaliações */}
+        <Card className="border-border/60 animate-slide-up" style={{ animationDelay: "0.4s" }}>
+          <CardContent className="pt-6 flex flex-col items-center justify-center gap-3 h-full">
+            <div className="flex items-center gap-2 self-start">
+              <Star className="h-4 w-4 text-primary" />
+              <h3 className="font-serif text-base font-medium tracking-tight">Avaliações</h3>
             </div>
-          )}
-        </CardContent>
-      </Card>
+            <p className="text-xs text-muted-foreground self-start -mt-2">Média geral dos atendimentos</p>
+            {avgRating !== null ? (
+              <>
+                <p className="text-5xl font-serif font-bold text-primary">{avgRating.toFixed(1)}</p>
+                <div className="flex gap-0.5">
+                  {[1, 2, 3, 4, 5].map((s) => (
+                    <Star
+                      key={s}
+                      className={`h-5 w-5 ${s <= Math.round(avgRating!) ? "fill-primary text-primary" : "text-muted-foreground/30"}`}
+                    />
+                  ))}
+                </div>
+                <p className="text-xs text-muted-foreground">{reviewCount} avaliação{reviewCount !== 1 ? "ões" : ""}</p>
+              </>
+            ) : (
+              <p className="text-sm text-muted-foreground text-center py-4">Sem avaliações ainda.</p>
+            )}
+          </CardContent>
+        </Card>
+
+        {/* Últimos clientes */}
+        <Card className="lg:col-span-3 border-border/60 animate-slide-up" style={{ animationDelay: "0.42s" }}>
+          <CardContent className="pt-6">
+            <h3 className="font-serif text-base font-medium mb-4 tracking-tight">Últimos Clientes Cadastrados</h3>
+            {recentClients.length === 0 ? (
+              <p className="text-sm text-muted-foreground py-4 text-center">Nenhum cliente.</p>
+            ) : (
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+                {recentClients.map((c, i) => (
+                  <div key={i} className="flex items-center gap-3 p-3 rounded-xl bg-muted/40 border border-border/40 hover:border-primary/20 transition-colors">
+                    <div className="h-9 w-9 rounded-full bg-primary/10 flex items-center justify-center text-xs font-bold text-primary shrink-0">
+                      {(c.full_name || "?").charAt(0).toUpperCase()}
+                    </div>
+                    <div className="min-w-0">
+                      <p className="text-sm font-medium truncate">{c.full_name || "Sem nome"}</p>
+                      <p className="text-xs text-muted-foreground">{new Date(c.created_at).toLocaleDateString("pt-BR")}</p>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </CardContent>
+        </Card>
+      </div>
 
       {/* Row 4: KPIs por Filial (Gerente e CEO) */}
       {canViewBranchKpis && branchKpis.length > 0 && (
