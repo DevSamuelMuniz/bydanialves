@@ -10,11 +10,12 @@ import { Badge } from "@/components/ui/badge";
 import {
   Check, ChevronLeft, ShieldX, MessageCircle, Building2, MapPin,
   Scissors, Clock, CalendarDays, Timer, DollarSign, Star, Sparkles,
-  ChevronRight
+  ChevronRight, RotateCcw
 } from "lucide-react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from "@/components/ui/dialog";
 import { ptBR } from "date-fns/locale";
 import { format } from "date-fns";
+import { useSearchParams } from "react-router-dom";
 
 interface Branch { id: string; name: string; address: string | null; image_url: string | null; }
 
