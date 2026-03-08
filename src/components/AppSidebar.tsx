@@ -23,6 +23,7 @@ export interface NavItem {
   title: string;
   url: string;
   icon: LucideIcon;
+  tourId?: string;
 }
 
 interface AppSidebarProps {
@@ -76,6 +77,7 @@ export function AppSidebar({ items, groupLabel, topBadge, bottomSlot }: AppSideb
                 <SidebarMenuItem key={item.title}>
                   <SidebarMenuButton asChild tooltip={item.title}>
                     <NavLink
+                      id={item.tourId}
                       to={item.url}
                       end
                       className={`rounded-lg transition-all duration-200 hover:bg-sidebar-accent ${collapsed ? "mx-1 px-2 py-2.5 justify-center" : "mx-2 px-3 py-2.5"}`}

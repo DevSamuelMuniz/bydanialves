@@ -6,12 +6,12 @@ import { supabase } from "@/integrations/supabase/client";
 import { Crown, AlertTriangle, LayoutDashboard, CalendarPlus, History, User, Clock } from "lucide-react";
 
 const items: NavItem[] = [
-  { title: "Dashboard",              url: "/client",          icon: LayoutDashboard },
-  { title: "Novo Agendamento",       url: "/client/booking",  icon: CalendarPlus },
-  { title: "Aguardando Confirmação", url: "/client/pending",  icon: Clock },
-  { title: "Histórico",              url: "/client/history",  icon: History },
-  { title: "Meu Plano",              url: "/client/plans",    icon: Crown },
-  { title: "Perfil",                 url: "/client/profile",  icon: User },
+  { title: "Dashboard",              url: "/client",          icon: LayoutDashboard, tourId: "sidebar-dashboard" },
+  { title: "Novo Agendamento",       url: "/client/booking",  icon: CalendarPlus,    tourId: "sidebar-booking" },
+  { title: "Aguardando Confirmação", url: "/client/pending",  icon: Clock,           tourId: "sidebar-pending" },
+  { title: "Histórico",              url: "/client/history",  icon: History,         tourId: "sidebar-history" },
+  { title: "Meu Plano",              url: "/client/plans",    icon: Crown,           tourId: "sidebar-plans" },
+  { title: "Perfil",                 url: "/client/profile",  icon: User,            tourId: "sidebar-profile" },
 ];
 
 export function ClientSidebar() {
