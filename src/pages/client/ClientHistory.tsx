@@ -67,6 +67,7 @@ function StarRating({ value, onChange }: { value: number; onChange: (v: number) 
 
 export default function ClientHistory() {
   const { user } = useAuth();
+  const navigate = useNavigate();
   const [appointments, setAppointments] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [statusFilter, setStatusFilter] = useState("all");
