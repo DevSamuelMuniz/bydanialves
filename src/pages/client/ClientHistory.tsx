@@ -4,7 +4,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Clock, Filter, MapPin, Scissors, CalendarDays, BanknoteIcon, StickyNote } from "lucide-react";
+import { Clock, Filter, MapPin, Scissors, CalendarDays, BanknoteIcon, StickyNote, Timer } from "lucide-react";
 
 const statusLabels: Record<string, string> = {
   pending: "Pendente",
@@ -38,7 +38,7 @@ export default function ClientHistory() {
     setLoading(true);
     let query = supabase
       .from("appointments")
-      .select("*, services(name, price, description, duration_minutes, image_url), branches(name, address)")
+      .select("*, services(name, price, description, duration_minutes), branches(name, address)")
       .eq("client_id", user.id)
       .order("appointment_date", { ascending: false })
       .order("appointment_time", { ascending: false });
@@ -80,7 +80,7 @@ export default function ClientHistory() {
       {loading ? (
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
           {[...Array(4)].map((_, i) => (
-            <Skeleton key={i} className="h-72 w-full rounded-2xl" />
+            <Skeleton key={i} className="h-64 w-full rounded-2xl" />
           ))}
         </div>
       ) : appointments.length === 0 ? (
@@ -88,9 +88,6 @@ export default function ClientHistory() {
       ) : (
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
           {appointments.map((appt) => {
-            const imgUrl =
-              appt.services?.image_url ||
-              `https://images.unsplash.com/photo-1522337360788-8b13dee7a37e?w=600&q=60&auto=format&fit=crop`;
             const dateFormatted = new Date(appt.appointment_date + "T00:00:00").toLocaleDateString("pt-BR", {
               day: "2-digit",
               month: "short",
@@ -108,82 +105,79 @@ export default function ClientHistory() {
             return (
               <div
                 key={appt.id}
-                className="relative flex flex-col rounded-2xl border border-border/50 bg-card overflow-hidden shadow-elegant hover:shadow-elevated transition-all duration-300 group"
+                className="relative flex flex-col rounded-2xl border border-border/60 bg-card overflow-hidden shadow-elegant hover:shadow-elevated hover:-translate-y-0.5 transition-all duration-300"
               >
                 {/* Status top bar */}
-                <div className={`h-1.5 w-full ${statusBarColors[appt.status]}`} />
+                <div className={`h-1 w-full ${statusBarColors[appt.status]}`} />
 
-                {/* Service image */}
-                <div className="relative h-36 overflow-hidden">
-                  <img
-                    src={imgUrl}
-                    alt={appt.services?.name}
-                    className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
-                  />
-                  <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent" />
-                  {/* Badge over image */}
-                  <div className="absolute bottom-3 left-3 right-3 flex justify-between items-end">
-                    <p className="font-serif text-white text-base font-semibold leading-tight drop-shadow">
-                      {appt.services?.name ?? "Serviço"}
-                    </p>
-                    <Badge variant="secondary" className={`text-xs shrink-0 ml-2 ${statusBadgeColors[appt.status]}`}>
+                {/* Card body */}
+                <div className="flex flex-col gap-3 p-4 flex-1">
+
+                  {/* Service name + badge */}
+                  <div className="flex items-start justify-between gap-2">
+                    <div className="flex items-center gap-2 min-w-0">
+                      <div className="h-8 w-8 rounded-lg bg-primary/10 flex items-center justify-center shrink-0">
+                        <Scissors className="h-4 w-4 text-primary" />
+                      </div>
+                      <p className="font-semibold text-sm leading-tight line-clamp-2">
+                        {appt.services?.name ?? "Serviço"}
+                      </p>
+                    </div>
+                    <Badge variant="secondary" className={`text-xs shrink-0 ${statusBadgeColors[appt.status]}`}>
                       {statusLabels[appt.status]}
                     </Badge>
                   </div>
-                </div>
 
-                {/* Info body */}
-                <div className="flex flex-col gap-2.5 p-4 flex-1">
-                  {/* Date & time */}
+                  <div className="border-t border-border/40" />
+
+                  {/* Date */}
                   <div className="flex items-center gap-2 text-sm">
-                    <CalendarDays className="h-4 w-4 text-primary shrink-0" />
-                    <span className="text-foreground font-medium">{dateFormatted}</span>
+                    <CalendarDays className="h-3.5 w-3.5 text-primary shrink-0" />
+                    <span className="font-medium text-foreground">{dateFormatted}</span>
                   </div>
-                  <div className="flex items-center gap-2 text-sm">
-                    <Clock className="h-4 w-4 text-primary shrink-0" />
-                    <span className="text-foreground">{timeFormatted}</span>
+
+                  {/* Time + duration */}
+                  <div className="flex items-center justify-between text-sm">
+                    <div className="flex items-center gap-2">
+                      <Clock className="h-3.5 w-3.5 text-primary shrink-0" />
+                      <span className="text-foreground">{timeFormatted}</span>
+                    </div>
                     {duration && (
-                      <span className="text-muted-foreground text-xs ml-auto">~{duration} min</span>
+                      <div className="flex items-center gap-1 text-xs text-muted-foreground">
+                        <Timer className="h-3 w-3" />
+                        {duration} min
+                      </div>
                     )}
                   </div>
 
                   {/* Branch */}
                   {branchName && (
                     <div className="flex items-start gap-2 text-sm">
-                      <MapPin className="h-4 w-4 text-primary shrink-0 mt-0.5" />
+                      <MapPin className="h-3.5 w-3.5 text-primary shrink-0 mt-0.5" />
                       <div className="min-w-0">
-                        <p className="text-foreground font-medium leading-tight truncate">{branchName}</p>
+                        <p className="font-medium text-foreground leading-tight truncate">{branchName}</p>
                         {branchAddress && (
-                          <p className="text-muted-foreground text-xs leading-tight line-clamp-2">{branchAddress}</p>
+                          <p className="text-xs text-muted-foreground leading-tight line-clamp-1">{branchAddress}</p>
                         )}
                       </div>
                     </div>
                   )}
 
-                  {/* Divider */}
-                  <div className="border-t border-border/40 my-0.5" />
+                  <div className="border-t border-border/40 mt-auto" />
 
-                  {/* Price & duration */}
-                  <div className="flex items-center gap-2 text-sm">
-                    <BanknoteIcon className="h-4 w-4 text-primary shrink-0" />
-                    <span className="font-serif text-foreground font-semibold">{price}</span>
+                  {/* Price */}
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-2">
+                      <BanknoteIcon className="h-3.5 w-3.5 text-primary shrink-0" />
+                      <span className="font-serif font-semibold text-foreground text-sm">{price}</span>
+                    </div>
+                    {appt.notes && (
+                      <div className="flex items-center gap-1 text-xs text-muted-foreground" title={appt.notes}>
+                        <StickyNote className="h-3 w-3" />
+                        <span className="truncate max-w-[60px]">Obs.</span>
+                      </div>
+                    )}
                   </div>
-
-                  {/* Service description */}
-                  {appt.services?.description && (
-                    <div className="flex items-start gap-2 text-xs">
-                      <Scissors className="h-3.5 w-3.5 text-muted-foreground shrink-0 mt-0.5" />
-                      <p className="text-muted-foreground line-clamp-2 leading-relaxed">{appt.services.description}</p>
-                    </div>
-                  )}
-
-                  {/* Notes */}
-                  {appt.notes && (
-                    <div className="flex items-start gap-2 text-xs">
-                      <StickyNote className="h-3.5 w-3.5 text-muted-foreground shrink-0 mt-0.5" />
-                      <p className="text-muted-foreground line-clamp-2 leading-relaxed italic">{appt.notes}</p>
-                    </div>
-                  )}
                 </div>
               </div>
             );
