@@ -72,8 +72,11 @@ export default function AdminFinance() {
   const { toast } = useToast();
   const perms = useAdminPermissions();
 
+  const isManager = perms.adminLevel === "manager" || perms.adminLevel === "ceo";
+
   const [records, setRecords]           = useState<any[]>([]);
   const [completedAppointments, setCompletedAppointments] = useState<any[]>([]);
+  const [branches, setBranches]         = useState<any[]>([]);
   const [loading, setLoading]           = useState(true);
   const [dialogOpen, setDialogOpen]     = useState(false);
   const [editingRecord, setEditingRecord] = useState<any | null>(null);
@@ -90,10 +93,18 @@ export default function AdminFinance() {
   });
 
   // Filters
-  const [dateFrom, setDateFrom]   = useState<Date | undefined>(undefined);
-  const [dateTo, setDateTo]       = useState<Date | undefined>(undefined);
-  const [typeFilter, setTypeFilter] = useState<string>("all");
-  const [tab, setTab]             = useState("overview");
+  const [dateFrom, setDateFrom]         = useState<Date | undefined>(undefined);
+  const [dateTo, setDateTo]             = useState<Date | undefined>(undefined);
+  const [typeFilter, setTypeFilter]     = useState<string>("all");
+  const [branchFilter, setBranchFilter] = useState<string>("all");
+  const [tab, setTab]                   = useState("overview");
+
+  // ─── Fetch branches (for manager/ceo filter) ────────────
+  useEffect(() => {
+    if (!isManager) return;
+    supabase.from("branches").select("id, name").eq("active", true).order("name")
+      .then(({ data }) => setBranches(data || []));
+  }, [isManager]);
 
   // ─── Fetch ──────────────────────────────────────────────
   const fetchRecords = useCallback(async () => {
@@ -108,23 +119,29 @@ export default function AdminFinance() {
     if (dateFrom) query = query.gte("created_at", format(dateFrom, "yyyy-MM-dd"));
     if (dateTo)   query = query.lte("created_at", format(dateTo, "yyyy-MM-dd") + "T23:59:59");
     if (typeFilter !== "all") query = query.eq("type", typeFilter as any);
+    // Filter by branch name for manager/ceo
+    if (isManager && branchFilter !== "all") {
+      const selectedBranch = branches.find((b) => b.id === branchFilter);
+      if (selectedBranch) query = query.eq("branch", selectedBranch.name);
+    }
     const { data } = await query;
     setRecords(data || []);
 
     // Fetch completed appointments with service prices and client profiles
     let apptQuery = supabase
       .from("appointments")
-      .select("id, appointment_date, appointment_time, created_at, notes, client_id, profiles(full_name), services(name, price, is_system)")
+      .select("id, appointment_date, appointment_time, created_at, notes, client_id, branch_id, profiles(full_name), services(name, price, is_system)")
       .eq("status", "completed")
       .order("appointment_date", { ascending: false })
       .limit(500);
     if (dateFrom) apptQuery = apptQuery.gte("appointment_date", format(dateFrom, "yyyy-MM-dd"));
     if (dateTo)   apptQuery = apptQuery.lte("appointment_date", format(dateTo, "yyyy-MM-dd"));
+    if (isManager && branchFilter !== "all") apptQuery = apptQuery.eq("branch_id", branchFilter);
     const { data: apptData } = await apptQuery;
     setCompletedAppointments(apptData || []);
 
     setLoading(false);
-  }, [dateFrom, dateTo, typeFilter]);
+  }, [dateFrom, dateTo, typeFilter, branchFilter, isManager, branches]);
 
   useEffect(() => { fetchRecords(); }, [fetchRecords]);
 
@@ -350,7 +367,20 @@ export default function AdminFinance() {
             <Filter className="h-4 w-4 text-muted-foreground" />
             <span className="text-sm font-medium">Filtros</span>
           </div>
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+          <div className={`grid grid-cols-1 gap-3 ${isManager ? "sm:grid-cols-2 lg:grid-cols-4" : "sm:grid-cols-3"}`}>
+            {/* Branch filter — Gerente/CEO only */}
+            {isManager && (
+              <Select value={branchFilter} onValueChange={setBranchFilter}>
+                <SelectTrigger className="gap-2">
+                  <Building2 className="h-3.5 w-3.5 text-muted-foreground shrink-0" />
+                  <SelectValue placeholder="Filial" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">Todas as filiais</SelectItem>
+                  {branches.map((b) => <SelectItem key={b.id} value={b.id}>{b.name}</SelectItem>)}
+                </SelectContent>
+              </Select>
+            )}
             <Popover>
               <PopoverTrigger asChild>
                 <Button variant="outline" className="justify-start text-sm font-normal">
@@ -382,8 +412,15 @@ export default function AdminFinance() {
               </SelectContent>
             </Select>
           </div>
+          {(branchFilter !== "all" || dateFrom || dateTo || typeFilter !== "all") && (
+            <Button variant="ghost" size="sm" className="mt-2 text-xs"
+              onClick={() => { setBranchFilter("all"); setDateFrom(undefined); setDateTo(undefined); setTypeFilter("all"); }}>
+              Limpar filtros
+            </Button>
+          )}
         </CardContent>
       </Card>
+
 
       {/* ── KPI Cards ── */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4">

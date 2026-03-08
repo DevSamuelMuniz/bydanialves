@@ -13,7 +13,7 @@ import { Calendar } from "@/components/ui/calendar";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
 import { useToast } from "@/hooks/use-toast";
-import { Clock, CalendarDays, Filter, StickyNote, Trash2, DollarSign, Handshake, CheckCircle2, User, Scissors, RefreshCw, AlertCircle, XCircle } from "lucide-react";
+import { Clock, CalendarDays, Filter, StickyNote, Trash2, DollarSign, Handshake, CheckCircle2, User, Scissors, RefreshCw, AlertCircle, XCircle, Building2 } from "lucide-react";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
 
@@ -22,10 +22,13 @@ const PAGE_SIZE = 100; // load more for kanban view
 export default function AdminAgenda() {
   const { toast } = useToast();
   const { user, adminBranchId } = useAuth();
-  const { adminLevel } = useAdminPermissions();
+  const { adminLevel, canViewBranches } = useAdminPermissions();
+
+  const isManager = adminLevel === "manager" || adminLevel === "ceo";
 
   const [appointments, setAppointments] = useState<any[]>([]);
   const [services, setServices] = useState<any[]>([]);
+  const [branches, setBranches] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [takingId, setTakingId] = useState<string | null>(null);
 
@@ -33,6 +36,8 @@ export default function AdminAgenda() {
   const [dateFrom, setDateFrom] = useState<Date | undefined>();
   const [dateTo, setDateTo] = useState<Date | undefined>();
   const [serviceFilter, setServiceFilter] = useState<string>("all");
+  // Branch filter — only for manager/ceo (no fixed adminBranchId)
+  const [branchFilter, setBranchFilter] = useState<string>("all");
 
   // Notes
   const [editingNotes, setEditingNotes] = useState<string | null>(null);
@@ -43,6 +48,12 @@ export default function AdminAgenda() {
     setServices(data || []);
   };
 
+  const fetchBranches = async () => {
+    if (!isManager) return;
+    const { data } = await supabase.from("branches").select("id, name").eq("active", true).order("name");
+    setBranches(data || []);
+  };
+
   const fetchAppointments = useCallback(async () => {
     setLoading(true);
     let query = supabase
@@ -50,8 +61,12 @@ export default function AdminAgenda() {
       .select("*, services(name, price, duration_minutes), profiles!appointments_client_profile_fkey(full_name, phone)")
       .in("status", ["pending", "confirmed", "cancelled"]);
 
-    // Staff with a branch only see their branch's appointments
-    if (adminBranchId) query = query.eq("branch_id", adminBranchId);
+    // Staff with a fixed branch → use that; manager/ceo → use the branch filter dropdown
+    if (adminBranchId) {
+      query = query.eq("branch_id", adminBranchId);
+    } else if (isManager && branchFilter !== "all") {
+      query = query.eq("branch_id", branchFilter);
+    }
 
     if (dateFrom) query = query.gte("appointment_date", format(dateFrom, "yyyy-MM-dd"));
     if (dateTo) query = query.lte("appointment_date", format(dateTo, "yyyy-MM-dd"));
@@ -64,9 +79,9 @@ export default function AdminAgenda() {
 
     setAppointments(data || []);
     setLoading(false);
-  }, [dateFrom, dateTo, serviceFilter, adminBranchId]);
+  }, [dateFrom, dateTo, serviceFilter, adminBranchId, branchFilter, isManager]);
 
-  useEffect(() => { fetchServices(); }, []);
+  useEffect(() => { fetchServices(); fetchBranches(); }, []);
   useEffect(() => { fetchAppointments(); }, [fetchAppointments]);
 
   useEffect(() => {
@@ -128,7 +143,7 @@ export default function AdminAgenda() {
   };
 
   const resetFilters = () => {
-    setDateFrom(undefined); setDateTo(undefined); setServiceFilter("all");
+    setDateFrom(undefined); setDateTo(undefined); setServiceFilter("all"); setBranchFilter("all");
   };
 
   // Split into columns
@@ -337,7 +352,20 @@ export default function AdminAgenda() {
             <Filter className="h-4 w-4 text-muted-foreground" />
             <span className="text-sm font-medium">Filtros</span>
           </div>
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+          <div className={`grid grid-cols-1 gap-3 ${isManager ? "sm:grid-cols-2 lg:grid-cols-4" : "sm:grid-cols-3"}`}>
+            {/* Branch filter — Gerente/CEO only */}
+            {isManager && (
+              <Select value={branchFilter} onValueChange={setBranchFilter}>
+                <SelectTrigger className="gap-2">
+                  <Building2 className="h-3.5 w-3.5 text-muted-foreground shrink-0" />
+                  <SelectValue placeholder="Filial" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">Todas as filiais</SelectItem>
+                  {branches.map((b) => <SelectItem key={b.id} value={b.id}>{b.name}</SelectItem>)}
+                </SelectContent>
+              </Select>
+            )}
             <Popover>
               <PopoverTrigger asChild>
                 <Button variant="outline" className="justify-start text-sm font-normal">
@@ -364,7 +392,7 @@ export default function AdminAgenda() {
               </SelectContent>
             </Select>
           </div>
-          {(dateFrom || dateTo || serviceFilter !== "all") && (
+          {(dateFrom || dateTo || serviceFilter !== "all" || branchFilter !== "all") && (
             <Button variant="ghost" size="sm" className="mt-2 text-xs" onClick={resetFilters}>Limpar filtros</Button>
           )}
         </CardContent>
