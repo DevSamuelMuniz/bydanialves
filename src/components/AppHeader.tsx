@@ -117,7 +117,7 @@ export function AppHeader({ title, profilePath }: AppHeaderProps) {
           {/* Avatar dropdown */}
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
-              <button className="rounded-full p-0.5 hover:ring-2 hover:ring-primary/40 transition-all ml-1">
+              <button id="header-avatar" className="rounded-full p-0.5 hover:ring-2 hover:ring-primary/40 transition-all ml-1">
                 <Avatar className="h-8 w-8">
                   <AvatarImage src={avatarUrl || undefined} />
                   <AvatarFallback className="bg-primary text-primary-foreground text-xs font-serif">
