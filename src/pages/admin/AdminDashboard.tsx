@@ -6,6 +6,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { CalendarDays, Users, Clock, AlertCircle, TrendingUp, CheckCircle2, Scissors, Building2 } from "lucide-react";
 import {
   AreaChart, Area, BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer,
@@ -30,8 +31,10 @@ const statusColors: Record<string, string> = {
 
 export default function AdminDashboard() {
   const navigate = useNavigate();
-  const { canViewDashboard, canViewDashboardFinancials, canViewBranchKpis } = useAdminPermissions();
+  const { canViewDashboard, canViewDashboardFinancials, canViewBranchKpis, adminLevel } = useAdminPermissions();
   const { adminBranchId } = useAuth();
+
+  const isManager = adminLevel === "manager" || adminLevel === "ceo";
 
   useEffect(() => {
     if (!canViewDashboard) navigate("/admin/agenda", { replace: true });
@@ -51,10 +54,17 @@ export default function AdminDashboard() {
   const [peakHours, setPeakHours] = useState<{ hour: string; count: number }[]>([]);
   const [completionRate, setCompletionRate] = useState(0);
   const [branchKpis, setBranchKpis] = useState<{ name: string; count: number; revenue: number }[]>([]);
+  const [branches, setBranches] = useState<{ id: string; name: string }[]>([]);
+  const [branchFilter, setBranchFilter] = useState<string>("all");
 
   const [loading, setLoading] = useState(true);
 
+  // Load branches for manager/ceo filter
   useEffect(() => {
+    if (!isManager) return;
+    supabase.from("branches").select("id, name").eq("active", true).order("name")
+      .then(({ data }) => setBranches(data || []));
+  }, [isManager]);
     const today = new Date().toISOString().split("T")[0];
     const monthStart = startOfMonth(new Date()).toISOString().split("T")[0];
     const weekStart = format(subDays(new Date(), 6), "yyyy-MM-dd");
