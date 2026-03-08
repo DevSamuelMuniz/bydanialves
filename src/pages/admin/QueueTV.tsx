@@ -5,8 +5,9 @@ import { useAuth } from "@/contexts/AuthContext";
 import {
   Maximize2, Minimize2, RefreshCw, ArrowLeft, Clock, Users, CheckCircle2,
   Loader2, Share2, Copy, Check, Trash2, Plus, ExternalLink, Link2, Volume2, VolumeX,
-  GitBranch, Pencil, X,
+  GitBranch, Pencil, X, QrCode, Download,
 } from "lucide-react";
+import { QRCodeSVG, QRCodeCanvas } from "qrcode.react";
 import logoDark from "@/assets/logo_dark.png";
 import logoLight from "@/assets/logo_light.png";
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetDescription } from "@/components/ui/sheet";
@@ -132,6 +133,19 @@ export default function QueueTV() {
   const [editingId, setEditingId] = useState<string | null>(null);
   const [editLabel, setEditLabel] = useState("");
   const [editBranchId, setEditBranchId] = useState<string>("all");
+
+  // QR code expand state
+  const [qrOpenId, setQrOpenId] = useState<string | null>(null);
+
+  const downloadQr = (token: QueueToken) => {
+    const canvas = document.getElementById(`qr-canvas-${token.id}`) as HTMLCanvasElement | null;
+    if (!canvas) return;
+    const url = canvas.toDataURL("image/png");
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = `qr-${token.label.replace(/\s+/g, "-").toLowerCase()}.png`;
+    a.click();
+  };
 
   // Track which IDs are "new" for animation/flash
   const [newIds, setNewIds] = useState<Set<string>>(new Set());
@@ -669,8 +683,16 @@ export default function QueueTV() {
                                       <Pencil className="h-3.5 w-3.5" />
                                     </button>
                                     <button
+                                      onClick={() => setQrOpenId(qrOpenId === t.id ? null : t.id)}
+                                      className={`h-7 w-7 rounded-lg flex items-center justify-center transition-colors ${qrOpenId === t.id ? "bg-primary/10 text-primary" : "hover:bg-secondary/60 text-muted-foreground hover:text-foreground"}`}
+                                      title="Ver QR Code"
+                                    >
+                                      <QrCode className="h-3.5 w-3.5" />
+                                    </button>
+                                    <button
                                       onClick={() => window.open(buildLink(t.token), "_blank")}
                                       className="h-7 w-7 rounded-lg flex items-center justify-center hover:bg-secondary/60 transition-colors text-muted-foreground hover:text-foreground"
+                                      title="Abrir em nova aba"
                                     >
                                       <ExternalLink className="h-3.5 w-3.5" />
                                     </button>
@@ -707,6 +729,33 @@ export default function QueueTV() {
                                   className="shrink-0 text-xs text-primary hover:text-primary/80 font-medium transition-colors"
                                 >
                                   {copiedId === t.id ? "Copiado!" : "Copiar"}
+                                </button>
+                              </div>
+                            )}
+
+                            {/* QR Code panel */}
+                            {t.active && qrOpenId === t.id && (
+                              <div className="flex flex-col items-center gap-3 pt-1 pb-1">
+                                <div className="bg-white rounded-xl p-3 shadow-sm border border-border/30">
+                                  <QRCodeCanvas
+                                    id={`qr-canvas-${t.id}`}
+                                    value={buildLink(t.token)}
+                                    size={180}
+                                    level="M"
+                                  />
+                                </div>
+                                <div className="text-center space-y-0.5">
+                                  <p className="text-xs font-medium text-foreground">{t.label}</p>
+                                  {t.branch_name && (
+                                    <p className="text-xs text-muted-foreground">{t.branch_name}</p>
+                                  )}
+                                </div>
+                                <button
+                                  onClick={() => downloadQr(t)}
+                                  className="flex items-center gap-1.5 text-xs font-medium text-primary hover:text-primary/80 transition-colors"
+                                >
+                                  <Download className="h-3.5 w-3.5" />
+                                  Baixar QR Code
                                 </button>
                               </div>
                             )}
