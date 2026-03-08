@@ -38,7 +38,7 @@ export function AppSidebar({ items, groupLabel, topBadge, bottomSlot }: AppSideb
   const { resolvedTheme } = useTheme();
   const { state } = useSidebar();
   const collapsed = state === "collapsed";
-  const logoSrc = resolvedTheme === "dark" ? logoDark : logoLight;
+  const logoSrc = resolvedTheme === "dark" ? logoLight : logoDark;
 
   return (
     <Sidebar collapsible="icon" className="border-r border-sidebar-border/60">
