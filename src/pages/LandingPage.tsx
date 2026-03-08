@@ -701,19 +701,30 @@ export default function LandingPage() {
                 className="flex gap-5 animate-[gallery-marquee_60s_linear_infinite]"
                 style={{ width: "max-content" }}>
                 
-              {[...galleryImages, ...galleryImages].map((src, i) =>
-                <div
-                  key={i}
-                  className="flex-shrink-0 w-[300px] md:w-[360px] aspect-[4/3] rounded-2xl overflow-hidden shadow-lg group">
-                  
-                  <img
-                    src={src}
-                    alt={`Serviço ${i % galleryImages.length + 1}`}
-                    className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700"
-                    loading="lazy" />
-                  
-                </div>
-                )}
+              {[...galleryImages, ...galleryImages].map((src, i) => {
+                const uniqueIdx = i % galleryUniqueImages.length;
+                return (
+                  <button
+                    key={i}
+                    type="button"
+                    onClick={() => openLightbox(uniqueIdx)}
+                    className="flex-shrink-0 w-[300px] md:w-[360px] aspect-[4/3] rounded-2xl overflow-hidden shadow-lg group cursor-zoom-in relative"
+                    aria-label={`Abrir foto ${uniqueIdx + 1}`}
+                  >
+                    <img
+                      src={src}
+                      alt={`Serviço ${uniqueIdx + 1}`}
+                      className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700"
+                      loading="lazy"
+                    />
+                    <div className="absolute inset-0 bg-black/0 group-hover:bg-black/20 transition-colors duration-300 flex items-center justify-center">
+                      <span className="opacity-0 group-hover:opacity-100 transition-opacity duration-300 bg-background/80 backdrop-blur-sm rounded-full px-3 py-1.5 text-xs font-medium text-foreground">
+                        Ver foto
+                      </span>
+                    </div>
+                  </button>
+                );
+              })}
             </div>
           </div>
         </div>
