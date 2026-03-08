@@ -36,6 +36,7 @@ export function AdminSidebar() {
       "/admin/branches":        perms.canViewBranches,
       "/admin/users":           perms.canViewUsers,
       "/admin/coupons":         perms.canManageCoupons,
+      "/admin/reviews":         perms.canViewServices,
       "/admin/logs":            perms.canViewLogs,
     };
     return map[item.url] ?? false;
