@@ -1,15 +1,50 @@
+import { useEffect, useState } from "react";
 import { AppSidebar, NavItem } from "@/components/AppSidebar";
 import { useAdminPermissions, ADMIN_LEVEL_LABELS, ADMIN_LEVEL_COLORS } from "@/hooks/use-admin-permissions";
 import { useAuth } from "@/contexts/AuthContext";
 import { Badge } from "@/components/ui/badge";
+import { supabase } from "@/integrations/supabase/client";
 import {
   LayoutDashboard, Users, Calendar, Scissors, DollarSign,
-  BarChart3, ShieldCheck, Crown, Activity, ClipboardList, Building2, Tag, Star, Tv2,
+  ShieldCheck, Crown, Activity, ClipboardList, Building2, Tag, Star, Tv2,
 } from "lucide-react";
+
+function usePendingQueueCount() {
+  const [count, setCount] = useState(0);
+
+  useEffect(() => {
+    const today = new Date().toISOString().split("T")[0];
+
+    const fetch = async () => {
+      const { count: c } = await supabase
+        .from("appointments")
+        .select("id", { count: "exact", head: true })
+        .eq("appointment_date", today)
+        .eq("status", "pending");
+      setCount(c ?? 0);
+    };
+
+    fetch();
+
+    const channel = supabase
+      .channel("pending-queue-count")
+      .on(
+        "postgres_changes",
+        { event: "*", schema: "public", table: "appointments" },
+        () => fetch()
+      )
+      .subscribe();
+
+    return () => { supabase.removeChannel(channel); };
+  }, []);
+
+  return count;
+}
 
 export function AdminSidebar() {
   const { adminLevel } = useAuth();
   const perms = useAdminPermissions();
+  const pendingCount = usePendingQueueCount();
 
   const items: NavItem[] = [
     { title: "Dashboard",          url: "/admin",                icon: LayoutDashboard, tourId: "sidebar-admin-dashboard" },
@@ -23,7 +58,7 @@ export function AdminSidebar() {
     { title: "Usuários",           url: "/admin/users",          icon: ShieldCheck,     tourId: "sidebar-admin-users" },
     { title: "Cupons",             url: "/admin/coupons",        icon: Tag,             tourId: "sidebar-admin-coupons" },
     { title: "Avaliações",         url: "/admin/reviews",        icon: Star,            tourId: "sidebar-admin-reviews" },
-    { title: "TV de Fila",         url: "/admin/queue-tv",       icon: Tv2,             tourId: "sidebar-admin-queue-tv" },
+    { title: "TV de Fila",         url: "/admin/queue-tv",       icon: Tv2,             tourId: "sidebar-admin-queue-tv", badge: pendingCount },
     { title: "Logs",               url: "/admin/logs",           icon: Activity,        tourId: "sidebar-admin-logs" },
   ].filter((item) => {
     const map: Record<string, boolean> = {
