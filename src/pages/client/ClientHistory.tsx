@@ -287,6 +287,19 @@ export default function ClientHistory() {
                       Avaliação enviada
                     </div>
                   )}
+
+                  {/* Reagendar button */}
+                  {canReschedule && appt.service_id && (
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      className="w-full gap-1.5 border-border/60 text-muted-foreground hover:border-primary/40 hover:text-primary hover:bg-primary/5 text-xs"
+                      onClick={() => navigate(`/client/booking?serviceId=${appt.service_id}`)}
+                    >
+                      <RotateCcw className="h-3.5 w-3.5" />
+                      Reagendar
+                    </Button>
+                  )}
                 </div>
               </div>
             );
