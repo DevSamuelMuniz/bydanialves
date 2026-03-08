@@ -17,8 +17,9 @@ import { Skeleton } from "@/components/ui/skeleton";
 import {
   Plus, ArrowUpCircle, ArrowDownCircle, Filter, CalendarDays, Edit2, Trash2,
   TrendingUp, TrendingDown, Wallet, Scissors, ShoppingBag, Users, Building2,
-  CreditCard, Banknote, QrCode, BarChart3, Target, DollarSign, FileText, Upload
+  CreditCard, Banknote, QrCode, BarChart3, Target, DollarSign, FileText, Upload, Download
 } from "lucide-react";
+import { downloadCSV } from "@/lib/csv";
 import { format, startOfMonth, endOfMonth, subMonths } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import {
