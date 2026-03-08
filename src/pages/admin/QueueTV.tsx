@@ -5,12 +5,14 @@ import { useAuth } from "@/contexts/AuthContext";
 import {
   Maximize2, Minimize2, RefreshCw, ArrowLeft, Clock, Users, CheckCircle2,
   Loader2, Share2, Copy, Check, Trash2, Plus, ExternalLink, Link2, Volume2, VolumeX,
+  GitBranch,
 } from "lucide-react";
 import logoDark from "@/assets/logo_dark.png";
 import logoLight from "@/assets/logo_light.png";
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetDescription } from "@/components/ui/sheet";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { toast } from "sonner";
 
 interface Appointment {
