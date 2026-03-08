@@ -212,20 +212,43 @@ export default function PublicQueueTV() {
   }
 
   return (
-    <div
-      ref={containerRef}
-      className="min-h-screen bg-background text-foreground flex flex-col select-none"
-    >
-      {/* Header */}
-      <header className="flex items-center justify-between px-8 py-5 border-b border-border/40 bg-card/60 backdrop-blur shrink-0">
-        <div className="flex items-center gap-4">
-          <img src={isDark ? logoLight : logoDark} alt="Logo" className="h-10 object-contain" />
-          <div className="w-px h-10 bg-border/40" />
-          <div>
-            <h1 className="text-2xl font-serif font-bold tracking-tight">TV de Fila</h1>
-            <p className="text-sm text-muted-foreground">{label || "Atendimentos de hoje"}</p>
+    <>
+      <style>{`
+        @keyframes queue-enter {
+          0%   { opacity: 0; transform: translateX(-24px) scale(0.97); }
+          60%  { opacity: 1; transform: translateX(4px) scale(1.01); }
+          100% { opacity: 1; transform: translateX(0) scale(1); }
+        }
+        @keyframes queue-glow {
+          0%, 100% { box-shadow: 0 0 0 0 hsl(var(--warning) / 0); }
+          30%      { box-shadow: 0 0 0 6px hsl(var(--warning) / 0.35); }
+          70%      { box-shadow: 0 0 0 3px hsl(var(--warning) / 0.15); }
+        }
+        @keyframes header-flash {
+          0%, 100% { background-color: transparent; }
+          25%      { background-color: hsl(var(--warning) / 0.35); }
+          75%      { background-color: hsl(var(--warning) / 0.15); }
+        }
+        .queue-card-new {
+          animation: queue-enter 0.45s cubic-bezier(0.34,1.56,0.64,1) both,
+                     queue-glow 1.4s ease-in-out 0.4s 3;
+        }
+        .pending-flash { animation: header-flash 0.6s ease-in-out 2; }
+      `}</style>
+      <div
+        ref={containerRef}
+        className="min-h-screen bg-background text-foreground flex flex-col select-none"
+      >
+        {/* Header */}
+        <header className="flex items-center justify-between px-8 py-5 border-b border-border/40 bg-card/60 backdrop-blur shrink-0">
+          <div className="flex items-center gap-4">
+            <img src={isDark ? logoLight : logoDark} alt="Logo" className="h-10 object-contain" />
+            <div className="w-px h-10 bg-border/40" />
+            <div>
+              <h1 className="text-2xl font-serif font-bold tracking-tight">TV de Fila</h1>
+              <p className="text-sm text-muted-foreground">{label || "Atendimentos de hoje"}</p>
+            </div>
           </div>
-        </div>
 
         <div className="flex items-center gap-6">
           <LiveClock />
