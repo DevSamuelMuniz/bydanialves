@@ -5,8 +5,9 @@ import { useAuth } from "@/contexts/AuthContext";
 import {
   Maximize2, Minimize2, RefreshCw, ArrowLeft, Clock, Users, CheckCircle2,
   Loader2, Share2, Copy, Check, Trash2, Plus, ExternalLink, Link2, Volume2, VolumeX,
-  GitBranch, Pencil, X,
+  GitBranch, Pencil, X, QrCode, Download,
 } from "lucide-react";
+import { QRCodeSVG, QRCodeCanvas } from "qrcode.react";
 import logoDark from "@/assets/logo_dark.png";
 import logoLight from "@/assets/logo_light.png";
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetDescription } from "@/components/ui/sheet";
