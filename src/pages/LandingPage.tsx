@@ -1139,6 +1139,37 @@ export default function LandingPage() {
 
       {/* ═══ LIGHTBOX ═══ */}
       {lightboxOpen && lightboxIndex !== null && (
+        <div className="fixed inset-0 z-[200] bg-black/95 backdrop-blur-md flex items-center justify-center" onClick={closeLightbox}>
+          <div className="relative max-w-5xl w-full mx-4 flex items-center justify-center" onClick={(e) => e.stopPropagation()}>
+            <img src={galleryUniqueImages[lightboxIndex]} alt={`Foto ${lightboxIndex + 1}`} className="max-h-[85vh] max-w-full rounded-2xl shadow-2xl object-contain select-none" />
+            <div className="absolute top-4 left-1/2 -translate-x-1/2 bg-black/60 backdrop-blur-sm rounded-full px-4 py-1.5 text-white text-xs font-medium">
+              {lightboxIndex + 1} / {galleryUniqueImages.length}
+            </div>
+            <button onClick={closeLightbox} className="absolute -top-4 -right-4 h-10 w-10 rounded-full bg-background/90 border border-border/60 flex items-center justify-center hover:bg-background transition-colors shadow-lg" aria-label="Fechar">
+              <ChevronRight className="h-4 w-4 rotate-45" />
+            </button>
+            <button onClick={lightboxPrev} className="absolute -left-5 md:-left-14 h-12 w-12 rounded-full bg-background/90 border border-border/60 flex items-center justify-center hover:bg-background transition-colors shadow-lg" aria-label="Foto anterior">
+              <ChevronLeft className="h-5 w-5" />
+            </button>
+            <button onClick={lightboxNext} className="absolute -right-5 md:-right-14 h-12 w-12 rounded-full bg-background/90 border border-border/60 flex items-center justify-center hover:bg-background transition-colors shadow-lg" aria-label="Próxima foto">
+              <ChevronRight className="h-5 w-5" />
+            </button>
+          </div>
+          <div className="absolute bottom-6 left-1/2 -translate-x-1/2 flex gap-2 px-4">
+            {galleryUniqueImages.map((src, i) => (
+              <button key={i} onClick={(e) => { e.stopPropagation(); setLightboxIndex(i); }} className={`h-12 w-16 rounded-lg overflow-hidden border-2 transition-all shrink-0 ${i === lightboxIndex ? "border-primary scale-110" : "border-white/20 opacity-60 hover:opacity-100"}`}>
+                <img src={src} alt="" className="w-full h-full object-cover" />
+              </button>
+            ))}
+          </div>
+        </div>
+      )}
+    </>
+  );
+}
+
+      {/* ═══ LIGHTBOX ═══ */}
+      {lightboxOpen && lightboxIndex !== null && (
         <div
           className="fixed inset-0 z-[200] bg-black/95 backdrop-blur-md flex items-center justify-center"
           onClick={closeLightbox}
