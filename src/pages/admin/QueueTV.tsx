@@ -271,6 +271,29 @@ export default function QueueTV() {
     fetchTokens();
   };
 
+  const startEdit = (t: QueueToken) => {
+    setEditingId(t.id);
+    setEditLabel(t.label);
+    setEditBranchId(t.branch_id ?? "all");
+  };
+
+  const cancelEdit = () => setEditingId(null);
+
+  const saveEdit = async () => {
+    if (!editingId) return;
+    const { error } = await (supabase as any)
+      .from("queue_tv_tokens")
+      .update({
+        label: editLabel.trim() || "Link público",
+        branch_id: editBranchId === "all" ? null : editBranchId,
+      })
+      .eq("id", editingId);
+    if (error) { toast.error("Erro ao salvar alterações"); return; }
+    toast.success("Link atualizado!");
+    setEditingId(null);
+    fetchTokens();
+  };
+
   const revokeToken = async (id: string) => {
     const { error } = await (supabase as any)
       .from("queue_tv_tokens")
