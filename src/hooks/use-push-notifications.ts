@@ -67,10 +67,16 @@ export function usePushNotifications() {
         },
         async (payload) => {
           const newRow = payload.new as { status: string; service_id: string };
-          const oldRow = payload.old as { status: string };
+          // With REPLICA IDENTITY FULL, payload.old now contains all columns
+          const oldRow = payload.old as { status?: string };
+
+          console.log("[PushNotifications] Appointment updated:", {
+            oldStatus: oldRow?.status,
+            newStatus: newRow.status,
+          });
 
           // Only fire when status actually changed
-          if (newRow.status === oldRow.status) return;
+          if (newRow.status === oldRow?.status) return;
 
           const config = STATUS_LABELS[newRow.status];
           if (!config) return;
@@ -88,10 +94,13 @@ export function usePushNotifications() {
             // fallback to generic name
           }
 
+          console.log("[PushNotifications] Showing notification:", config.title);
           showBrowserNotification(config.title, config.body(serviceName), config.icon);
         }
       )
-      .subscribe();
+      .subscribe((status) => {
+        console.log("[PushNotifications] Channel status:", status);
+      });
 
     return () => {
       supabase.removeChannel(channel);
