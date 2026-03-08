@@ -123,6 +123,8 @@ export default function QueueTV() {
   const [tokens, setTokens] = useState<QueueToken[]>([]);
   const [tokensLoading, setTokensLoading] = useState(false);
   const [newLabel, setNewLabel] = useState("");
+  const [newBranchId, setNewBranchId] = useState<string>("all");
+  const [branches, setBranches] = useState<Branch[]>([]);
   const [copiedId, setCopiedId] = useState<string | null>(null);
   const containerRef = useRef<HTMLDivElement>(null);
 
@@ -227,24 +229,39 @@ export default function QueueTV() {
   }, []);
 
   // ── Token management ──────────────────────────────────────────────────────
+  const fetchBranches = useCallback(async () => {
+    const { data } = await (supabase as any)
+      .from("branches")
+      .select("id, name")
+      .eq("active", true)
+      .order("name");
+    setBranches(data || []);
+  }, []);
+
   const fetchTokens = useCallback(async () => {
     setTokensLoading(true);
     const { data } = await (supabase as any)
       .from("queue_tv_tokens")
-      .select("id, token, label, active, created_at")
+      .select("id, token, label, active, created_at, branch_id, branches(name)")
       .order("created_at", { ascending: false });
-    setTokens(data || []);
+    const mapped = (data || []).map((t: any) => ({
+      ...t,
+      branch_name: t.branches?.name ?? null,
+    }));
+    setTokens(mapped);
     setTokensLoading(false);
   }, []);
 
   const createToken = async () => {
     if (!user) return;
     const label = newLabel.trim() || "Link público";
+    const branch_id = newBranchId === "all" ? null : newBranchId;
     const { error } = await (supabase as any)
       .from("queue_tv_tokens")
-      .insert({ label, created_by: user.id });
+      .insert({ label, created_by: user.id, branch_id });
     if (error) { toast.error("Erro ao criar link"); return; }
     setNewLabel("");
+    setNewBranchId("all");
     toast.success("Link gerado com sucesso!");
     fetchTokens();
   };
