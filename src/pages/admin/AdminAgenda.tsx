@@ -48,6 +48,12 @@ export default function AdminAgenda() {
     setServices(data || []);
   };
 
+  const fetchBranches = async () => {
+    if (!isManager) return;
+    const { data } = await supabase.from("branches").select("id, name").eq("active", true).order("name");
+    setBranches(data || []);
+  };
+
   const fetchAppointments = useCallback(async () => {
     setLoading(true);
     let query = supabase
@@ -55,8 +61,12 @@ export default function AdminAgenda() {
       .select("*, services(name, price, duration_minutes), profiles!appointments_client_profile_fkey(full_name, phone)")
       .in("status", ["pending", "confirmed", "cancelled"]);
 
-    // Staff with a branch only see their branch's appointments
-    if (adminBranchId) query = query.eq("branch_id", adminBranchId);
+    // Staff with a fixed branch → use that; manager/ceo → use the branch filter dropdown
+    if (adminBranchId) {
+      query = query.eq("branch_id", adminBranchId);
+    } else if (isManager && branchFilter !== "all") {
+      query = query.eq("branch_id", branchFilter);
+    }
 
     if (dateFrom) query = query.gte("appointment_date", format(dateFrom, "yyyy-MM-dd"));
     if (dateTo) query = query.lte("appointment_date", format(dateTo, "yyyy-MM-dd"));
@@ -69,7 +79,7 @@ export default function AdminAgenda() {
 
     setAppointments(data || []);
     setLoading(false);
-  }, [dateFrom, dateTo, serviceFilter, adminBranchId]);
+  }, [dateFrom, dateTo, serviceFilter, adminBranchId, branchFilter, isManager]);
 
   useEffect(() => { fetchServices(); }, []);
   useEffect(() => { fetchAppointments(); }, [fetchAppointments]);
