@@ -65,7 +65,8 @@ export default function AdminDashboard() {
     supabase.from("branches").select("id, name").eq("active", true).order("name")
       .then(({ data }) => setBranches(data || []));
   }, [isManager]);
-    const today = new Date().toISOString().split("T")[0];
+
+  useEffect(() => {
     const monthStart = startOfMonth(new Date()).toISOString().split("T")[0];
     const weekStart = format(subDays(new Date(), 6), "yyyy-MM-dd");
     const last30Start = format(subDays(new Date(), 29), "yyyy-MM-dd");
