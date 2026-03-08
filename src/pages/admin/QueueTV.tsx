@@ -5,7 +5,7 @@ import { useAuth } from "@/contexts/AuthContext";
 import {
   Maximize2, Minimize2, RefreshCw, ArrowLeft, Clock, Users, CheckCircle2,
   Loader2, Share2, Copy, Check, Trash2, Plus, ExternalLink, Link2, Volume2, VolumeX,
-  GitBranch,
+  GitBranch, Pencil, X,
 } from "lucide-react";
 import logoDark from "@/assets/logo_dark.png";
 import logoLight from "@/assets/logo_light.png";
