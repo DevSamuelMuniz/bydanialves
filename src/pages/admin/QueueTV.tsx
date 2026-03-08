@@ -5,12 +5,14 @@ import { useAuth } from "@/contexts/AuthContext";
 import {
   Maximize2, Minimize2, RefreshCw, ArrowLeft, Clock, Users, CheckCircle2,
   Loader2, Share2, Copy, Check, Trash2, Plus, ExternalLink, Link2, Volume2, VolumeX,
+  GitBranch,
 } from "lucide-react";
 import logoDark from "@/assets/logo_dark.png";
 import logoLight from "@/assets/logo_light.png";
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetDescription } from "@/components/ui/sheet";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { toast } from "sonner";
 
 interface Appointment {
@@ -28,6 +30,13 @@ interface QueueToken {
   label: string;
   active: boolean;
   created_at: string;
+  branch_id: string | null;
+  branch_name?: string | null;
+}
+
+interface Branch {
+  id: string;
+  name: string;
 }
 
 const STATUS_CONFIG = {
@@ -114,6 +123,8 @@ export default function QueueTV() {
   const [tokens, setTokens] = useState<QueueToken[]>([]);
   const [tokensLoading, setTokensLoading] = useState(false);
   const [newLabel, setNewLabel] = useState("");
+  const [newBranchId, setNewBranchId] = useState<string>("all");
+  const [branches, setBranches] = useState<Branch[]>([]);
   const [copiedId, setCopiedId] = useState<string | null>(null);
   const containerRef = useRef<HTMLDivElement>(null);
 
@@ -218,24 +229,39 @@ export default function QueueTV() {
   }, []);
 
   // ── Token management ──────────────────────────────────────────────────────
+  const fetchBranches = useCallback(async () => {
+    const { data } = await (supabase as any)
+      .from("branches")
+      .select("id, name")
+      .eq("active", true)
+      .order("name");
+    setBranches(data || []);
+  }, []);
+
   const fetchTokens = useCallback(async () => {
     setTokensLoading(true);
     const { data } = await (supabase as any)
       .from("queue_tv_tokens")
-      .select("id, token, label, active, created_at")
+      .select("id, token, label, active, created_at, branch_id, branches(name)")
       .order("created_at", { ascending: false });
-    setTokens(data || []);
+    const mapped = (data || []).map((t: any) => ({
+      ...t,
+      branch_name: t.branches?.name ?? null,
+    }));
+    setTokens(mapped);
     setTokensLoading(false);
   }, []);
 
   const createToken = async () => {
     if (!user) return;
     const label = newLabel.trim() || "Link público";
+    const branch_id = newBranchId === "all" ? null : newBranchId;
     const { error } = await (supabase as any)
       .from("queue_tv_tokens")
-      .insert({ label, created_by: user.id });
+      .insert({ label, created_by: user.id, branch_id });
     if (error) { toast.error("Erro ao criar link"); return; }
     setNewLabel("");
+    setNewBranchId("all");
     toast.success("Link gerado com sucesso!");
     fetchTokens();
   };
@@ -354,7 +380,7 @@ export default function QueueTV() {
                 {isDark ? "☀️ Claro" : "🌙 Escuro"}
               </button>
               <button
-                onClick={() => { setShareOpen(true); fetchTokens(); }}
+                onClick={() => { setShareOpen(true); fetchTokens(); fetchBranches(); }}
                 className="h-9 px-3 rounded-lg flex items-center gap-1.5 bg-primary/10 hover:bg-primary/20 transition-colors text-primary text-xs font-medium"
               >
                 <Share2 className="h-3.5 w-3.5" />
@@ -497,14 +523,28 @@ export default function QueueTV() {
           <div className="flex-1 overflow-y-auto px-6 py-5 space-y-6">
             <div className="space-y-3">
               <p className="text-sm font-medium">Gerar novo link</p>
+              <Input
+                placeholder="Nome do link (ex: Recepção, Filial Norte)"
+                value={newLabel}
+                onChange={(e) => setNewLabel(e.target.value)}
+                onKeyDown={(e) => e.key === "Enter" && createToken()}
+                className="text-sm"
+              />
               <div className="flex gap-2">
-                <Input
-                  placeholder="Nome do link (ex: Recepção, Filial Norte)"
-                  value={newLabel}
-                  onChange={(e) => setNewLabel(e.target.value)}
-                  onKeyDown={(e) => e.key === "Enter" && createToken()}
-                  className="flex-1 text-sm"
-                />
+                <Select value={newBranchId} onValueChange={setNewBranchId}>
+                  <SelectTrigger className="flex-1 text-sm h-9">
+                    <div className="flex items-center gap-1.5">
+                      <GitBranch className="h-3.5 w-3.5 text-muted-foreground" />
+                      <SelectValue placeholder="Filtrar por filial" />
+                    </div>
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">Todas as filiais</SelectItem>
+                    {branches.map((b) => (
+                      <SelectItem key={b.id} value={b.id}>{b.name}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
                 <Button onClick={createToken} size="sm" className="shrink-0 gap-1.5">
                   <Plus className="h-4 w-4" />
                   Gerar
@@ -536,7 +576,17 @@ export default function QueueTV() {
                       <div className="flex items-center justify-between gap-2">
                         <div className="flex items-center gap-2 min-w-0">
                           <div className={`h-2 w-2 rounded-full shrink-0 ${t.active ? "bg-success" : "bg-muted-foreground/40"}`} />
-                          <p className="font-medium text-sm truncate">{t.label}</p>
+                          <div className="min-w-0">
+                            <p className="font-medium text-sm truncate">{t.label}</p>
+                            {t.branch_name ? (
+                              <span className="inline-flex items-center gap-1 text-xs text-primary/80 bg-primary/10 px-1.5 py-0.5 rounded mt-0.5">
+                                <GitBranch className="h-3 w-3" />
+                                {t.branch_name}
+                              </span>
+                            ) : (
+                              <span className="text-xs text-muted-foreground/50">Todas as filiais</span>
+                            )}
+                          </div>
                           {!t.active && (
                             <span className="text-xs text-muted-foreground bg-muted px-1.5 py-0.5 rounded shrink-0">Revogado</span>
                           )}

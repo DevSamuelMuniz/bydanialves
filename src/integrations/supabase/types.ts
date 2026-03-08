@@ -363,6 +363,7 @@ export type Database = {
       queue_tv_tokens: {
         Row: {
           active: boolean
+          branch_id: string | null
           created_at: string
           created_by: string
           id: string
@@ -371,6 +372,7 @@ export type Database = {
         }
         Insert: {
           active?: boolean
+          branch_id?: string | null
           created_at?: string
           created_by: string
           id?: string
@@ -379,13 +381,22 @@ export type Database = {
         }
         Update: {
           active?: boolean
+          branch_id?: string | null
           created_at?: string
           created_by?: string
           id?: string
           label?: string
           token?: string
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "queue_tv_tokens_branch_id_fkey"
+            columns: ["branch_id"]
+            isOneToOne: false
+            referencedRelation: "branches"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       reviews: {
         Row: {

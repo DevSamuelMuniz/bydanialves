@@ -28,7 +28,7 @@ Deno.serve(async (req) => {
   // Validate token
   const { data: tokenData, error: tokenError } = await supabase
     .from("queue_tv_tokens")
-    .select("id, active, label")
+    .select("id, active, label, branch_id")
     .eq("token", token)
     .eq("active", true)
     .single();
@@ -42,7 +42,8 @@ Deno.serve(async (req) => {
 
   // Fetch today's appointments
   const today = new Date().toISOString().split("T")[0];
-  const { data: appointments, error: apptError } = await supabase
+
+  let query = supabase
     .from("appointments")
     .select(`
       id,
@@ -56,11 +57,29 @@ Deno.serve(async (req) => {
     .neq("status", "cancelled")
     .order("appointment_time", { ascending: true });
 
+  // Filter by branch if token has one assigned
+  if (tokenData.branch_id) {
+    query = query.eq("branch_id", tokenData.branch_id);
+  }
+
+  const { data: appointments, error: apptError } = await query;
+
   if (apptError) {
     return new Response(
       JSON.stringify({ error: "Falha ao carregar agendamentos" }),
       { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
     );
+  }
+
+  // Resolve branch name if filtered
+  let branchName: string | null = null;
+  if (tokenData.branch_id) {
+    const { data: branchData } = await supabase
+      .from("branches")
+      .select("name")
+      .eq("id", tokenData.branch_id)
+      .single();
+    branchName = branchData?.name ?? null;
   }
 
   const mapped = (appointments || []).map((a: any) => ({
@@ -73,7 +92,7 @@ Deno.serve(async (req) => {
   }));
 
   return new Response(
-    JSON.stringify({ appointments: mapped, label: tokenData.label }),
+    JSON.stringify({ appointments: mapped, label: tokenData.label, branch_name: branchName }),
     { headers: { ...corsHeaders, "Content-Type": "application/json" } }
   );
 });

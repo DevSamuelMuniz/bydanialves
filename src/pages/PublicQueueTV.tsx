@@ -100,6 +100,7 @@ export default function PublicQueueTV() {
 
   const [appointments, setAppointments] = useState<Appointment[]>([]);
   const [label, setLabel] = useState("");
+  const [branchName, setBranchName] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [lastUpdate, setLastUpdate] = useState(new Date());
@@ -156,6 +157,7 @@ export default function PublicQueueTV() {
 
       setAppointments(appts);
       setLabel(json.label || "TV de Fila");
+      setBranchName(json.branch_name || null);
       setLastUpdate(new Date());
       setError(null);
     } catch {
@@ -253,7 +255,9 @@ export default function PublicQueueTV() {
             <div className="w-px h-10 bg-border/40" />
             <div>
               <h1 className="text-2xl font-serif font-bold tracking-tight">TV de Fila</h1>
-              <p className="text-sm text-muted-foreground">{label || "Atendimentos de hoje"}</p>
+              <p className="text-sm text-muted-foreground">
+                {branchName ? `📍 ${branchName}` : label || "Atendimentos de hoje"}
+              </p>
             </div>
           </div>
 
