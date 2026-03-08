@@ -352,7 +352,20 @@ export default function AdminAgenda() {
             <Filter className="h-4 w-4 text-muted-foreground" />
             <span className="text-sm font-medium">Filtros</span>
           </div>
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+          <div className={`grid grid-cols-1 gap-3 ${isManager ? "sm:grid-cols-2 lg:grid-cols-4" : "sm:grid-cols-3"}`}>
+            {/* Branch filter — Gerente/CEO only */}
+            {isManager && (
+              <Select value={branchFilter} onValueChange={setBranchFilter}>
+                <SelectTrigger className="gap-2">
+                  <Building2 className="h-3.5 w-3.5 text-muted-foreground shrink-0" />
+                  <SelectValue placeholder="Filial" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">Todas as filiais</SelectItem>
+                  {branches.map((b) => <SelectItem key={b.id} value={b.id}>{b.name}</SelectItem>)}
+                </SelectContent>
+              </Select>
+            )}
             <Popover>
               <PopoverTrigger asChild>
                 <Button variant="outline" className="justify-start text-sm font-normal">
@@ -379,7 +392,7 @@ export default function AdminAgenda() {
               </SelectContent>
             </Select>
           </div>
-          {(dateFrom || dateTo || serviceFilter !== "all") && (
+          {(dateFrom || dateTo || serviceFilter !== "all" || branchFilter !== "all") && (
             <Button variant="ghost" size="sm" className="mt-2 text-xs" onClick={resetFilters}>Limpar filtros</Button>
           )}
         </CardContent>
