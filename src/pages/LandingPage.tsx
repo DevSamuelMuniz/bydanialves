@@ -602,6 +602,11 @@ export default function LandingPage() {
   const formatPrice = (price: number) =>
   price.toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
 
+  const openSubscribeModal = (plan: any) => {
+    setSelectedPlan(plan);
+    setSubscribeModalOpen(true);
+  };
+
   const scrollTo = (id: string) =>
   document.getElementById(id)?.scrollIntoView({ behavior: "smooth" });
 
