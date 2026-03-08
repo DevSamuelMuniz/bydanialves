@@ -40,7 +40,10 @@ export function AppSidebar({ items, groupLabel, topBadge, bottomSlot }: AppSideb
   const { resolvedTheme } = useTheme();
   const { state } = useSidebar();
   const collapsed = state === "collapsed";
-  const logoSrc = resolvedTheme === "dark" ? logoLight : resolvedTheme === "light" ? logoDark : logoDark;
+  // Use logoLight (white) on dark backgrounds, logoDark (dark) on light backgrounds
+  // Fall back to checking the document class if resolvedTheme hasn't resolved yet
+  const isDark = resolvedTheme === "dark" || (resolvedTheme === undefined && typeof document !== "undefined" && document.documentElement.classList.contains("dark"));
+  const logoSrc = isDark ? logoLight : logoDark;
 
   return (
     <Sidebar collapsible="icon" className="border-r border-sidebar-border/60">
