@@ -179,3 +179,91 @@
     font-family: 'Poppins', sans-serif;
   }
 }
+
+/* ========== Driver.js Onboarding Tour Custom Styles ========== */
+.driver-popover.onboarding-popover {
+  background: hsl(var(--card)) !important;
+  color: hsl(var(--foreground)) !important;
+  border: 1px solid hsl(var(--border)) !important;
+  border-radius: 1rem !important;
+  box-shadow: 0 20px 60px hsl(var(--foreground) / 0.15),
+              0 0 0 1px hsl(var(--primary) / 0.15) !important;
+  font-family: 'Poppins', sans-serif !important;
+  max-width: 320px !important;
+  padding: 1.25rem !important;
+}
+
+.driver-popover.onboarding-popover .driver-popover-title {
+  font-size: 1rem !important;
+  font-weight: 600 !important;
+  color: hsl(var(--foreground)) !important;
+  margin-bottom: 0.5rem !important;
+  font-family: 'Poppins', sans-serif !important;
+}
+
+.driver-popover.onboarding-popover .driver-popover-description {
+  font-size: 0.8125rem !important;
+  color: hsl(var(--muted-foreground)) !important;
+  line-height: 1.6 !important;
+  font-family: 'Poppins', sans-serif !important;
+}
+
+.driver-popover.onboarding-popover .driver-popover-progress-text {
+  color: hsl(var(--muted-foreground)) !important;
+  font-size: 0.75rem !important;
+}
+
+.driver-popover.onboarding-popover .driver-popover-footer {
+  margin-top: 1rem !important;
+  gap: 0.5rem !important;
+}
+
+.driver-popover.onboarding-popover .driver-popover-prev-btn,
+.driver-popover.onboarding-popover .driver-popover-next-btn,
+.driver-popover.onboarding-popover .driver-popover-done-btn {
+  background: hsl(var(--primary)) !important;
+  color: hsl(var(--primary-foreground)) !important;
+  border: none !important;
+  border-radius: 0.5rem !important;
+  font-size: 0.8125rem !important;
+  font-weight: 500 !important;
+  padding: 0.4rem 0.875rem !important;
+  font-family: 'Poppins', sans-serif !important;
+  cursor: pointer !important;
+  transition: opacity 0.15s !important;
+}
+
+.driver-popover.onboarding-popover .driver-popover-prev-btn {
+  background: hsl(var(--secondary)) !important;
+  color: hsl(var(--secondary-foreground)) !important;
+}
+
+.driver-popover.onboarding-popover .driver-popover-prev-btn:hover,
+.driver-popover.onboarding-popover .driver-popover-next-btn:hover,
+.driver-popover.onboarding-popover .driver-popover-done-btn:hover {
+  opacity: 0.85 !important;
+}
+
+.driver-popover.onboarding-popover .driver-popover-close-btn {
+  color: hsl(var(--muted-foreground)) !important;
+  font-size: 1.25rem !important;
+  top: 0.75rem !important;
+  right: 0.75rem !important;
+}
+
+.driver-popover.onboarding-popover .driver-popover-arrow-side-left.driver-popover-arrow {
+  border-right-color: hsl(var(--card)) !important;
+}
+.driver-popover.onboarding-popover .driver-popover-arrow-side-right.driver-popover-arrow {
+  border-left-color: hsl(var(--card)) !important;
+}
+.driver-popover.onboarding-popover .driver-popover-arrow-side-top.driver-popover-arrow {
+  border-bottom-color: hsl(var(--card)) !important;
+}
+.driver-popover.onboarding-popover .driver-popover-arrow-side-bottom.driver-popover-arrow {
+  border-top-color: hsl(var(--card)) !important;
+}
+
+.driver-overlay {
+  background: rgba(0, 0, 0, 0.6) !important;
+}
