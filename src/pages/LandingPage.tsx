@@ -1167,6 +1167,9 @@ export default function LandingPage() {
     </>
   );
 }
+    </>
+  );
+}
 
       {/* ═══ LIGHTBOX ═══ */}
       {lightboxOpen && lightboxIndex !== null && (
