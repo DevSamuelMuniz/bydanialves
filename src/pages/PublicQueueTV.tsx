@@ -256,7 +256,7 @@ export default function PublicQueueTV() {
             <div>
               <h1 className="text-2xl font-serif font-bold tracking-tight">TV de Fila</h1>
               <p className="text-sm text-muted-foreground">
-                {branchName ? `📍 ${branchName}` : label || "Atendimentos de hoje"}
+                {label || "Atendimentos de hoje"}
               </p>
             </div>
           </div>
