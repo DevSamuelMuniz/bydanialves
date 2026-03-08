@@ -128,6 +128,11 @@ export default function QueueTV() {
   const [copiedId, setCopiedId] = useState<string | null>(null);
   const containerRef = useRef<HTMLDivElement>(null);
 
+  // Inline edit state
+  const [editingId, setEditingId] = useState<string | null>(null);
+  const [editLabel, setEditLabel] = useState("");
+  const [editBranchId, setEditBranchId] = useState<string>("all");
+
   // Track which IDs are "new" for animation/flash
   const [newIds, setNewIds] = useState<Set<string>>(new Set());
   const [pendingFlash, setPendingFlash] = useState(false);
