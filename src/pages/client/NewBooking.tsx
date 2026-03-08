@@ -297,6 +297,7 @@ export default function NewBooking() {
 
   // Step labels
   const STEP_LABELS = ["Filial", "Serviços", "Data", "Horário", "Confirmação"];
+  const isRescheduling = !!preselectedServiceId;
 
   return (
     <div className="w-full space-y-6">
@@ -308,7 +309,16 @@ export default function NewBooking() {
           </Button>
         )}
         <div>
-          <h1 className="font-serif text-2xl tracking-tight">Novo Agendamento</h1>
+          <div className="flex items-center gap-2">
+            <h1 className="font-serif text-2xl tracking-tight">
+              {isRescheduling ? "Reagendar" : "Novo Agendamento"}
+            </h1>
+            {isRescheduling && (
+              <span className="inline-flex items-center gap-1 text-xs font-medium text-primary bg-primary/10 border border-primary/20 rounded-full px-2 py-0.5">
+                <RotateCcw className="h-3 w-3" /> Reagendamento
+              </span>
+            )}
+          </div>
           <p className="text-sm text-muted-foreground">{STEP_LABELS[step - 1]}</p>
         </div>
       </div>
