@@ -552,10 +552,28 @@ export default function LandingPage() {
   const [subscribeModalOpen, setSubscribeModalOpen] = useState(false);
   const [selectedPlan, setSelectedPlan] = useState<any | null>(null);
 
-  const openSubscribeModal = (plan: any) => {
-    setSelectedPlan(plan);
-    setSubscribeModalOpen(true);
-  };
+  // Lightbox state
+  const [lightboxIndex, setLightboxIndex] = useState<number | null>(null);
+  const lightboxOpen = lightboxIndex !== null;
+
+  const openLightbox = (idx: number) => setLightboxIndex(idx % galleryUniqueImages.length);
+  const closeLightbox = () => setLightboxIndex(null);
+  const lightboxPrev = useCallback(() =>
+    setLightboxIndex((i) => (i === null ? 0 : (i - 1 + galleryUniqueImages.length) % galleryUniqueImages.length)), []);
+  const lightboxNext = useCallback(() =>
+    setLightboxIndex((i) => (i === null ? 0 : (i + 1) % galleryUniqueImages.length)), []);
+
+  // Keyboard navigation for lightbox
+  useEffect(() => {
+    if (!lightboxOpen) return;
+    const handler = (e: KeyboardEvent) => {
+      if (e.key === "ArrowLeft") lightboxPrev();
+      if (e.key === "ArrowRight") lightboxNext();
+      if (e.key === "Escape") closeLightbox();
+    };
+    window.addEventListener("keydown", handler);
+    return () => window.removeEventListener("keydown", handler);
+  }, [lightboxOpen, lightboxPrev, lightboxNext]);
 
   useEffect(() => {
     const onScroll = () => setScrolled(window.scrollY > 20);
