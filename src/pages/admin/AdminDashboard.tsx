@@ -7,7 +7,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { CalendarDays, Users, Clock, AlertCircle, TrendingUp, CheckCircle2, Scissors, Building2 } from "lucide-react";
+import { CalendarDays, Users, Clock, AlertCircle, TrendingUp, CheckCircle2, Scissors, Building2, Star } from "lucide-react";
 import {
   AreaChart, Area, BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer,
   CartesianGrid, Cell,
