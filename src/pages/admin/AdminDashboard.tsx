@@ -164,6 +164,18 @@ export default function AdminDashboard() {
       setLoading(false);
     });
 
+    // Reviews average
+    (async () => {
+      const { data: reviewsData } = await (supabase as any)
+        .from("reviews")
+        .select("rating");
+      if (reviewsData && reviewsData.length > 0) {
+        const avg = reviewsData.reduce((s: number, r: any) => s + r.rating, 0) / reviewsData.length;
+        setAvgRating(Math.round(avg * 10) / 10);
+        setReviewCount(reviewsData.length);
+      }
+    })();
+
     // Branch KPIs (always global — shows all branches for CEO/Gerente comparison)
     (async () => {
       const monthStart2 = startOfMonth(new Date()).toISOString().split("T")[0];
