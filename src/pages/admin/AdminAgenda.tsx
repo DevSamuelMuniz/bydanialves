@@ -13,7 +13,7 @@ import { Calendar } from "@/components/ui/calendar";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
 import { useToast } from "@/hooks/use-toast";
-import { Clock, CalendarDays, Filter, StickyNote, Trash2, DollarSign, Handshake, CheckCircle2, User, Scissors, RefreshCw, AlertCircle, XCircle } from "lucide-react";
+import { Clock, CalendarDays, Filter, StickyNote, Trash2, DollarSign, Handshake, CheckCircle2, User, Scissors, RefreshCw, AlertCircle, XCircle, Building2 } from "lucide-react";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
 
@@ -22,10 +22,13 @@ const PAGE_SIZE = 100; // load more for kanban view
 export default function AdminAgenda() {
   const { toast } = useToast();
   const { user, adminBranchId } = useAuth();
-  const { adminLevel } = useAdminPermissions();
+  const { adminLevel, canViewBranches } = useAdminPermissions();
+
+  const isManager = adminLevel === "manager" || adminLevel === "ceo";
 
   const [appointments, setAppointments] = useState<any[]>([]);
   const [services, setServices] = useState<any[]>([]);
+  const [branches, setBranches] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [takingId, setTakingId] = useState<string | null>(null);
 
@@ -33,6 +36,8 @@ export default function AdminAgenda() {
   const [dateFrom, setDateFrom] = useState<Date | undefined>();
   const [dateTo, setDateTo] = useState<Date | undefined>();
   const [serviceFilter, setServiceFilter] = useState<string>("all");
+  // Branch filter — only for manager/ceo (no fixed adminBranchId)
+  const [branchFilter, setBranchFilter] = useState<string>("all");
 
   // Notes
   const [editingNotes, setEditingNotes] = useState<string | null>(null);
