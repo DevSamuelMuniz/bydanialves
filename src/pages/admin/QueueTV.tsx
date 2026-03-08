@@ -523,14 +523,28 @@ export default function QueueTV() {
           <div className="flex-1 overflow-y-auto px-6 py-5 space-y-6">
             <div className="space-y-3">
               <p className="text-sm font-medium">Gerar novo link</p>
+              <Input
+                placeholder="Nome do link (ex: Recepção, Filial Norte)"
+                value={newLabel}
+                onChange={(e) => setNewLabel(e.target.value)}
+                onKeyDown={(e) => e.key === "Enter" && createToken()}
+                className="text-sm"
+              />
               <div className="flex gap-2">
-                <Input
-                  placeholder="Nome do link (ex: Recepção, Filial Norte)"
-                  value={newLabel}
-                  onChange={(e) => setNewLabel(e.target.value)}
-                  onKeyDown={(e) => e.key === "Enter" && createToken()}
-                  className="flex-1 text-sm"
-                />
+                <Select value={newBranchId} onValueChange={setNewBranchId}>
+                  <SelectTrigger className="flex-1 text-sm h-9">
+                    <div className="flex items-center gap-1.5">
+                      <GitBranch className="h-3.5 w-3.5 text-muted-foreground" />
+                      <SelectValue placeholder="Filtrar por filial" />
+                    </div>
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">Todas as filiais</SelectItem>
+                    {branches.map((b) => (
+                      <SelectItem key={b.id} value={b.id}>{b.name}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
                 <Button onClick={createToken} size="sm" className="shrink-0 gap-1.5">
                   <Plus className="h-4 w-4" />
                   Gerar
@@ -562,7 +576,17 @@ export default function QueueTV() {
                       <div className="flex items-center justify-between gap-2">
                         <div className="flex items-center gap-2 min-w-0">
                           <div className={`h-2 w-2 rounded-full shrink-0 ${t.active ? "bg-success" : "bg-muted-foreground/40"}`} />
-                          <p className="font-medium text-sm truncate">{t.label}</p>
+                          <div className="min-w-0">
+                            <p className="font-medium text-sm truncate">{t.label}</p>
+                            {t.branch_name ? (
+                              <span className="inline-flex items-center gap-1 text-xs text-primary/80 bg-primary/10 px-1.5 py-0.5 rounded mt-0.5">
+                                <GitBranch className="h-3 w-3" />
+                                {t.branch_name}
+                              </span>
+                            ) : (
+                              <span className="text-xs text-muted-foreground/50">Todas as filiais</span>
+                            )}
+                          </div>
                           {!t.active && (
                             <span className="text-xs text-muted-foreground bg-muted px-1.5 py-0.5 rounded shrink-0">Revogado</span>
                           )}
