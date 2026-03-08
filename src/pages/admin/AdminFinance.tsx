@@ -350,15 +350,35 @@ export default function AdminFinance() {
   return (
     <div className="space-y-6">
       {/* Header */}
-      <div className="flex items-center justify-between">
+      <div className="flex items-center justify-between gap-2 flex-wrap">
         <div>
           <h1 className="font-serif text-2xl">Painel Financeiro</h1>
           <p className="text-sm text-muted-foreground">Visão gerencial completa · {perms.adminLevel === "ceo" ? "CEO" : "Gerente"}</p>
         </div>
-        <Button onClick={openAdd}>
-          <Plus className="mr-2 h-4 w-4" />
-          Novo Registro
-        </Button>
+        <div className="flex items-center gap-2">
+          <Button variant="outline" size="sm" onClick={() => {
+            const dateLabel = (d?: Date) => d ? format(d, "dd/MM/yyyy") : "";
+            const filename = `financeiro${dateLabel(dateFrom) ? "_" + dateLabel(dateFrom).replace(/\//g,"-") : ""}${dateLabel(dateTo) ? "_ate_" + dateLabel(dateTo).replace(/\//g,"-") : ""}`;
+            const headers = ["Data", "Tipo", "Descrição", "Categoria", "Método Pagamento", "Filial", "Valor (R$)"];
+            const rows = records.map((r) => [
+              new Date(r.created_at).toLocaleDateString("pt-BR"),
+              r.type === "income" ? "Entrada" : "Saída",
+              r.description,
+              CATEGORIES.find((c) => c.value === r.category)?.label ?? r.category ?? "",
+              PAYMENT_METHODS.find((p) => p.value === r.payment_method)?.label ?? r.payment_method ?? "",
+              r.branch ?? "",
+              Number(r.amount).toFixed(2).replace(".", ","),
+            ]);
+            downloadCSV(filename, headers, rows);
+          }}>
+            <Download className="mr-2 h-4 w-4" />
+            Exportar CSV
+          </Button>
+          <Button onClick={openAdd}>
+            <Plus className="mr-2 h-4 w-4" />
+            Novo Registro
+          </Button>
+        </div>
       </div>
 
       {/* Filters */}
