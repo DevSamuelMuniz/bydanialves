@@ -1,6 +1,29 @@
 import { useEffect, useState, useCallback, useRef } from "react";
 import { useSearchParams } from "react-router-dom";
-import { Maximize2, Minimize2, RefreshCw, Clock, Users, CheckCircle2, Loader2, WifiOff } from "lucide-react";
+import { Maximize2, Minimize2, RefreshCw, Clock, Users, CheckCircle2, Loader2, WifiOff, Volume2, VolumeX } from "lucide-react";
+
+/** Same pleasant chime as in QueueTV */
+function playChime() {
+  try {
+    const ctx = new AudioContext();
+    const play = (freq: number, start: number, dur: number, vol = 0.25) => {
+      const osc = ctx.createOscillator();
+      const gain = ctx.createGain();
+      osc.connect(gain);
+      gain.connect(ctx.destination);
+      osc.type = "sine";
+      osc.frequency.setValueAtTime(freq, ctx.currentTime + start);
+      gain.gain.setValueAtTime(0, ctx.currentTime + start);
+      gain.gain.linearRampToValueAtTime(vol, ctx.currentTime + start + 0.01);
+      gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + start + dur);
+      osc.start(ctx.currentTime + start);
+      osc.stop(ctx.currentTime + start + dur + 0.05);
+    };
+    play(880, 0, 0.35, 0.2);
+    play(1046, 0.18, 0.4, 0.18);
+    play(1318, 0.36, 0.5, 0.15);
+  } catch (_) { /* silently skip */ }
+}
 import logoDark from "@/assets/logo_dark.png";
 import logoLight from "@/assets/logo_light.png";
 
