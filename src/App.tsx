@@ -53,6 +53,9 @@ const App = () => (
             <Route path="/politicadeprivacidade" element={<PoliticaDePrivacidade />} />
             <Route path="/politica-e-termos" element={<PoliticaETermos />} />
 
+            {/* Public Queue TV – no auth required */}
+            <Route path="/tv" element={<PublicQueueTV />} />
+
             {/* Client routes */}
             <Route path="/client" element={<ProtectedRoute requiredRole="client"><ClientLayout /></ProtectedRoute>}>
               <Route index element={<ClientDashboard />} />
