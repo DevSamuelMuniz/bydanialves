@@ -5,7 +5,8 @@ import { useAuth } from "@/contexts/AuthContext";
 import { SidebarTrigger } from "@/components/ui/sidebar";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { GlobalSearch } from "@/components/GlobalSearch";
-import { User, Settings, LogOut, Bell, Moon, Sun, FileText } from "lucide-react";
+import { NotificationBell } from "@/components/NotificationBell";
+import { User, Settings, LogOut, Moon, Sun, FileText } from "lucide-react";
 import {
   DropdownMenu,
   DropdownMenuContent,

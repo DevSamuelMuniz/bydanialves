@@ -2,9 +2,20 @@ import { useEffect, useState, useCallback } from "react";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
 import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Clock, Filter, MapPin, Scissors, CalendarDays, BanknoteIcon, StickyNote, Timer } from "lucide-react";
+import { Textarea } from "@/components/ui/textarea";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogFooter,
+  DialogDescription,
+} from "@/components/ui/dialog";
+import { Clock, Filter, MapPin, Scissors, CalendarDays, BanknoteIcon, StickyNote, Timer, Star } from "lucide-react";
+import { toast } from "sonner";
 
 const statusLabels: Record<string, string> = {
   pending: "Pendente",
@@ -27,11 +38,45 @@ const statusBadgeColors: Record<string, string> = {
   cancelled: "bg-destructive/10 text-destructive border-destructive/30",
 };
 
+function StarRating({ value, onChange }: { value: number; onChange: (v: number) => void }) {
+  const [hovered, setHovered] = useState(0);
+  return (
+    <div className="flex gap-1">
+      {[1, 2, 3, 4, 5].map((star) => (
+        <button
+          key={star}
+          type="button"
+          className="transition-transform hover:scale-110"
+          onMouseEnter={() => setHovered(star)}
+          onMouseLeave={() => setHovered(0)}
+          onClick={() => onChange(star)}
+        >
+          <Star
+            className={`h-7 w-7 transition-colors ${
+              star <= (hovered || value)
+                ? "fill-primary text-primary"
+                : "text-muted-foreground/40"
+            }`}
+          />
+        </button>
+      ))}
+    </div>
+  );
+}
+
 export default function ClientHistory() {
   const { user } = useAuth();
   const [appointments, setAppointments] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [statusFilter, setStatusFilter] = useState("all");
+  const [reviewedIds, setReviewedIds] = useState<Set<string>>(new Set());
+
+  // Review modal state
+  const [reviewOpen, setReviewOpen] = useState(false);
+  const [reviewAppt, setReviewAppt] = useState<any>(null);
+  const [reviewRating, setReviewRating] = useState(0);
+  const [reviewComment, setReviewComment] = useState("");
+  const [submitting, setSubmitting] = useState(false);
 
   const fetchAppointments = useCallback(async () => {
     if (!user) return;
@@ -52,9 +97,49 @@ export default function ClientHistory() {
     setLoading(false);
   }, [user, statusFilter]);
 
+  // Fetch already-reviewed appointment IDs
+  const fetchReviewed = useCallback(async () => {
+    if (!user) return;
+    const { data } = await (supabase as any)
+      .from("reviews")
+      .select("appointment_id")
+      .eq("client_id", user.id);
+    setReviewedIds(new Set((data || []).map((r: any) => r.appointment_id)));
+  }, [user]);
+
   useEffect(() => {
     fetchAppointments();
-  }, [fetchAppointments]);
+    fetchReviewed();
+  }, [fetchAppointments, fetchReviewed]);
+
+  const openReview = (appt: any) => {
+    setReviewAppt(appt);
+    setReviewRating(0);
+    setReviewComment("");
+    setReviewOpen(true);
+  };
+
+  const submitReview = async () => {
+    if (!user || !reviewAppt || reviewRating === 0) {
+      toast.error("Selecione uma nota de 1 a 5 estrelas.");
+      return;
+    }
+    setSubmitting(true);
+    const { error } = await (supabase as any).from("reviews").insert({
+      appointment_id: reviewAppt.id,
+      client_id: user.id,
+      rating: reviewRating,
+      comment: reviewComment.trim() || null,
+    });
+    setSubmitting(false);
+    if (error) {
+      toast.error("Erro ao enviar avaliação.");
+    } else {
+      toast.success("Avaliação enviada! Obrigada 💖");
+      setReviewedIds((prev) => new Set([...prev, reviewAppt.id]));
+      setReviewOpen(false);
+    }
+  };
 
   return (
     <div className="w-full space-y-6">
@@ -101,6 +186,8 @@ export default function ClientHistory() {
             const duration = appt.services?.duration_minutes;
             const branchName = appt.branches?.name;
             const branchAddress = appt.branches?.address;
+            const canReview = appt.status === "completed" && !reviewedIds.has(appt.id);
+            const hasReview = appt.status === "completed" && reviewedIds.has(appt.id);
 
             return (
               <div
@@ -178,12 +265,72 @@ export default function ClientHistory() {
                       </div>
                     )}
                   </div>
+
+                  {/* Avaliar button */}
+                  {canReview && (
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      className="w-full gap-1.5 border-primary/40 text-primary hover:bg-primary/10 text-xs mt-1"
+                      onClick={() => openReview(appt)}
+                    >
+                      <Star className="h-3.5 w-3.5" />
+                      Avaliar atendimento
+                    </Button>
+                  )}
+                  {hasReview && (
+                    <div className="flex items-center justify-center gap-1 text-xs text-success mt-1">
+                      <Star className="h-3 w-3 fill-success" />
+                      Avaliação enviada
+                    </div>
+                  )}
                 </div>
               </div>
             );
           })}
         </div>
       )}
+
+      {/* Review Modal */}
+      <Dialog open={reviewOpen} onOpenChange={setReviewOpen}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle className="font-serif">Avaliar atendimento</DialogTitle>
+            <DialogDescription>
+              Como foi seu atendimento de <strong>{reviewAppt?.services?.name}</strong>?
+            </DialogDescription>
+          </DialogHeader>
+
+          <div className="space-y-4 py-2">
+            <div className="flex flex-col items-center gap-2">
+              <p className="text-sm text-muted-foreground">Selecione uma nota</p>
+              <StarRating value={reviewRating} onChange={setReviewRating} />
+              {reviewRating > 0 && (
+                <p className="text-xs text-muted-foreground">
+                  {["", "Péssimo 😞", "Ruim 😐", "Regular 🙂", "Bom 😊", "Excelente 🤩"][reviewRating]}
+                </p>
+              )}
+            </div>
+
+            <Textarea
+              placeholder="Deixe um comentário (opcional)..."
+              value={reviewComment}
+              onChange={(e) => setReviewComment(e.target.value)}
+              rows={3}
+              className="resize-none"
+            />
+          </div>
+
+          <DialogFooter>
+            <Button variant="ghost" onClick={() => setReviewOpen(false)} disabled={submitting}>
+              Cancelar
+            </Button>
+            <Button onClick={submitReview} disabled={submitting || reviewRating === 0}>
+              {submitting ? "Enviando..." : "Enviar avaliação"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
