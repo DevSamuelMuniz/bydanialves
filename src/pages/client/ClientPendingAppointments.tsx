@@ -2,13 +2,27 @@ import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
-import { Clock, CalendarDays, Scissors, MapPin, AlertCircle, CheckCircle2 } from "lucide-react";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog";
+import { Clock, CalendarDays, Scissors, MapPin, AlertCircle, CheckCircle2, XCircle } from "lucide-react";
+import { toast } from "sonner";
 
 export default function ClientPendingAppointments() {
   const { user } = useAuth();
   const [appointments, setAppointments] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
+  const [cancelling, setCancelling] = useState<string | null>(null);
 
   const fetchPending = async () => {
     if (!user) return;
@@ -40,6 +54,32 @@ export default function ClientPendingAppointments() {
       .subscribe();
     return () => { supabase.removeChannel(channel); };
   }, [user]);
+
+  const cancelAppointment = async (id: string, appointmentDate: string) => {
+    // Verifica se a data ainda não passou
+    const apptDate = new Date(appointmentDate + "T00:00:00");
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    if (apptDate < today) {
+      toast.error("Não é possível cancelar agendamentos de datas passadas.");
+      return;
+    }
+
+    setCancelling(id);
+    const { error } = await supabase
+      .from("appointments")
+      .update({ status: "cancelled" })
+      .eq("id", id)
+      .eq("client_id", user!.id);
+
+    if (error) {
+      toast.error("Erro ao cancelar agendamento.");
+    } else {
+      toast.success("Agendamento cancelado com sucesso.");
+      fetchPending();
+    }
+    setCancelling(null);
+  };
 
   const statusConfig = {
     pending: {
@@ -84,6 +124,8 @@ export default function ClientPendingAppointments() {
             const dateStr = new Date(a.appointment_date + "T00:00:00").toLocaleDateString("pt-BR", {
               weekday: "long", day: "2-digit", month: "long",
             });
+            const isPast = new Date(a.appointment_date + "T00:00:00") < new Date(new Date().setHours(0, 0, 0, 0));
+
             return (
               <div
                 key={a.id}
@@ -117,12 +159,50 @@ export default function ClientPendingAppointments() {
                     </div>
                   </div>
 
-                  {/* Status badge */}
+                  {/* Right side: status badge + cancel */}
                   <div className="flex items-center gap-2 shrink-0">
                     {cfg.icon}
                     <Badge className={`text-xs font-semibold border px-3 py-1 ${cfg.badgeClass}`}>
                       {cfg.label}
                     </Badge>
+
+                    {!isPast && (
+                      <AlertDialog>
+                        <AlertDialogTrigger asChild>
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            className="h-8 px-2 text-destructive hover:text-destructive hover:bg-destructive/10"
+                            disabled={cancelling === a.id}
+                          >
+                            <XCircle className="h-4 w-4" />
+                          </Button>
+                        </AlertDialogTrigger>
+                        <AlertDialogContent>
+                          <AlertDialogHeader>
+                            <AlertDialogTitle>Cancelar agendamento?</AlertDialogTitle>
+                            <AlertDialogDescription>
+                              Tem certeza que deseja cancelar o agendamento de{" "}
+                              <strong>{a.services?.name}</strong> em{" "}
+                              <span className="capitalize">{dateStr}</span> às{" "}
+                              {a.appointment_time?.slice(0, 5)}?
+                              <br />
+                              <br />
+                              Esta ação não pode ser desfeita.
+                            </AlertDialogDescription>
+                          </AlertDialogHeader>
+                          <AlertDialogFooter>
+                            <AlertDialogCancel>Voltar</AlertDialogCancel>
+                            <AlertDialogAction
+                              onClick={() => cancelAppointment(a.id, a.appointment_date)}
+                              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                            >
+                              Sim, cancelar
+                            </AlertDialogAction>
+                          </AlertDialogFooter>
+                        </AlertDialogContent>
+                      </AlertDialog>
+                    )}
                   </div>
                 </div>
               </div>
