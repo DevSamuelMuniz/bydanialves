@@ -19,7 +19,6 @@ import {
 } from "lucide-react";
 import { useTheme } from "next-themes";
 import logoHorizontal from "@/assets/logo_horizontal.png";
-
 import { supabase } from "@/integrations/supabase/client";
 import gallery1 from "@/assets/gallery-1.jpeg";
 import gallery2 from "@/assets/gallery-2.png";
