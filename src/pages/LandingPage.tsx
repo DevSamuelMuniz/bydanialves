@@ -19,9 +19,7 @@ import {
 } from "lucide-react";
 import logoLight from "@/assets/logo_light.png";
 import logoDark from "@/assets/logo_dark.png";
-import logoBeauty from "@/assets/logo-dani-alves-beauty.png";
 import { supabase } from "@/integrations/supabase/client";
-import logo from "@/assets/logo-dani-alves.jpg";
 import gallery1 from "@/assets/gallery-1.jpeg";
 import gallery2 from "@/assets/gallery-2.png";
 import gallery3 from "@/assets/gallery-3.png";
