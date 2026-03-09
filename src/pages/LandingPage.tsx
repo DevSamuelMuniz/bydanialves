@@ -18,8 +18,7 @@ import {
   Check, Crown, ArrowLeft, Loader2, User, LogIn, Moon, Sun,
 } from "lucide-react";
 import { useTheme } from "next-themes";
-import logoLight from "@/assets/logo_light.png";
-import logoDark from "@/assets/logo_dark.png";
+import logoHorizontal from "@/assets/logo_horizontal.png";
 
 import { supabase } from "@/integrations/supabase/client";
 import gallery1 from "@/assets/gallery-1.jpeg";
