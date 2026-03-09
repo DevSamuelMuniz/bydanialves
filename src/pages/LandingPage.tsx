@@ -19,6 +19,7 @@ import {
 } from "lucide-react";
 import logoLight from "@/assets/logo_light.png";
 import logoDark from "@/assets/logo_dark.png";
+
 import { supabase } from "@/integrations/supabase/client";
 import gallery1 from "@/assets/gallery-1.jpeg";
 import gallery2 from "@/assets/gallery-2.png";
