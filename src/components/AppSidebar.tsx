@@ -16,8 +16,8 @@ import {
 } from "@/components/ui/sidebar";
 import { LogOut, LucideIcon } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import logoLight from "@/assets/logo_light.png";
-import logoDark from "@/assets/logo_dark.png";
+import logoVertical from "@/assets/logo_vertical.png";
+import logoIcon from "@/assets/logo_icon.png";
 
 export interface NavItem {
   title: string;
@@ -44,10 +44,10 @@ export function AppSidebar({ items, groupLabel, topBadge, bottomSlot }: AppSideb
     <Sidebar collapsible="icon" className="border-r border-sidebar-border/60">
       {/* Logo */}
       <SidebarHeader className={`border-b border-sidebar-border/40 transition-all duration-200 ${collapsed ? "items-center p-3" : "items-center p-4 pb-3"}`}>
-        {/* Show light logo on dark backgrounds, dark logo on light backgrounds */}
-        <img src={logoLight} alt="Salão Daniella Alves" className={`${imgClass} hidden dark:block`} />
-        <img src={logoDark}  alt="Salão Daniella Alves" className={`${imgClass} block dark:hidden`} />
-        {/* Optional badge (e.g. admin level) */}
+        {collapsed
+          ? <img src={logoIcon} alt="DA" className="w-8 h-8 object-contain" />
+          : <img src={logoVertical} alt="Dani Alves Beauty Express" className="w-28 h-auto object-contain" />
+        }
         {topBadge && !collapsed && (
           <div className="w-full pt-1">{topBadge}</div>
         )}
