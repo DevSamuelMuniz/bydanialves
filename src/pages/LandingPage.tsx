@@ -39,6 +39,22 @@ function useTypewriter(words: string[], typingSpeed = 80, erasingSpeed = 40, pau
 
   return { displayed, isTyping: phase === "typing" };
 }
+
+function HeroTypewriter() {
+  const { displayed, isTyping } = useTypewriter(TYPEWRITER_WORDS);
+  return (
+    <span className="gradient-gold-text whitespace-nowrap">
+      {displayed}
+      <span
+        className="ml-0.5 inline-block w-[3px] h-[0.85em] align-middle rounded-sm"
+        style={{
+          background: "hsl(var(--primary))",
+          animation: isTyping ? "none" : "blink-cursor 0.75s step-end infinite",
+        }}
+      />
+    </span>
+  );
+}
 import { ParticlesBackground } from "@/components/ParticlesBackground";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
