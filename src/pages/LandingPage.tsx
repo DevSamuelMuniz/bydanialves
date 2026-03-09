@@ -48,7 +48,7 @@ function useTypewriter(words: string[], typingSpeed = 80, erasingSpeed = 40, pau
 function HeroTypewriter() {
   const { displayed, isTyping } = useTypewriter(TYPEWRITER_WORDS);
   return (
-    <span className="gradient-gold-text whitespace-nowrap">
+    <span className="gradient-gold-text break-words">
       {displayed}
       <span
         className="ml-0.5 inline-block w-[3px] h-[0.85em] align-middle rounded-sm"
