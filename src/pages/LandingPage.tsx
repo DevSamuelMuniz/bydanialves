@@ -146,8 +146,7 @@ function SubscriptionModal({ open, onClose, selectedPlan }: { open: boolean; onC
     <Dialog open={open} onOpenChange={(v) => { if (!v) onClose(); }}>
       <DialogContent className="max-w-md p-0 overflow-hidden gap-0">
         <div className="gradient-gold p-5 flex items-center gap-3">
-          <img src={logoDark} alt="Salão Daniella Alves" className="h-10 object-contain border-2 border-white/30 shadow rounded block dark:hidden" />
-          <img src={logoLight} alt="Salão Daniella Alves" className="h-10 object-contain border-2 border-white/30 shadow rounded hidden dark:block" />
+          <img src={logoHorizontal} alt="Dani Alves Beauty Express" className="h-10 object-contain border-2 border-white/30 shadow rounded" />
           <div>
             <p className="text-primary-foreground font-serif font-bold text-lg leading-tight">Dani Alves Studio</p>
             <p className="text-primary-foreground/80 text-xs">
