@@ -467,14 +467,7 @@ export default function LandingPage() {
                   </Button>
                   <Button size="lg" variant="outline" onClick={() => scrollTo("planos")} className="text-base font-semibold px-8">Ver planos e preços</Button>
                 </div>
-                <div className="flex gap-8 pt-2">
-                  {[{ value: "8+", label: "Anos de experiência" }, { value: "2K+", label: "Clientes atendidas" }, { value: "2", label: "Unidades" }].map((s) =>
-                    <div key={s.label}>
-                      <p className="font-serif text-2xl font-bold gradient-gold-text">{s.value}</p>
-                      <p className="text-xs text-muted-foreground mt-0.5">{s.label}</p>
-                    </div>
-                  )}
-                </div>
+                <StatsRow />
               </div>
               <div className="relative rounded-3xl overflow-hidden aspect-[4/3] shadow-elevated">
                 <img src="https://images.unsplash.com/photo-1522337360788-8b13dee7a37e?auto=format&fit=crop&w=800&q=80" alt="Salão Daniella Alves" className="w-full h-full object-cover" />
