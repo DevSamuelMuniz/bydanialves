@@ -87,7 +87,7 @@ const STATS = [
 function StatsRow() {
   const { ref, visible } = useInView(0.3);
   return (
-    <div ref={ref} className="flex gap-8 pt-2">
+    <div ref={ref} className="flex flex-wrap gap-x-8 gap-y-4 pt-2 w-full">
       {STATS.map((s, i) => (
         <div
           key={s.label}
