@@ -1,5 +1,60 @@
 import { useNavigate } from "react-router-dom";
-import { useState, useCallback, useEffect } from "react";
+import { useState, useCallback, useEffect, useRef } from "react";
+
+// ─── Typewriter Hook ──────────────────────────────────────────────────────────
+const TYPEWRITER_WORDS = [
+  "experiência inesquecível",
+  "beleza que transforma",
+  "estilo que inspira",
+  "cuidado que encanta",
+  "resultado impecável",
+];
+
+function useTypewriter(words: string[], typingSpeed = 80, erasingSpeed = 40, pauseMs = 1800) {
+  const [displayed, setDisplayed] = useState("");
+  const [wordIndex, setWordIndex] = useState(0);
+  const [phase, setPhase] = useState<"typing" | "pausing" | "erasing">("typing");
+  const timeout = useRef<ReturnType<typeof setTimeout>>();
+
+  useEffect(() => {
+    const word = words[wordIndex];
+    if (phase === "typing") {
+      if (displayed.length < word.length) {
+        timeout.current = setTimeout(() => setDisplayed(word.slice(0, displayed.length + 1)), typingSpeed);
+      } else {
+        timeout.current = setTimeout(() => setPhase("pausing"), pauseMs);
+      }
+    } else if (phase === "pausing") {
+      timeout.current = setTimeout(() => setPhase("erasing"), 200);
+    } else {
+      if (displayed.length > 0) {
+        timeout.current = setTimeout(() => setDisplayed(displayed.slice(0, -1)), erasingSpeed);
+      } else {
+        setWordIndex((i) => (i + 1) % words.length);
+        setPhase("typing");
+      }
+    }
+    return () => clearTimeout(timeout.current);
+  }, [displayed, phase, wordIndex, words, typingSpeed, erasingSpeed, pauseMs]);
+
+  return { displayed, isTyping: phase === "typing" };
+}
+
+function HeroTypewriter() {
+  const { displayed, isTyping } = useTypewriter(TYPEWRITER_WORDS);
+  return (
+    <span className="gradient-gold-text whitespace-nowrap">
+      {displayed}
+      <span
+        className="ml-0.5 inline-block w-[3px] h-[0.85em] align-middle rounded-sm"
+        style={{
+          background: "hsl(var(--primary))",
+          animation: isTyping ? "none" : "blink-cursor 0.75s step-end infinite",
+        }}
+      />
+    </span>
+  );
+}
 import { ParticlesBackground } from "@/components/ParticlesBackground";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -377,8 +432,9 @@ export default function LandingPage() {
             <div className="grid grid-cols-1 md:grid-cols-2 gap-12 items-center">
               <div className="flex flex-col gap-6">
                 <Badge className="self-start gradient-gold text-primary-foreground border-0 shadow-gold px-4 py-1.5 text-xs font-medium tracking-widest uppercase">✨ Beleza & Cuidado Exclusivo</Badge>
-                <h1 className="font-serif text-4xl md:text-6xl font-bold leading-tight text-balance">
-                  Cabelos perfeitos,{" "}<span className="gradient-gold-text">experiência inesquecível</span>
+                <h1 className="font-serif text-4xl md:text-6xl font-bold leading-tight">
+                  Cabelos perfeitos,{" "}
+                  <HeroTypewriter />
                 </h1>
                 <p className="text-lg text-muted-foreground max-w-md text-balance">
                   Agende online, escolha sua unidade e sinta a diferença de um salão premium com planos exclusivos para você.
