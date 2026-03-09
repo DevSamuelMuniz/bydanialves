@@ -479,7 +479,7 @@ export default function LandingPage() {
           </div>
           <div className="relative max-w-6xl mx-auto px-6">
             <div className="grid grid-cols-1 md:grid-cols-2 gap-12 items-center">
-              <div className="flex flex-col gap-6">
+              <div className="flex flex-col gap-6 relative z-10">
                 <Badge className="self-start gradient-gold text-primary-foreground border-0 shadow-gold px-4 py-1.5 text-xs font-medium tracking-widest uppercase">✨ Beleza & Cuidado Exclusivo</Badge>
                 <h1 className="font-serif text-4xl md:text-6xl font-bold leading-tight">
                   Cabelos perfeitos,{" "}
