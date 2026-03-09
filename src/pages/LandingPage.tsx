@@ -15,8 +15,9 @@ import {
   Calendar, Star, Clock, MapPin, Phone, Instagram,
   ChevronRight, ChevronLeft, Bell, BarChart3, CreditCard,
   Building2, CheckCircle2, AlertCircle, Tag, Scissors, Gift,
-  Check, Crown, ArrowLeft, Loader2, User, LogIn,
+  Check, Crown, ArrowLeft, Loader2, User, LogIn, Moon, Sun,
 } from "lucide-react";
+import { useTheme } from "next-themes";
 import logoLight from "@/assets/logo_light.png";
 import logoDark from "@/assets/logo_dark.png";
 
