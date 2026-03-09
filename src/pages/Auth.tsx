@@ -11,7 +11,7 @@ import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import authBg from "@/assets/auth-bg.jpg";
-import logo from "@/assets/logo-dani-alves.jpg";
+import logo from "@/assets/logo-dani-alves-beauty.png";
 import { AuthImageOverlay } from "@/components/AuthImageOverlay";
 
 export default function Auth() {
