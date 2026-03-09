@@ -597,7 +597,8 @@ export default function LandingPage() {
           <div className="max-w-6xl mx-auto px-6">
             <div className="grid grid-cols-1 md:grid-cols-3 gap-10">
               <div>
-                <img src={logoBeauty} alt="Dani Alves Beauty Express" className="h-20 object-contain mb-4" />
+                <img src={logoDark} alt="Salão Daniella Alves" className="h-20 object-contain mb-4 block dark:hidden" />
+                <img src={logoLight} alt="Salão Daniella Alves" className="h-20 object-contain mb-4 hidden dark:block" />
                 <p className="text-sm text-muted-foreground max-w-xs">Beleza, cuidado e exclusividade em cada detalhe. Visite uma de nossas unidades e sinta a diferença.</p>
               </div>
               <div>
