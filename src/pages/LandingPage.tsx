@@ -280,6 +280,7 @@ function SubscriptionModal({ open, onClose, selectedPlan }: { open: boolean; onC
 // ─── Component ───────────────────────────────────────────────────────────────
 export default function LandingPage() {
   const navigate = useNavigate();
+  const { theme, setTheme } = useTheme();
   const [plans, setPlans] = useState<any[]>([]);
   const [activeChapter, setActiveChapter] = useState(0);
   const [scrolled, setScrolled] = useState(false);
