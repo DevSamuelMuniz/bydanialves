@@ -19,9 +19,7 @@ import {
 } from "lucide-react";
 import logoLight from "@/assets/logo_light.png";
 import logoDark from "@/assets/logo_dark.png";
-import logoBeauty from "@/assets/logo-dani-alves-beauty.png";
 import { supabase } from "@/integrations/supabase/client";
-import logo from "@/assets/logo-dani-alves.jpg";
 import gallery1 from "@/assets/gallery-1.jpeg";
 import gallery2 from "@/assets/gallery-2.png";
 import gallery3 from "@/assets/gallery-3.png";
@@ -147,7 +145,8 @@ function SubscriptionModal({ open, onClose, selectedPlan }: { open: boolean; onC
     <Dialog open={open} onOpenChange={(v) => { if (!v) onClose(); }}>
       <DialogContent className="max-w-md p-0 overflow-hidden gap-0">
         <div className="gradient-gold p-5 flex items-center gap-3">
-          <img src={logo} alt="Dani Alves" className="h-10 w-10 rounded-full object-cover border-2 border-white/30 shadow" />
+          <img src={logoDark} alt="Salão Daniella Alves" className="h-10 object-contain border-2 border-white/30 shadow rounded block dark:hidden" />
+          <img src={logoLight} alt="Salão Daniella Alves" className="h-10 object-contain border-2 border-white/30 shadow rounded hidden dark:block" />
           <div>
             <p className="text-primary-foreground font-serif font-bold text-lg leading-tight">Dani Alves Studio</p>
             <p className="text-primary-foreground/80 text-xs">
@@ -345,7 +344,8 @@ export default function LandingPage() {
         <header className={`fixed top-0 left-0 right-0 z-50 border-b transition-all duration-300 ${scrolled ? "bg-background/95 backdrop-blur-md shadow-md border-border/60" : "glass border-border/40"}`}>
           <div className="max-w-6xl mx-auto px-6 h-16 flex items-center justify-between">
             <button onClick={() => window.scrollTo({ top: 0, behavior: "smooth" })} className="focus:outline-none">
-              <img alt="Salão Daniella Alves" className="h-10 object-contain cursor-pointer" src="/lovable-uploads/b95347fd-0e2a-4b5b-aac9-c7e6452c22a5.png" />
+              <img alt="Salão Daniella Alves" className="h-10 object-contain cursor-pointer block dark:hidden" src={logoDark} />
+              <img alt="Salão Daniella Alves" className="h-10 object-contain cursor-pointer hidden dark:block" src={logoLight} />
             </button>
             <nav className="hidden md:flex items-center gap-8 text-sm font-medium text-muted-foreground">
               <button onClick={() => scrollTo("beneficios")} className="hover:text-foreground transition-colors">Benefícios</button>
@@ -597,7 +597,8 @@ export default function LandingPage() {
           <div className="max-w-6xl mx-auto px-6">
             <div className="grid grid-cols-1 md:grid-cols-3 gap-10">
               <div>
-                <img src={logoBeauty} alt="Dani Alves Beauty Express" className="h-20 object-contain mb-4" />
+                <img src={logoDark} alt="Salão Daniella Alves" className="h-20 object-contain mb-4 block dark:hidden" />
+                <img src={logoLight} alt="Salão Daniella Alves" className="h-20 object-contain mb-4 hidden dark:block" />
                 <p className="text-sm text-muted-foreground max-w-xs">Beleza, cuidado e exclusividade em cada detalhe. Visite uma de nossas unidades e sinta a diferença.</p>
               </div>
               <div>

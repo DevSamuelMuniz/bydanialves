@@ -8,7 +8,8 @@ import { useToast } from "@/hooks/use-toast";
 import { ShieldCheck, Eye, EyeOff } from "lucide-react";
 import { PasswordInput } from "@/components/PasswordInput";
 import authBg from "@/assets/auth-bg.jpg";
-import logo from "@/assets/logo-dani-alves.jpg";
+import logoDark from "@/assets/logo_dark.png";
+import logoLight from "@/assets/logo_light.png";
 import { AuthImageOverlay } from "@/components/AuthImageOverlay";
 
 export default function AdminAuth() {
@@ -96,7 +97,8 @@ export default function AdminAuth() {
       <div className="w-full lg:w-1/2 flex items-center justify-center bg-background px-6 py-12">
         <div className="w-full max-w-md space-y-6">
           <div className="text-center">
-            <img src={logo} alt="Dani Alves" className="mx-auto h-16 w-16 rounded-full object-cover border-2 border-primary/20 shadow-lg mb-4" />
+            <img src={logoDark} alt="Salão Daniella Alves" className="mx-auto h-auto w-36 mb-4 block dark:hidden" />
+            <img src={logoLight} alt="Salão Daniella Alves" className="mx-auto h-auto w-36 mb-4 hidden dark:block" />
             <h1 className="font-serif text-2xl font-bold tracking-tight">Painel Administrativo</h1>
             <p className="text-muted-foreground mt-1">Acesso restrito a administradores</p>
           </div>

@@ -11,7 +11,7 @@ import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import authBg from "@/assets/auth-bg.jpg";
-import logo from "@/assets/logo-dani-alves.jpg";
+import logo from "@/assets/logo-dani-alves-beauty.png";
 import { AuthImageOverlay } from "@/components/AuthImageOverlay";
 
 export default function Auth() {
@@ -107,7 +107,7 @@ export default function Auth() {
         <div className="w-full lg:w-1/2 flex items-center justify-center bg-background px-6 py-12 overflow-y-auto">
           <div className="w-full max-w-md space-y-6">
             <div className="text-center">
-              <img src={logo} alt="Dani Alves" className="mx-auto h-16 w-16 rounded-full object-cover border-2 border-primary/20 shadow-lg mb-4" />
+              <img src={logo} alt="Salão Daniella Alves" className="mx-auto h-auto w-40 mb-4" />
               <h1 className="font-serif text-2xl font-bold tracking-tight">Recuperar Senha</h1>
               <p className="text-muted-foreground mt-1">Informe seu e-mail para redefinir</p>
             </div>
@@ -136,7 +136,7 @@ export default function Auth() {
       <div className="w-full lg:w-1/2 flex justify-center bg-background px-6 py-12 overflow-y-auto h-screen">
         <div className="w-full max-w-md space-y-6 my-auto">
           <div className="text-center">
-            <img alt="Dani Alves" className="mx-auto h-auto w-48 mb-4" src="/lovable-uploads/956e4a55-f6ac-453a-9a05-199bec11fa7f.png" />
+            <img alt="Salão Daniella Alves" className="mx-auto h-auto w-48 mb-4" src={logo} />
             
             <p className="text-muted-foreground mt-1">Agende seus serviços com elegância</p>
           </div>
