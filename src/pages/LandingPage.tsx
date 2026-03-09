@@ -77,6 +77,33 @@ function useInView(threshold = 0.2) {
   }, [threshold]);
   return { ref, visible };
 }
+
+const STATS = [
+  { value: "8+", label: "Anos de experiência" },
+  { value: "2K+", label: "Clientes atendidas" },
+  { value: "2", label: "Unidades" },
+];
+
+function StatsRow() {
+  const { ref, visible } = useInView(0.3);
+  return (
+    <div ref={ref} className="flex gap-8 pt-2">
+      {STATS.map((s, i) => (
+        <div
+          key={s.label}
+          style={{
+            opacity: visible ? 1 : 0,
+            transform: visible ? "translateY(0)" : "translateY(20px)",
+            transition: `opacity 0.5s ease ${i * 120}ms, transform 0.5s ease ${i * 120}ms`,
+          }}
+        >
+          <p className="font-serif text-2xl font-bold gradient-gold-text">{s.value}</p>
+          <p className="text-xs text-muted-foreground mt-0.5">{s.label}</p>
+        </div>
+      ))}
+    </div>
+  );
+}
 import { ParticlesBackground } from "@/components/ParticlesBackground";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
