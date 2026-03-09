@@ -127,6 +127,11 @@
   }
 }
 
+@keyframes blink-cursor {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0; }
+}
+
 @layer utilities {
   .glass {
     @apply bg-card/80 backdrop-blur-xl border border-border/50;
