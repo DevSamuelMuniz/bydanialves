@@ -16,8 +16,8 @@ import {
 } from "@/components/ui/sidebar";
 import { LogOut, LucideIcon } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import logoLight from "@/assets/logo_light.png";
-import logoDark from "@/assets/logo_dark.png";
+import logoVertical from "@/assets/logo_vertical.png";
+import logoIcon from "@/assets/logo_icon.png";
 
 export interface NavItem {
   title: string;
