@@ -8,6 +8,11 @@ const TYPEWRITER_WORDS = [
   "estilo que inspira",
   "cuidado que encanta",
   "resultado impecável",
+  "autoestima renovada",
+  "confiança em cada fio",
+  "sofisticação que dura",
+  "tratamento premium",
+  "magia nos seus cabelos",
 ];
 
 function useTypewriter(words: string[], typingSpeed = 80, erasingSpeed = 40, pauseMs = 1800) {
