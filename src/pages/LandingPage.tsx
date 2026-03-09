@@ -18,8 +18,8 @@ import {
   Check, Crown, ArrowLeft, Loader2, User, LogIn, Moon, Sun,
 } from "lucide-react";
 import { useTheme } from "next-themes";
+// eslint-disable-next-line import/no-duplicates
 import logoHorizontal from "@/assets/logo_horizontal.png";
-
 import { supabase } from "@/integrations/supabase/client";
 import gallery1 from "@/assets/gallery-1.jpeg";
 import gallery2 from "@/assets/gallery-2.png";
