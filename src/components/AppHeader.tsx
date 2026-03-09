@@ -31,18 +31,13 @@ interface AppHeaderProps {
 export function AppHeader({ title, profilePath }: AppHeaderProps) {
   const { user, signOut } = useAuth();
   const navigate = useNavigate();
+  const { theme, setTheme } = useTheme();
   const [profileName, setProfileName] = useState("");
   const [profileEmail, setProfileEmail] = useState("");
   const [avatarUrl, setAvatarUrl] = useState<string | null>(null);
-  const [isDark, setIsDark] = useState(() =>
-    document.documentElement.classList.contains("dark")
-  );
 
-  const toggleDark = () => {
-    const next = !isDark;
-    setIsDark(next);
-    document.documentElement.classList.toggle("dark", next);
-  };
+  const isDark = theme === "dark";
+  const toggleDark = () => setTheme(isDark ? "light" : "dark");
 
   useEffect(() => {
     if (!user) return;
