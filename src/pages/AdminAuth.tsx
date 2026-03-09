@@ -8,7 +8,8 @@ import { useToast } from "@/hooks/use-toast";
 import { ShieldCheck, Eye, EyeOff } from "lucide-react";
 import { PasswordInput } from "@/components/PasswordInput";
 import authBg from "@/assets/auth-bg.jpg";
-import logo from "@/assets/logo-dani-alves.jpg";
+import logoDark from "@/assets/logo_dark.png";
+import logoLight from "@/assets/logo_light.png";
 import { AuthImageOverlay } from "@/components/AuthImageOverlay";
 
 export default function AdminAuth() {
