@@ -96,8 +96,7 @@ export default function AdminAuth() {
       <div className="w-full lg:w-1/2 flex items-center justify-center bg-background px-6 py-12">
         <div className="w-full max-w-md space-y-6">
           <div className="text-center">
-            <img src={logoDark} alt="Salão Daniella Alves" className="mx-auto h-auto w-36 mb-4 block dark:hidden" />
-            <img src={logoLight} alt="Salão Daniella Alves" className="mx-auto h-auto w-36 mb-4 hidden dark:block" />
+            <img src={logoHorizontal} alt="Dani Alves Beauty Express" className="mx-auto h-auto w-52 mb-4" />
             <h1 className="font-serif text-2xl font-bold tracking-tight">Painel Administrativo</h1>
             <p className="text-muted-foreground mt-1">Acesso restrito a administradores</p>
           </div>
