@@ -48,7 +48,7 @@ function useTypewriter(words: string[], typingSpeed = 80, erasingSpeed = 40, pau
 function HeroTypewriter() {
   const { displayed, isTyping } = useTypewriter(TYPEWRITER_WORDS);
   return (
-    <span className="gradient-gold-text whitespace-nowrap">
+    <span className="gradient-gold-text break-words">
       {displayed}
       <span
         className="ml-0.5 inline-block w-[3px] h-[0.85em] align-middle rounded-sm"
@@ -481,7 +481,7 @@ export default function LandingPage() {
             <div className="grid grid-cols-1 md:grid-cols-2 gap-12 items-center">
               <div className="flex flex-col gap-6 relative z-10">
                 <Badge className="self-start gradient-gold text-primary-foreground border-0 shadow-gold px-4 py-1.5 text-xs font-medium tracking-widest uppercase">✨ Beleza & Cuidado Exclusivo</Badge>
-                <h1 className="font-serif text-4xl md:text-6xl font-bold leading-tight">
+                <h1 className="font-serif text-4xl md:text-6xl font-bold leading-tight max-w-full overflow-hidden">
                   Cabelos perfeitos,{" "}
                   <HeroTypewriter />
                 </h1>
