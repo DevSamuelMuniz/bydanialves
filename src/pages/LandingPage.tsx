@@ -357,9 +357,18 @@ export default function LandingPage() {
               <button onClick={() => scrollTo("depoimentos")} className="hover:text-foreground transition-colors">Depoimentos</button>
               <button onClick={() => scrollTo("contato")} className="hover:text-foreground transition-colors">Contato</button>
             </nav>
-            <Button size="sm" onClick={() => navigate("/auth")} className="gradient-gold border-0 shadow-gold text-primary-foreground">
-              Agendar agora <ChevronRight className="h-4 w-4" />
-            </Button>
+            <div className="flex items-center gap-2">
+              <button
+                onClick={() => setTheme(theme === "dark" ? "light" : "dark")}
+                className="h-9 w-9 flex items-center justify-center rounded-lg hover:bg-secondary/60 transition-colors text-muted-foreground hover:text-foreground"
+                aria-label="Alternar tema"
+              >
+                {theme === "dark" ? <Sun className="h-4 w-4" /> : <Moon className="h-4 w-4" />}
+              </button>
+              <Button size="sm" onClick={() => navigate("/auth")} className="gradient-gold border-0 shadow-gold text-primary-foreground">
+                Agendar agora <ChevronRight className="h-4 w-4" />
+              </Button>
+            </div>
           </div>
         </header>
 
