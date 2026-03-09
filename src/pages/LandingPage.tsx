@@ -60,6 +60,50 @@ function HeroTypewriter() {
     </span>
   );
 }
+
+// ─── useInView Hook ───────────────────────────────────────────────────────────
+function useInView(threshold = 0.2) {
+  const ref = useRef<HTMLDivElement>(null);
+  const [visible, setVisible] = useState(false);
+  useEffect(() => {
+    const el = ref.current;
+    if (!el) return;
+    const observer = new IntersectionObserver(
+      ([entry]) => { if (entry.isIntersecting) { setVisible(true); observer.disconnect(); } },
+      { threshold }
+    );
+    observer.observe(el);
+    return () => observer.disconnect();
+  }, [threshold]);
+  return { ref, visible };
+}
+
+const STATS = [
+  { value: "8+", label: "Anos de experiência" },
+  { value: "2K+", label: "Clientes atendidas" },
+  { value: "2", label: "Unidades" },
+];
+
+function StatsRow() {
+  const { ref, visible } = useInView(0.3);
+  return (
+    <div ref={ref} className="flex gap-8 pt-2">
+      {STATS.map((s, i) => (
+        <div
+          key={s.label}
+          style={{
+            opacity: visible ? 1 : 0,
+            transform: visible ? "translateY(0)" : "translateY(20px)",
+            transition: `opacity 0.5s ease ${i * 120}ms, transform 0.5s ease ${i * 120}ms`,
+          }}
+        >
+          <p className="font-serif text-2xl font-bold gradient-gold-text">{s.value}</p>
+          <p className="text-xs text-muted-foreground mt-0.5">{s.label}</p>
+        </div>
+      ))}
+    </div>
+  );
+}
 import { ParticlesBackground } from "@/components/ParticlesBackground";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -450,14 +494,7 @@ export default function LandingPage() {
                   </Button>
                   <Button size="lg" variant="outline" onClick={() => scrollTo("planos")} className="text-base font-semibold px-8">Ver planos e preços</Button>
                 </div>
-                <div className="flex gap-8 pt-2">
-                  {[{ value: "8+", label: "Anos de experiência" }, { value: "2K+", label: "Clientes atendidas" }, { value: "2", label: "Unidades" }].map((s) =>
-                    <div key={s.label}>
-                      <p className="font-serif text-2xl font-bold gradient-gold-text">{s.value}</p>
-                      <p className="text-xs text-muted-foreground mt-0.5">{s.label}</p>
-                    </div>
-                  )}
-                </div>
+                <StatsRow />
               </div>
               <div className="relative rounded-3xl overflow-hidden aspect-[4/3] shadow-elevated">
                 <img src="https://images.unsplash.com/photo-1522337360788-8b13dee7a37e?auto=format&fit=crop&w=800&q=80" alt="Salão Daniella Alves" className="w-full h-full object-cover" />
