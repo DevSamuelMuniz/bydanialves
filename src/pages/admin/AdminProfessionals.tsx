@@ -376,6 +376,34 @@ export default function AdminProfessionals() {
     fetchAll();
   };
 
+  const openEditDialog = (prof: ProfessionalProfile) => {
+    setEditProf(prof);
+    setEditName(prof.full_name);
+    setEditBio(prof.bio || "");
+    setEditLevel((prof.admin_level as NonNullable<AdminLevel>) || "professional");
+    setEditBranchId(prof.branch_id || "");
+    setEditDialog(true);
+  };
+
+  const saveEdit = async () => {
+    if (!editProf) return;
+    setEditSaving(true);
+
+    const [{ error: profileError }, { error: roleError }] = await Promise.all([
+      supabase.from("profiles").update({ full_name: editName, bio: editBio }).eq("user_id", editProf.user_id),
+      (supabase as any).from("user_roles").update({ admin_level: editLevel, branch_id: editBranchId || null }).eq("user_id", editProf.user_id).eq("role", "admin"),
+    ]);
+
+    if (profileError || roleError) {
+      toast({ title: "Erro ao salvar", description: (profileError || roleError)?.message, variant: "destructive" });
+    } else {
+      toast({ title: "Dados atualizados com sucesso! ✅" });
+      setEditDialog(false);
+      fetchAll();
+    }
+    setEditSaving(false);
+  };
+
   if (!perms.canViewBranches) return <AccessDenied />;
 
   return (
