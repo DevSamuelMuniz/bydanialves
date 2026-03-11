@@ -142,10 +142,22 @@ export default function AdminProfessionals() {
     const result: ProfessionalProfile[] = (roles as any[]).map((role) => {
       const profile = ((profiles as any[]) || []).find((p) => p.user_id === role.user_id);
       const mySchedules = ((schedulesData as any[]) || []).filter((s) => s.professional_id === role.user_id);
+
+      let avatarUrl: string | null = null;
+      if (profile?.avatar_url) {
+        // If it's already a full URL, use it directly; otherwise resolve from storage
+        if (profile.avatar_url.startsWith("http")) {
+          avatarUrl = profile.avatar_url;
+        } else {
+          const { data: urlData } = supabase.storage.from("avatars").getPublicUrl(profile.avatar_url);
+          avatarUrl = urlData?.publicUrl || null;
+        }
+      }
+
       return {
         user_id: role.user_id,
         full_name: profile?.full_name || "Sem nome",
-        avatar_url: profile?.avatar_url || null,
+        avatar_url: avatarUrl,
         bio: profile?.bio || null,
         admin_level: role.admin_level as AdminLevel,
         branch_id: role.branch_id,
