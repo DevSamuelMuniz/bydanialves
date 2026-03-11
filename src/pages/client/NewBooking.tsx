@@ -382,83 +382,6 @@ export default function NewBooking() {
       });
   }, [selectedDate, selectedBranch]);
 
-  // Load professionals when reaching step 4
-  useEffect(() => {
-    if (step !== 4 || !selectedBranch || !selectedDate) return;
-    setLoadingProfessionals(true);
-
-    const dayOfWeek = selectedDate.getDay();
-
-    supabase
-      .from("user_roles" as any)
-      .select("user_id, admin_level, branch_id")
-      .eq("role", "admin")
-      .in("admin_level", ["professional", "attendant"])
-      .then(async ({ data: roles }) => {
-        if (!roles || roles.length === 0) {
-          setProfessionals([]);
-          setLoadingProfessionals(false);
-          return;
-        }
-
-        // Filter by branch
-        const filtered = (roles as any[]).filter(
-          (r) => !r.branch_id || r.branch_id === selectedBranch.id
-        );
-
-        if (filtered.length === 0) {
-          setProfessionals([]);
-          setLoadingProfessionals(false);
-          return;
-        }
-
-        const userIds = filtered.map((r: any) => r.user_id);
-
-        const [{ data: profiles }, { data: schedules }] = await Promise.all([
-          supabase.from("profiles").select("user_id, full_name, avatar_url, bio").in("user_id", userIds),
-          (supabase as any)
-            .from("professional_schedules")
-            .select("professional_id, day_of_week, start_time, end_time, active")
-            .in("professional_id", userIds)
-            .eq("active", true),
-        ]);
-
-        const scheduleMap: Record<string, ProfSchedule[]> = {};
-        ((schedules as any[]) || []).forEach((s: any) => {
-          if (!scheduleMap[s.professional_id]) scheduleMap[s.professional_id] = [];
-          scheduleMap[s.professional_id].push({
-            day_of_week: s.day_of_week,
-            start_time: s.start_time.slice(0, 5),
-            end_time: s.end_time.slice(0, 5),
-            active: s.active,
-          });
-        });
-
-        // Only include professionals who have a schedule for the selected day (or no schedules = always available)
-        const availableProfs = ((profiles as any[]) || []).filter((p) => {
-          const profSchedules = scheduleMap[p.user_id] || [];
-          if (profSchedules.length === 0) return true; // no schedule = always available
-          return profSchedules.some((s) => s.day_of_week === dayOfWeek && s.active);
-        }).map((p) => {
-          // Resolve avatar URL
-          let avatarUrl = p.avatar_url;
-          if (avatarUrl && !avatarUrl.startsWith("http")) {
-            avatarUrl = supabase.storage.from("avatars").getPublicUrl(avatarUrl).data.publicUrl;
-          }
-          return {
-            user_id: p.user_id,
-            full_name: p.full_name,
-            avatar_url: avatarUrl,
-            bio: p.bio,
-            schedules: scheduleMap[p.user_id] || [],
-          };
-        });
-
-        setProfessionals(availableProfs);
-        setLoadingProfessionals(false);
-      });
-  }, [step, selectedBranch, selectedDate]);
-
   const toggleService = (s: ServiceItem) => {
     setSelectedServices((prev) => {
       const exists = prev.find((x) => x.id === s.id);
@@ -500,6 +423,8 @@ export default function NewBooking() {
       setSelectedTime(null);
       setSelectedBranch(null);
       setSelectedProfessional(null);
+      setAllBranchProfessionals([]);
+      setProfessionals([]);
     }
     setSubmitting(false);
   };
