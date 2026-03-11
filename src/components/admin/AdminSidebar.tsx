@@ -44,9 +44,16 @@ function usePendingQueueCount() {
   return count;
 }
 
-const PROF_SUB_ITEMS = [
-  { title: "Profissionais",            url: "/admin/professionals",        icon: UserCheck },
-  { title: "Relatório do Profissional", url: "/admin/professionals/report", icon: BarChart2 },
+// Sub-items visible to manager/ceo only
+const PROF_MANAGE_ITEMS = [
+  { title: "Profissionais",             url: "/admin/professionals",         icon: UserCheck },
+  { title: "Relatório do Profissional", url: "/admin/professionals/report",  icon: BarChart2 },
+];
+
+// Sub-items visible to professional + manager/ceo
+const PROF_PERSONAL_ITEMS = [
+  { title: "Agenda do Profissional",    url: "/admin/professionals/agenda",   icon: Calendar },
+  { title: "Histórico do Profissional", url: "/admin/professionals/history",  icon: ClipboardList },
 ];
 
 function ProfessionaisGroup() {
