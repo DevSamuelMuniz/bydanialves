@@ -45,16 +45,16 @@ function getBranchImage(branch: Branch) {
 // Generate available time slots based on services total duration
 function generateTimeSlots(totalMinutes: number): string[] {
   const slots: string[] = [];
-  const start = 8 * 60; // 08:00
-  const end = 18 * 60;  // 18:00
+  const start = 8 * 60;  // 08:00
+  const end = 17 * 60;   // 17:00
   let t = start;
   while (t + totalMinutes <= end) {
-    if (t < 12 * 60 || t >= 13 * 60) { // Lunch break 12-13
-      const h = Math.floor(t / 60);
-      const m = t % 60;
-      slots.push(`${String(h).padStart(2, "0")}:${String(m).padStart(2, "0")}`);
+    const h = Math.floor(t / 60);
+    const m = t % 60;
+    if (m === 0) { // apenas horas em ponto
+      slots.push(`${String(h).padStart(2, "0")}:00`);
     }
-    t += 30;
+    t += 60; // incremento de 1 hora
   }
   return slots;
 }
