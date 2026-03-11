@@ -583,6 +583,7 @@ export default function AdminProfessionals() {
                 </div>
               );
             })}
+          </div>
 
           {/* Atalhos */}
           <div className="flex flex-wrap gap-1.5 pt-1 border-t border-border">
