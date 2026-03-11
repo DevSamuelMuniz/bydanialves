@@ -606,6 +606,33 @@ export type Database = {
           },
         ]
       }
+      work_calendar: {
+        Row: {
+          created_at: string
+          created_by: string
+          date: string
+          enabled: boolean
+          id: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          created_by: string
+          date: string
+          enabled?: boolean
+          id?: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          created_by?: string
+          date?: string
+          enabled?: boolean
+          id?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
