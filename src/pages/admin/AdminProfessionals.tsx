@@ -537,8 +537,9 @@ export default function AdminProfessionals() {
               <span className="w-6" />
             </div>
 
-            {DAYS.map((d) => {
+            {(() => { const weekDates = getCurrentWeekDates(); return DAYS.map((d) => {
               const row = weekState[d.value] ?? defaultDayRow();
+              const weekDate = weekDates[d.value];
               return (
                 <div
                   key={d.value}
@@ -550,9 +551,14 @@ export default function AdminProfessionals() {
                     onCheckedChange={(v) => setDayField(d.value, "enabled", v)}
                     className="scale-75 origin-left"
                   />
-                  <span className={`text-sm font-medium pl-2 ${row.enabled ? "text-foreground" : "text-muted-foreground"}`}>
-                    {d.label}
-                  </span>
+                  <div className="pl-2 flex flex-col">
+                    <span className={`text-sm font-medium leading-tight ${row.enabled ? "text-foreground" : "text-muted-foreground"}`}>
+                      {d.label}
+                    </span>
+                    {weekDate && (
+                      <span className="text-[10px] text-muted-foreground leading-tight">{fmtDate(weekDate)}</span>
+                    )}
+                  </div>
                   <Select
                     value={row.start_time}
                     onValueChange={(v) => setDayField(d.value, "start_time", v)}
