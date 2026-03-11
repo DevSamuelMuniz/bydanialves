@@ -448,6 +448,7 @@ export default function AdminProfessionals() {
               key={prof.user_id}
               prof={prof}
               canManage={canManage}
+              onEdit={() => openEditDialog(prof)}
               onEditWeek={() => openWeekDialog(prof)}
               onDeleteAll={() => deleteAllSchedules(prof)}
               onRemove={() => removeProfessional(prof)}
