@@ -248,25 +248,31 @@ export default function NewBooking() {
 
       const userIds = filtered.map((r: any) => r.user_id);
 
+      const schedulesQuery = (supabase as any)
+        .from("professional_schedules")
+        .select("professional_id, day_of_week, start_time, end_time, active, branch_id")
+        .in("professional_id", userIds)
+        .eq("active", true);
+
+      // Include schedules for this branch OR with null branch_id (global)
       const [{ data: profiles }, { data: schedules }] = await Promise.all([
         supabase.from("profiles").select("user_id, full_name, avatar_url, bio").in("user_id", userIds),
-        (supabase as any)
-          .from("professional_schedules")
-          .select("professional_id, day_of_week, start_time, end_time, active")
-          .in("professional_id", userIds)
-          .eq("active", true),
+        schedulesQuery,
       ]);
 
       const scheduleMap: Record<string, ProfSchedule[]> = {};
-      ((schedules as any[]) || []).forEach((s: any) => {
-        if (!scheduleMap[s.professional_id]) scheduleMap[s.professional_id] = [];
-        scheduleMap[s.professional_id].push({
-          day_of_week: s.day_of_week,
-          start_time: s.start_time.slice(0, 5),
-          end_time: s.end_time.slice(0, 5),
-          active: s.active,
+      ((schedules as any[]) || [])
+        // Only include schedules matching this branch OR with null branch_id (works everywhere)
+        .filter((s: any) => !s.branch_id || s.branch_id === selectedBranch.id)
+        .forEach((s: any) => {
+          if (!scheduleMap[s.professional_id]) scheduleMap[s.professional_id] = [];
+          scheduleMap[s.professional_id].push({
+            day_of_week: s.day_of_week,
+            start_time: s.start_time.slice(0, 5),
+            end_time: s.end_time.slice(0, 5),
+            active: s.active,
+          });
         });
-      });
 
       const allProfs = ((profiles as any[]) || []).map((p) => {
         let avatarUrl = p.avatar_url;
@@ -806,6 +812,12 @@ export default function NewBooking() {
                         </div>
                         <div>
                           <p className="font-semibold text-sm leading-tight">{p.full_name}</p>
+                          {/* Bio snippet */}
+                          {p.bio && (
+                            <p className="text-xs text-muted-foreground mt-0.5 line-clamp-2 text-center leading-relaxed">
+                              {p.bio}
+                            </p>
+                          )}
                           {/* Show working hours for that day */}
                           {daySchedule && (
                             <div className="flex items-center justify-center gap-1 mt-1">
