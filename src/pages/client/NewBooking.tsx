@@ -248,21 +248,19 @@ export default function NewBooking() {
 
       const userIds = filtered.map((r: any) => r.user_id);
 
-      const schedulesQuery = (supabase as any)
-        .from("professional_schedules")
-        .select("professional_id, day_of_week, start_time, end_time, active, branch_id")
-        .in("professional_id", userIds)
-        .eq("active", true);
-
-      // Include schedules for this branch OR with null branch_id (global)
+      // Fetch ALL schedules (active and inactive) so we can distinguish
+      // "has schedules but not today" from "no schedules configured"
       const [{ data: profiles }, { data: schedules }] = await Promise.all([
         supabase.from("profiles").select("user_id, full_name, avatar_url, bio").in("user_id", userIds),
-        schedulesQuery,
+        (supabase as any)
+          .from("professional_schedules")
+          .select("professional_id, day_of_week, start_time, end_time, active, branch_id")
+          .in("professional_id", userIds),
       ]);
 
       const scheduleMap: Record<string, ProfSchedule[]> = {};
       ((schedules as any[]) || [])
-        // Only include schedules matching this branch OR with null branch_id (works everywhere)
+        // Only include schedules matching this branch OR with null branch_id (global)
         .filter((s: any) => !s.branch_id || s.branch_id === selectedBranch.id)
         .forEach((s: any) => {
           if (!scheduleMap[s.professional_id]) scheduleMap[s.professional_id] = [];
@@ -289,19 +287,22 @@ export default function NewBooking() {
       });
 
       setAllBranchProfessionals(allProfs);
-      setProfessionals(allProfs); // will be filtered by day later
+      setProfessionals(allProfs);
       setLoadingProfessionals(false);
     };
 
     fetchProfessionals();
   }, [selectedBranch]);
 
-  // When date changes, filter professionals to those available on that day
+  // When date changes, filter professionals to those with an ACTIVE schedule on that day of week.
+  // Professionals with NO schedules configured at all are excluded (not yet set up).
   useEffect(() => {
     if (!selectedDate || allBranchProfessionals.length === 0) return;
     const dayOfWeek = selectedDate.getDay();
     const availableProfs = allBranchProfessionals.filter((p) => {
-      if (p.schedules.length === 0) return true;
+      // No schedules configured → exclude (not yet set up by admin)
+      if (p.schedules.length === 0) return false;
+      // Has at least one active entry matching this day of week
       return p.schedules.some((s) => s.day_of_week === dayOfWeek && s.active);
     });
     setProfessionals(availableProfs);
