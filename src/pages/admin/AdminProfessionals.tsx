@@ -198,7 +198,7 @@ export default function AdminProfessionals() {
         bio: profile?.bio || null,
         admin_level: role.admin_level as AdminLevel,
         branch_id: role.branch_id,
-        branch_name: role.branch_id ? (branchMap[role.branch_id] || null) : null,
+        branch_name: role.branch_id ? (branchMap[role.branch_id] || "Filial Principal") : "Filial Principal",
         schedules: mySchedules.map((s: any) => ({
           id: s.id,
           day_of_week: s.day_of_week,
