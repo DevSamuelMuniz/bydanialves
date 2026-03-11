@@ -552,9 +552,22 @@ function ClientProfileCard({ client, email, freqBranch, isProfessional, onClick,
         </div>
       )}
 
-      {/* Avatar 3D */}
+      {/* Avatar */}
       <div className="relative mt-2 transition-transform duration-300 group-hover:scale-105">
-        <Avatar3D name={client.full_name || "?"} blocked={client.blocked} gender={client.gender ?? undefined} />
+        {client.avatar_url ? (
+          <div className="h-20 w-20 rounded-full overflow-hidden ring-2 ring-primary/20">
+            <img
+              src={client.avatar_url.startsWith("http")
+                ? client.avatar_url
+                : (() => { const { data } = require("@/integrations/supabase/client").supabase.storage.from("avatars").getPublicUrl(client.avatar_url!); return data.publicUrl; })()
+              }
+              alt={client.full_name}
+              className="h-full w-full object-cover"
+            />
+          </div>
+        ) : (
+          <Avatar3D name={client.full_name || "?"} blocked={client.blocked} gender={client.gender ?? undefined} />
+        )}
         <div className="absolute inset-0 rounded-full ring-2 ring-primary/0 transition-all duration-300 group-hover:ring-primary/40 group-hover:ring-offset-2" />
       </div>
 
