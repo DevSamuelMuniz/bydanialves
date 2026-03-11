@@ -156,10 +156,12 @@ export default function AdminServices() {
         toast({ title: "Imagem gerada com IA!" });
         fetchServices();
       } else {
-        throw new Error("Falha ao gerar imagem");
+        const statusMsg = result?.status || "sem retorno da IA";
+        throw new Error(`Falha ao gerar imagem: ${statusMsg}`);
       }
     } catch (err: any) {
-      toast({ title: "Erro", description: err.message, variant: "destructive" });
+      const msg = err?.context?.error || err?.message || "Erro desconhecido";
+      toast({ title: "Erro ao gerar imagem", description: msg, variant: "destructive" });
     } finally {
       setGeneratingAI(false);
     }
