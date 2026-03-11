@@ -231,7 +231,7 @@ export default function AdminProfessionalAgenda() {
               </Button>
             )}
             {isCompleteCol && (isProfessional || isManager) && (
-              <Button size="sm" className="h-7 text-xs gap-1 bg-emerald-600 hover:bg-emerald-700 text-white" onClick={() => updateStatus(a.id, "completed")}>
+              <Button size="sm" className="h-7 text-xs gap-1 bg-success hover:bg-success/90 text-success-foreground" onClick={() => updateStatus(a.id, "completed")}>
                 <CheckCircle2 className="h-3 w-3" />Concluir
               </Button>
             )}
