@@ -32,8 +32,6 @@ export default function AdminProfessionalHistory() {
   const isProfessional = adminLevel === "professional";
   const isAttendant = adminLevel === "attendant";
 
-  if (!isManager && !isProfessional && !isAttendant) return <AccessDenied />;
-
   const [appointments, setAppointments] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [professionals, setProfessionals] = useState<{ user_id: string; full_name: string; avatar_url: string | null }[]>([]);

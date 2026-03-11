@@ -23,14 +23,11 @@ const PAGE_SIZE = 100;
 export default function AdminProfessionalAgenda() {
   const { toast } = useToast();
   const { user, adminBranchId } = useAuth();
-  const { adminLevel, canViewBranches } = useAdminPermissions();
+  const { adminLevel } = useAdminPermissions();
 
   const isManager = adminLevel === "manager" || adminLevel === "ceo";
   const isProfessional = adminLevel === "professional";
   const isAttendant = adminLevel === "attendant";
-
-  // Only professional, manager, ceo can access
-  if (!isManager && !isProfessional && !isAttendant) return <AccessDenied />;
 
   const [appointments, setAppointments] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
