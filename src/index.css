@@ -270,5 +270,10 @@
 }
 
 .driver-overlay {
-  background: rgba(0, 0, 0, 0.6) !important;
+  background: rgba(0, 0, 0, 0.35) !important;
+}
+
+/* Prevent duplicate overlay stacking */
+.driver-overlay ~ .driver-overlay {
+  display: none !important;
 }
