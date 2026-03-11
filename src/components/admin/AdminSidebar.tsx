@@ -54,6 +54,7 @@ export function AdminSidebar() {
     { title: "Serviços",           url: "/admin/services",       icon: Scissors,        tourId: "sidebar-admin-services" },
     { title: "Planos",             url: "/admin/plans",          icon: Crown,           tourId: "sidebar-admin-plans" },
     { title: "Financeiro",         url: "/admin/finance",        icon: DollarSign,      tourId: "sidebar-admin-finance" },
+    { title: "Profissionais",      url: "/admin/professionals",  icon: UserCheck,       tourId: "sidebar-admin-professionals" },
     { title: "Filiais",            url: "/admin/branches",       icon: Building2,       tourId: "sidebar-admin-branches" },
     { title: "Usuários",           url: "/admin/users",          icon: ShieldCheck,     tourId: "sidebar-admin-users" },
     { title: "Cupons",             url: "/admin/coupons",        icon: Tag,             tourId: "sidebar-admin-coupons" },
