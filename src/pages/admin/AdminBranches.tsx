@@ -21,6 +21,7 @@ interface Branch {
   created_at: string;
   image_url: string | null;
   staffCount?: number;
+  clientCount?: number;
 }
 
 export default function AdminBranches() {
