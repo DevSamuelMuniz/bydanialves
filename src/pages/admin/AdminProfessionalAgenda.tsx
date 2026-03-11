@@ -77,7 +77,7 @@ export default function AdminProfessionalAgenda() {
     let query = supabase
       .from("appointments")
       .select("*, services(name, price, duration_minutes), profiles!appointments_client_profile_fkey(full_name, phone)")
-      .in("status", ["pending", "confirmed", "cancelled"]);
+      .in("status", ["confirmed", "cancelled"]);
 
     // Professional sees only their own
     if (!isManager) {
