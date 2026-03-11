@@ -27,8 +27,6 @@ export default function AdminMyAppointments() {
   const [loading, setLoading] = useState(true);
   const [historyOpen, setHistoryOpen] = useState(true);
 
-  const TAG_PREFIX = "[Atendido por:";
-
   const fetchData = async () => {
     if (!user) return;
     setLoading(true);
@@ -39,26 +37,22 @@ export default function AdminMyAppointments() {
       .eq("user_id", user.id)
       .maybeSingle();
 
-    const name = prof?.full_name || "";
-    setProfName(name);
+    setProfName(prof?.full_name || "");
 
-    if (!name) { setLoading(false); return; }
-
-    let apptQuery = supabase
+    let apptQuery = (supabase as any)
       .from("appointments")
       .select("*, services(name, price, duration_minutes), profiles!appointments_client_profile_fkey(full_name, phone)")
-      .ilike("notes", `%${TAG_PREFIX} ${name}]%`)
+      .eq("professional_id", user.id)
       .order("appointment_date", { ascending: true })
       .order("appointment_time", { ascending: true });
 
-    // Filter by branch if staff is assigned to one
     if (adminBranchId) apptQuery = apptQuery.eq("branch_id", adminBranchId);
 
     const { data } = await apptQuery;
 
     const all = data || [];
-    setConfirmed(all.filter((a) => ["pending", "confirmed"].includes(a.status)));
-    setHistory(all.filter((a) => ["completed", "cancelled"].includes(a.status)).reverse());
+    setConfirmed(all.filter((a: any) => ["pending", "confirmed"].includes(a.status)));
+    setHistory(all.filter((a: any) => ["completed", "cancelled"].includes(a.status)).reverse());
     setLoading(false);
   };
 
