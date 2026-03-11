@@ -106,7 +106,7 @@ function buildWeekState(existingSchedules: Schedule[]): Record<number, DayRow> {
 
 export default function AdminProfessionals() {
   const perms = useAdminPermissions();
-  const { adminBranchId } = useAuth();
+  const { adminBranchId, adminLevel } = useAuth();
   const { toast } = useToast();
 
   const [professionals, setProfessionals] = useState<ProfessionalProfile[]>([]);
