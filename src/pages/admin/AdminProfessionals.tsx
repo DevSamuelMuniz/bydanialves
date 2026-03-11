@@ -546,12 +546,12 @@ export default function AdminProfessionals() {
             </div>
           </div>
 
-          <DialogFooter className="gap-2">
+          <div className="flex justify-end gap-2 pt-2">
             <Button variant="ghost" onClick={() => setNewProfDialog(false)}>Cancelar</Button>
             <Button onClick={createProfessionals} disabled={selectedClients.length === 0 || creatingProf}>
               {creatingProf ? "Adicionando…" : `Adicionar${selectedClients.length > 1 ? ` (${selectedClients.length})` : ""} à equipe`}
             </Button>
-          </DialogFooter>
+          </div>
         </DialogContent>
       </Dialog>
 
