@@ -307,6 +307,50 @@ export type Database = {
         }
         Relationships: []
       }
+      professional_schedules: {
+        Row: {
+          active: boolean
+          branch_id: string | null
+          created_at: string
+          day_of_week: number
+          end_time: string
+          id: string
+          professional_id: string
+          start_time: string
+          updated_at: string
+        }
+        Insert: {
+          active?: boolean
+          branch_id?: string | null
+          created_at?: string
+          day_of_week: number
+          end_time?: string
+          id?: string
+          professional_id: string
+          start_time?: string
+          updated_at?: string
+        }
+        Update: {
+          active?: boolean
+          branch_id?: string | null
+          created_at?: string
+          day_of_week?: number
+          end_time?: string
+          id?: string
+          professional_id?: string
+          start_time?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "professional_schedules_branch_id_fkey"
+            columns: ["branch_id"]
+            isOneToOne: false
+            referencedRelation: "branches"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       profiles: {
         Row: {
           avatar_url: string | null
