@@ -150,6 +150,7 @@ export function AdminSidebar() {
     { title: "Cupons",            url: "/admin/coupons",        icon: Tag,             tourId: "sidebar-admin-coupons" },
     { title: "Avaliações",        url: "/admin/reviews",        icon: Star,            tourId: "sidebar-admin-reviews" },
     { title: "TV de Fila",        url: "/admin/queue-tv",       icon: Tv2,             tourId: "sidebar-admin-queue-tv", badge: pendingCount },
+    { title: "Calendário",        url: "/admin/work-calendar",  icon: CalendarDays,    tourId: "sidebar-admin-work-calendar" },
     { title: "Logs",              url: "/admin/logs",           icon: Activity,        tourId: "sidebar-admin-logs" },
   ];
 
