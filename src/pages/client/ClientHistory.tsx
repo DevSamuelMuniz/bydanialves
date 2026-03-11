@@ -65,6 +65,11 @@ function StarRating({ value, onChange }: { value: number; onChange: (v: number) 
   );
 }
 
+function parseEscovasFromIncludes(includes: string): number {
+  const match = includes.match(/(\d+)\s*escova/i);
+  return match ? parseInt(match[1], 10) : 0;
+}
+
 export default function ClientHistory() {
   const { user } = useAuth();
   const navigate = useNavigate();
@@ -72,6 +77,7 @@ export default function ClientHistory() {
   const [loading, setLoading] = useState(true);
   const [statusFilter, setStatusFilter] = useState("all");
   const [reviewedIds, setReviewedIds] = useState<Set<string>>(new Set());
+  const [escovasDisponiveis, setEscovasDisponiveis] = useState(0);
 
   // Review modal state
   const [reviewOpen, setReviewOpen] = useState(false);
