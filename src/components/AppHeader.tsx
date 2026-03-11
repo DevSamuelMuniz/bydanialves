@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
+import { useAvatarUrl } from "@/hooks/use-profile";
 import { SidebarTrigger } from "@/components/ui/sidebar";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { GlobalSearch } from "@/components/GlobalSearch";
@@ -34,7 +35,7 @@ export function AppHeader({ title, profilePath }: AppHeaderProps) {
   const { theme, setTheme } = useTheme();
   const [profileName, setProfileName] = useState("");
   const [profileEmail, setProfileEmail] = useState("");
-  const [avatarUrl, setAvatarUrl] = useState<string | null>(null);
+  const avatarUrl = useAvatarUrl();
 
   const isDark = theme === "dark";
   const toggleDark = () => setTheme(isDark ? "light" : "dark");
@@ -44,19 +45,11 @@ export function AppHeader({ title, profilePath }: AppHeaderProps) {
     setProfileEmail(user.email || "");
     supabase
       .from("profiles")
-      .select("full_name, avatar_url")
+      .select("full_name")
       .eq("user_id", user.id)
       .single()
       .then(({ data }) => {
-        if (data) {
-          setProfileName(data.full_name || "");
-          if (data.avatar_url) {
-            const { data: urlData } = supabase.storage
-              .from("avatars")
-              .getPublicUrl(data.avatar_url);
-            setAvatarUrl(urlData.publicUrl);
-          }
-        }
+        if (data) setProfileName(data.full_name || "");
       });
   }, [user]);
 
