@@ -755,9 +755,10 @@ function ProfessionalCard({ prof, canManage, onEditWeek, onDeleteAll, onRemove }
             Nenhuma escala cadastrada
           </div>
         ) : (
+          {(() => { const weekDates = getCurrentWeekDates(); return (
           <div className="flex flex-wrap gap-1.5">
             {sortedSchedules.map((sched) => {
-              const day = DAYS.find((d) => d.value === sched.day_of_week);
+              const weekDate = weekDates[sched.day_of_week];
               return (
                 <div
                   key={sched.id}
@@ -766,12 +767,13 @@ function ProfessionalCard({ prof, canManage, onEditWeek, onDeleteAll, onRemove }
                       ? "bg-primary/8 border-primary/20 text-foreground"
                       : "bg-muted/40 border-border text-muted-foreground line-through opacity-60"}`}
                 >
-                  <span className="font-semibold">{day?.short}</span>
+                  <span className="font-semibold">{weekDate ? fmtDate(weekDate) : ""}</span>
                   <span className="text-muted-foreground">{sched.start_time}–{sched.end_time}</span>
                 </div>
               );
             })}
           </div>
+          ); })()}
         )}
       </CardContent>
     </Card>
