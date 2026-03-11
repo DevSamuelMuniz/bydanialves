@@ -255,23 +255,44 @@ export default function ClientHistory() {
                     </div>
                   )}
 
+                  {/* Professional */}
+                  {professionalName && (
+                    <div className="flex items-center gap-2 text-sm">
+                      {professionalAvatar ? (
+                        <img
+                          src={professionalAvatar}
+                          alt={professionalName}
+                          className="h-5 w-5 rounded-full object-cover shrink-0 border border-border/40"
+                        />
+                      ) : (
+                        <UserCircle2 className="h-3.5 w-3.5 text-primary shrink-0" />
+                      )}
+                      <span className="text-muted-foreground text-xs truncate">{professionalName}</span>
+                    </div>
+                  )}
+
+                  {/* Service description */}
+                  {serviceDescription && (
+                    <p className="text-xs text-muted-foreground leading-relaxed line-clamp-2">{serviceDescription}</p>
+                  )}
+
                   <div className="border-t border-border/40 mt-auto" />
 
-                  {/* Price */}
+                  {/* Price + notes */}
                   <div className="flex items-center justify-between">
                     <div className="flex items-center gap-2">
                       <BanknoteIcon className="h-3.5 w-3.5 text-primary shrink-0" />
                       <span className="font-serif font-semibold text-foreground text-sm">{price}</span>
                     </div>
-                    {appt.notes && (
-                      <div className="flex items-center gap-1 text-xs text-muted-foreground" title={appt.notes}>
-                        <StickyNote className="h-3 w-3" />
-                        <span className="truncate max-w-[60px]">Obs.</span>
-                      </div>
-                    )}
                   </div>
 
-                  {/* Avaliar button */}
+                  {/* Notes */}
+                  {appt.notes && (
+                    <div className="flex items-start gap-1.5 text-xs text-muted-foreground bg-muted/40 rounded-lg px-2.5 py-2">
+                      <StickyNote className="h-3 w-3 shrink-0 mt-0.5" />
+                      <span className="line-clamp-2 leading-relaxed">{appt.notes}</span>
+                    </div>
+                  )}
                   {canReview && (
                     <Button
                       size="sm"
