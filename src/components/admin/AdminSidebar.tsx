@@ -156,21 +156,24 @@ export function AdminSidebar() {
 
   const permMap: Record<string, boolean> = {
     "/admin":                 perms.canViewDashboard,
-    "/admin/my-appointments": adminLevel === "attendant",
-    "/admin/clients":         perms.canViewClients,
+    "/admin/my-appointments": adminLevel === "attendant" || adminLevel === "professional",
+    "/admin/clients":         perms.canViewClients && adminLevel !== "professional",
     "/admin/services":        perms.canViewServices,
     "/admin/plans":           perms.canViewPlans,
     "/admin/finance":         perms.canViewFinance,
     "/admin/branches":        perms.canViewBranches,
     "/admin/users":           perms.canViewUsers,
     "/admin/coupons":         perms.canManageCoupons,
-    "/admin/reviews":         perms.canViewServices,
+    "/admin/reviews":         perms.canViewServices && adminLevel !== "professional",
     "/admin/queue-tv":        perms.canViewQueueTV,
     "/admin/work-calendar":   perms.canManageSystemSettings,
     "/admin/logs":            perms.canViewLogs,
   };
 
   const items = allItems.filter((item) => permMap[item.url] ?? false);
+
+  // Profissional não vê o dropdown de Profissionais (Agenda e Histórico ficam fora do menu)
+  const showProfDropdownFinal = isProfessional ? false : showProfDropdown;
 
   // Split items: before and after professionals slot
   const financeIdx = items.findIndex((i) => i.url === "/admin/finance");
