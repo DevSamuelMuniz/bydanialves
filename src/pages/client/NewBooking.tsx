@@ -347,6 +347,7 @@ export default function NewBooking() {
   }, [preselectedServiceId, services]);
 
   // Load booked ranges when date + branch changes (include professional_id for precise filtering)
+  // Group appointments by (professional_id, appointment_time) to sum durations of multiple services
   useEffect(() => {
     if (!selectedDate || !selectedBranch) return;
     const dateStr = selectedDate.toISOString().split("T")[0];
@@ -357,12 +358,25 @@ export default function NewBooking() {
       .eq("branch_id", selectedBranch.id)
       .neq("status", "cancelled")
       .then(({ data }) => {
-        const ranges = (data || []).map((a: any) => {
-          const [h, m] = (a.appointment_time || "00:00").slice(0, 5).split(":").map(Number);
+        // Group by professional_id + appointment_time to sum durations (multiple services same slot)
+        const grouped: Record<string, { start: number; totalDur: number; professionalId: string | null }> = {};
+        (data || []).forEach((a: any) => {
+          const timeStr = (a.appointment_time || "00:00").slice(0, 5);
+          const key = `${a.professional_id ?? "none"}__${timeStr}`;
+          const [h, m] = timeStr.split(":").map(Number);
           const start = h * 60 + m;
           const dur = a.services?.duration_minutes || 60;
-          return { start, end: start + dur, professionalId: a.professional_id };
+          if (grouped[key]) {
+            grouped[key].totalDur += dur;
+          } else {
+            grouped[key] = { start, totalDur: dur, professionalId: a.professional_id };
+          }
         });
+        const ranges = Object.values(grouped).map((g) => ({
+          start: g.start,
+          end: g.start + g.totalDur,
+          professionalId: g.professionalId,
+        }));
         setBookedRanges(ranges);
       });
   }, [selectedDate, selectedBranch]);
