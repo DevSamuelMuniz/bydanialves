@@ -187,6 +187,9 @@ export default function ClientHistory() {
             const duration = appt.services?.duration_minutes;
             const branchName = appt.branches?.name;
             const branchAddress = appt.branches?.address;
+            const professionalName = (appt.profiles as any)?.full_name;
+            const professionalAvatar = (appt.profiles as any)?.avatar_url;
+            const serviceDescription = appt.services?.description;
             const canReview = appt.status === "completed" && !reviewedIds.has(appt.id);
             const hasReview = appt.status === "completed" && reviewedIds.has(appt.id);
             const canReschedule = appt.status === "completed" || appt.status === "cancelled";
