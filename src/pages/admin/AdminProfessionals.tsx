@@ -3,7 +3,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useAdminPermissions } from "@/hooks/use-admin-permissions";
 import { useAuth } from "@/contexts/AuthContext";
 import { AccessDenied } from "@/components/admin/AccessDenied";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -11,22 +11,19 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { useToast } from "@/hooks/use-toast";
 import { Switch } from "@/components/ui/switch";
-import { Label } from "@/components/ui/label";
-import {
-  Users, Building2, CalendarDays, Clock, Plus, Pencil, Trash2, UserCheck
-} from "lucide-react";
+import { Users, Building2, CalendarDays, Clock, Pencil, Trash2 } from "lucide-react";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
 import { ADMIN_LEVEL_LABELS, ADMIN_LEVEL_COLORS } from "@/hooks/use-admin-permissions";
 import type { AdminLevel } from "@/contexts/AuthContext";
 
 const DAYS = [
-  { value: 1, label: "Segunda" },
-  { value: 2, label: "Terça" },
-  { value: 3, label: "Quarta" },
-  { value: 4, label: "Quinta" },
-  { value: 5, label: "Sexta" },
-  { value: 6, label: "Sábado" },
-  { value: 0, label: "Domingo" },
+  { value: 1, label: "Segunda",  short: "Seg" },
+  { value: 2, label: "Terça",    short: "Ter" },
+  { value: 3, label: "Quarta",   short: "Qua" },
+  { value: 4, label: "Quinta",   short: "Qui" },
+  { value: 5, label: "Sexta",    short: "Sex" },
+  { value: 6, label: "Sábado",   short: "Sáb" },
+  { value: 0, label: "Domingo",  short: "Dom" },
 ];
 
 const HOURS = Array.from({ length: 10 }, (_, i) => {
@@ -53,25 +50,44 @@ interface Schedule {
   active: boolean;
 }
 
+// State for the weekly schedule dialog — one row per day
+interface DayRow {
+  enabled: boolean;
+  start_time: string;
+  end_time: string;
+  existing_id?: string; // if already saved in DB
+}
+
+const defaultDayRow = (): DayRow => ({ enabled: false, start_time: "08:00", end_time: "17:00" });
+
+function buildWeekState(existingSchedules: Schedule[]): Record<number, DayRow> {
+  const state: Record<number, DayRow> = {};
+  DAYS.forEach((d) => {
+    const found = existingSchedules.find((s) => s.day_of_week === d.value);
+    state[d.value] = found
+      ? { enabled: found.active, start_time: found.start_time, end_time: found.end_time, existing_id: found.id }
+      : defaultDayRow();
+  });
+  return state;
+}
+
 export default function AdminProfessionals() {
   const perms = useAdminPermissions();
   const { adminBranchId } = useAuth();
   const { toast } = useToast();
 
   const [professionals, setProfessionals] = useState<ProfessionalProfile[]>([]);
-  const [branches, setBranches] = useState<Branch[]>([]);
   const [loading, setLoading] = useState(true);
   const [selectedProf, setSelectedProf] = useState<ProfessionalProfile | null>(null);
-  const [scheduleDialogOpen, setScheduleDialogOpen] = useState(false);
-  const [editSchedule, setEditSchedule] = useState<Partial<Schedule> & { professional_id?: string; branch_id?: string }>({});
-  const [savingSchedule, setSavingSchedule] = useState(false);
+  const [weekDialog, setWeekDialog] = useState(false);
+  const [weekState, setWeekState] = useState<Record<number, DayRow>>({});
+  const [saving, setSaving] = useState(false);
 
-  const canManage = perms.canManageBranches; // gerente/ceo
+  const canManage = perms.canManageBranches;
 
   const fetchAll = async () => {
     setLoading(true);
 
-    // Busca roles de professional e attendant
     let rolesQuery = (supabase as any)
       .from("user_roles")
       .select("user_id, admin_level, branch_id")
@@ -90,8 +106,6 @@ export default function AdminProfessionals() {
       supabase.from("branches" as any).select("id, name").eq("active", true),
       (supabase as any).from("professional_schedules").select("*").in("professional_id", userIds),
     ]);
-
-    setBranches((branchData as unknown as Branch[]) || []);
 
     const branchMap: Record<string, string> = {};
     ((branchData as unknown as Branch[]) || []).forEach((b) => { branchMap[b.id] = b.name; });
@@ -123,70 +137,80 @@ export default function AdminProfessionals() {
 
   useEffect(() => { fetchAll(); }, []);
 
-  const openAddSchedule = (prof: ProfessionalProfile) => {
+  const openWeekDialog = (prof: ProfessionalProfile) => {
     setSelectedProf(prof);
-    // Find first day not already scheduled
-    const usedDays = new Set(prof.schedules.map((s) => s.day_of_week));
-    const firstFreeDay = DAYS.find((d) => !usedDays.has(d.value))?.value ?? 1;
-    setEditSchedule({
-      professional_id: prof.user_id,
-      branch_id: prof.branch_id || undefined,
-      day_of_week: firstFreeDay,
-      start_time: "08:00",
-      end_time: "17:00",
-      active: true,
-    });
-    setScheduleDialogOpen(true);
+    setWeekState(buildWeekState(prof.schedules));
+    setWeekDialog(true);
   };
 
-  const openEditSchedule = (prof: ProfessionalProfile, sched: Schedule) => {
-    setSelectedProf(prof);
-    setEditSchedule({
-      ...sched,
-      professional_id: prof.user_id,
-      branch_id: prof.branch_id || undefined,
-    });
-    setScheduleDialogOpen(true);
+  const setDayField = (day: number, field: keyof DayRow, value: any) => {
+    setWeekState((prev) => ({
+      ...prev,
+      [day]: { ...prev[day], [field]: value },
+    }));
   };
 
-  const saveSchedule = async () => {
-    if (!editSchedule.professional_id || editSchedule.day_of_week === undefined) return;
-    setSavingSchedule(true);
+  // Apply same time to all enabled days
+  const applyToAll = (start: string, end: string) => {
+    setWeekState((prev) => {
+      const next = { ...prev };
+      DAYS.forEach((d) => {
+        if (next[d.value]?.enabled) {
+          next[d.value] = { ...next[d.value], start_time: start, end_time: end };
+        }
+      });
+      return next;
+    });
+  };
 
-    const payload = {
-      professional_id: editSchedule.professional_id,
-      branch_id: editSchedule.branch_id || null,
-      day_of_week: editSchedule.day_of_week,
-      start_time: editSchedule.start_time + ":00",
-      end_time: editSchedule.end_time + ":00",
-      active: editSchedule.active ?? true,
-    };
+  const saveWeek = async () => {
+    if (!selectedProf) return;
+    setSaving(true);
 
-    let error: any;
-    if (editSchedule.id) {
-      ({ error } = await (supabase as any).from("professional_schedules").update(payload).eq("id", editSchedule.id));
+    const ops: Promise<any>[] = [];
+
+    DAYS.forEach((d) => {
+      const row = weekState[d.value];
+      if (!row) return;
+
+      if (row.enabled) {
+        const payload = {
+          professional_id: selectedProf.user_id,
+          branch_id: selectedProf.branch_id || null,
+          day_of_week: d.value,
+          start_time: row.start_time + ":00",
+          end_time: row.end_time + ":00",
+          active: true,
+        };
+        if (row.existing_id) {
+          ops.push((supabase as any).from("professional_schedules").update(payload).eq("id", row.existing_id));
+        } else {
+          ops.push((supabase as any).from("professional_schedules").insert(payload));
+        }
+      } else if (row.existing_id) {
+        // Day was disabled or unchecked — delete existing record
+        ops.push((supabase as any).from("professional_schedules").delete().eq("id", row.existing_id));
+      }
+    });
+
+    const results = await Promise.all(ops);
+    const errors = results.filter((r) => r.error).map((r) => r.error.message);
+
+    if (errors.length) {
+      toast({ title: "Erro ao salvar escala", description: errors[0], variant: "destructive" });
     } else {
-      ({ error } = await (supabase as any).from("professional_schedules").insert(payload));
-    }
-
-    if (error) {
-      toast({ title: "Erro ao salvar escala", description: error.message, variant: "destructive" });
-    } else {
-      toast({ title: editSchedule.id ? "Escala atualizada!" : "Escala adicionada!" });
-      setScheduleDialogOpen(false);
+      toast({ title: "Escala salva com sucesso! ✅" });
+      setWeekDialog(false);
       fetchAll();
     }
-    setSavingSchedule(false);
+    setSaving(false);
   };
 
-  const deleteSchedule = async (schedId: string) => {
-    const { error } = await (supabase as any).from("professional_schedules").delete().eq("id", schedId);
-    if (error) toast({ title: "Erro", description: error.message, variant: "destructive" });
-    else { toast({ title: "Escala removida." }); fetchAll(); }
-  };
-
-  const toggleScheduleActive = async (sched: Schedule) => {
-    await (supabase as any).from("professional_schedules").update({ active: !sched.active }).eq("id", sched.id);
+  const deleteAllSchedules = async (prof: ProfessionalProfile) => {
+    const ids = prof.schedules.map((s) => s.id);
+    if (!ids.length) return;
+    await (supabase as any).from("professional_schedules").delete().in("id", ids);
+    toast({ title: "Escalas removidas." });
     fetchAll();
   };
 
@@ -197,7 +221,7 @@ export default function AdminProfessionals() {
       <div>
         <h1 className="font-serif text-2xl">Profissionais</h1>
         <p className="text-sm text-muted-foreground mt-0.5">
-          Gerencie a equipe e monte as escalas de trabalho de cada profissional
+          Gerencie a equipe e monte as escalas de trabalho semanais
         </p>
       </div>
 
@@ -220,82 +244,121 @@ export default function AdminProfessionals() {
               key={prof.user_id}
               prof={prof}
               canManage={canManage}
-              onAddSchedule={() => openAddSchedule(prof)}
-              onEditSchedule={(s) => openEditSchedule(prof, s)}
-              onDeleteSchedule={deleteSchedule}
-              onToggleSchedule={toggleScheduleActive}
+              onEditWeek={() => openWeekDialog(prof)}
+              onDeleteAll={() => deleteAllSchedules(prof)}
             />
           ))}
         </div>
       )}
 
-      {/* Dialog Escala */}
-      <Dialog open={scheduleDialogOpen} onOpenChange={setScheduleDialogOpen}>
-        <DialogContent className="max-w-sm">
+      {/* ── Dialog Escala Semanal ── */}
+      <Dialog open={weekDialog} onOpenChange={setWeekDialog}>
+        <DialogContent className="max-w-lg">
           <DialogHeader>
-            <DialogTitle className="font-serif">
-              {editSchedule.id ? "Editar Escala" : "Adicionar Escala"}
-            </DialogTitle>
+            <DialogTitle className="font-serif text-lg">Escala Semanal</DialogTitle>
             {selectedProf && (
               <p className="text-sm text-muted-foreground">{selectedProf.full_name}</p>
             )}
           </DialogHeader>
 
-          <div className="space-y-4 py-2">
-            <div className="space-y-1.5">
-              <Label>Dia da semana</Label>
-              <Select
-                value={String(editSchedule.day_of_week ?? 1)}
-                onValueChange={(v) => setEditSchedule((prev) => ({ ...prev, day_of_week: Number(v) }))}
-              >
-                <SelectTrigger><SelectValue /></SelectTrigger>
-                <SelectContent>
-                  {DAYS.map((d) => <SelectItem key={d.value} value={String(d.value)}>{d.label}</SelectItem>)}
-                </SelectContent>
-              </Select>
+          <div className="py-1 space-y-1">
+            {/* Header row */}
+            <div className="grid grid-cols-[1.5rem_1fr_auto_auto_auto] gap-2 items-center px-1 pb-1 border-b border-border">
+              <div />
+              <span className="text-xs font-medium text-muted-foreground">Dia</span>
+              <span className="text-xs font-medium text-muted-foreground w-20 text-center">Início</span>
+              <span className="text-xs font-medium text-muted-foreground w-20 text-center">Término</span>
+              <span className="text-xs font-medium text-muted-foreground w-6" />
             </div>
 
-            <div className="grid grid-cols-2 gap-3">
-              <div className="space-y-1.5">
-                <Label>Início</Label>
-                <Select
-                  value={editSchedule.start_time || "08:00"}
-                  onValueChange={(v) => setEditSchedule((prev) => ({ ...prev, start_time: v }))}
+            {DAYS.map((d) => {
+              const row = weekState[d.value] ?? defaultDayRow();
+              return (
+                <div
+                  key={d.value}
+                  className={`grid grid-cols-[1.5rem_1fr_auto_auto_auto] gap-2 items-center rounded-lg px-1 py-1.5 transition-colors
+                    ${row.enabled ? "bg-primary/5" : "opacity-50"}`}
                 >
-                  <SelectTrigger><SelectValue /></SelectTrigger>
-                  <SelectContent>
-                    {HOURS.map((h) => <SelectItem key={h} value={h}>{h}</SelectItem>)}
-                  </SelectContent>
-                </Select>
-              </div>
-              <div className="space-y-1.5">
-                <Label>Término</Label>
-                <Select
-                  value={editSchedule.end_time || "17:00"}
-                  onValueChange={(v) => setEditSchedule((prev) => ({ ...prev, end_time: v }))}
-                >
-                  <SelectTrigger><SelectValue /></SelectTrigger>
-                  <SelectContent>
-                    {HOURS.map((h) => <SelectItem key={h} value={h}>{h}</SelectItem>)}
-                  </SelectContent>
-                </Select>
-              </div>
-            </div>
+                  {/* Toggle */}
+                  <Switch
+                    checked={row.enabled}
+                    onCheckedChange={(v) => setDayField(d.value, "enabled", v)}
+                    className="scale-75 origin-left"
+                  />
 
-            <div className="flex items-center gap-3 pt-1">
-              <Switch
-                id="sched-active"
-                checked={editSchedule.active ?? true}
-                onCheckedChange={(v) => setEditSchedule((prev) => ({ ...prev, active: v }))}
-              />
-              <Label htmlFor="sched-active">Escala ativa</Label>
-            </div>
+                  {/* Day label */}
+                  <span className={`text-sm font-medium ${row.enabled ? "text-foreground" : "text-muted-foreground"}`}>
+                    {d.label}
+                  </span>
+
+                  {/* Start */}
+                  <Select
+                    value={row.start_time}
+                    onValueChange={(v) => setDayField(d.value, "start_time", v)}
+                    disabled={!row.enabled}
+                  >
+                    <SelectTrigger className="w-20 h-7 text-xs">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {HOURS.map((h) => <SelectItem key={h} value={h}>{h}</SelectItem>)}
+                    </SelectContent>
+                  </Select>
+
+                  {/* End */}
+                  <Select
+                    value={row.end_time}
+                    onValueChange={(v) => setDayField(d.value, "end_time", v)}
+                    disabled={!row.enabled}
+                  >
+                    <SelectTrigger className="w-20 h-7 text-xs">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {HOURS.map((h) => <SelectItem key={h} value={h}>{h}</SelectItem>)}
+                    </SelectContent>
+                  </Select>
+
+                  {/* Copy indicator */}
+                  <div className="w-6" />
+                </div>
+              );
+            })}
+          </div>
+
+          {/* Quick presets */}
+          <div className="flex flex-wrap gap-1.5 pt-1 border-t border-border">
+            <span className="text-xs text-muted-foreground self-center mr-1">Atalhos:</span>
+            <Button size="sm" variant="outline" className="h-6 text-xs px-2"
+              onClick={() => {
+                DAYS.slice(0, 5).forEach((d) => setDayField(d.value, "enabled", true));
+                DAYS.slice(5).forEach((d) => setDayField(d.value, "enabled", false));
+                applyToAll("08:00", "17:00");
+              }}>
+              Seg–Sex
+            </Button>
+            <Button size="sm" variant="outline" className="h-6 text-xs px-2"
+              onClick={() => {
+                DAYS.slice(0, 6).forEach((d) => setDayField(d.value, "enabled", true));
+                setDayField(0, "enabled", false);
+                applyToAll("08:00", "17:00");
+              }}>
+              Seg–Sáb
+            </Button>
+            <Button size="sm" variant="outline" className="h-6 text-xs px-2"
+              onClick={() => DAYS.forEach((d) => setDayField(d.value, "enabled", true))}>
+              Todos
+            </Button>
+            <Button size="sm" variant="outline" className="h-6 text-xs px-2"
+              onClick={() => DAYS.forEach((d) => setDayField(d.value, "enabled", false))}>
+              Nenhum
+            </Button>
           </div>
 
           <DialogFooter>
-            <Button variant="ghost" onClick={() => setScheduleDialogOpen(false)}>Cancelar</Button>
-            <Button onClick={saveSchedule} disabled={savingSchedule}>
-              {savingSchedule ? "Salvando…" : "Salvar"}
+            <Button variant="ghost" onClick={() => setWeekDialog(false)}>Cancelar</Button>
+            <Button onClick={saveWeek} disabled={saving}>
+              {saving ? "Salvando…" : "Salvar Escala"}
             </Button>
           </DialogFooter>
         </DialogContent>
@@ -304,17 +367,15 @@ export default function AdminProfessionals() {
   );
 }
 
-/* ────────────────── Sub-componente card ────────────────── */
+/* ────────────────── Card do profissional ────────────────── */
 interface ProfCardProps {
   prof: ProfessionalProfile;
   canManage: boolean;
-  onAddSchedule: () => void;
-  onEditSchedule: (s: Schedule) => void;
-  onDeleteSchedule: (id: string) => void;
-  onToggleSchedule: (s: Schedule) => void;
+  onEditWeek: () => void;
+  onDeleteAll: () => void;
 }
 
-function ProfessionalCard({ prof, canManage, onAddSchedule, onEditSchedule, onDeleteSchedule, onToggleSchedule }: ProfCardProps) {
+function ProfessionalCard({ prof, canManage, onEditWeek, onDeleteAll }: ProfCardProps) {
   const levelLabel = prof.admin_level ? ADMIN_LEVEL_LABELS[prof.admin_level] : null;
   const levelColor = prof.admin_level ? ADMIN_LEVEL_COLORS[prof.admin_level] : "";
   const initials = prof.full_name.split(" ").map((w) => w[0]).slice(0, 2).join("").toUpperCase();
@@ -355,10 +416,10 @@ function ProfessionalCard({ prof, canManage, onAddSchedule, onEditSchedule, onDe
       </div>
 
       {/* Escala header */}
-      <div className="px-4 pb-2 flex items-center justify-between">
+      <div className="px-4 pb-2 flex items-center justify-between border-t border-border pt-3">
         <div className="flex items-center gap-1.5 text-xs font-medium text-muted-foreground">
           <CalendarDays className="h-3.5 w-3.5" />
-          Escala de Trabalho
+          Escala
           {activeDays > 0 && (
             <Badge className="bg-primary/10 text-primary border-primary/20 text-[10px] px-1.5 py-0">
               {activeDays} dia{activeDays > 1 ? "s" : ""}
@@ -366,75 +427,62 @@ function ProfessionalCard({ prof, canManage, onAddSchedule, onEditSchedule, onDe
           )}
         </div>
         {canManage && (
-          <Button size="sm" variant="ghost" className="h-6 text-xs gap-1 text-primary" onClick={onAddSchedule}>
-            <Plus className="h-3 w-3" /> Adicionar
-          </Button>
+          <div className="flex items-center gap-1">
+            <Button size="sm" variant="ghost" className="h-6 text-xs gap-1 text-primary px-2" onClick={onEditWeek}>
+              <Pencil className="h-3 w-3" />
+              {sortedSchedules.length === 0 ? "Montar Escala" : "Editar"}
+            </Button>
+            {sortedSchedules.length > 0 && (
+              <AlertDialog>
+                <AlertDialogTrigger asChild>
+                  <Button size="icon" variant="ghost" className="h-6 w-6 text-destructive hover:text-destructive">
+                    <Trash2 className="h-3 w-3" />
+                  </Button>
+                </AlertDialogTrigger>
+                <AlertDialogContent>
+                  <AlertDialogHeader>
+                    <AlertDialogTitle>Limpar escala?</AlertDialogTitle>
+                    <AlertDialogDescription>
+                      Remove todos os turnos de <strong>{prof.full_name}</strong>. Não pode ser desfeito.
+                    </AlertDialogDescription>
+                  </AlertDialogHeader>
+                  <AlertDialogFooter>
+                    <AlertDialogCancel>Cancelar</AlertDialogCancel>
+                    <AlertDialogAction
+                      className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                      onClick={onDeleteAll}
+                    >
+                      Limpar tudo
+                    </AlertDialogAction>
+                  </AlertDialogFooter>
+                </AlertDialogContent>
+              </AlertDialog>
+            )}
+          </div>
         )}
       </div>
 
-      {/* Schedules list */}
+      {/* Schedules chips */}
       <CardContent className="px-4 pb-4 flex-1">
         {sortedSchedules.length === 0 ? (
-          <div className="py-6 text-center text-xs text-muted-foreground border border-dashed rounded-lg">
+          <div className="py-5 text-center text-xs text-muted-foreground border border-dashed rounded-lg">
             <Clock className="h-5 w-5 mx-auto mb-1 opacity-30" />
             Nenhuma escala cadastrada
           </div>
         ) : (
-          <div className="space-y-1.5">
+          <div className="flex flex-wrap gap-1.5">
             {sortedSchedules.map((sched) => {
-              const dayLabel = DAYS.find((d) => d.value === sched.day_of_week)?.label || "—";
+              const day = DAYS.find((d) => d.value === sched.day_of_week);
               return (
                 <div
                   key={sched.id}
-                  className={`flex items-center gap-2 rounded-lg px-2.5 py-1.5 text-xs border transition-colors
-                    ${sched.active ? "bg-primary/5 border-primary/15" : "bg-muted/40 border-border opacity-60"}`}
+                  className={`inline-flex items-center gap-1 rounded-md px-2 py-1 text-xs border
+                    ${sched.active
+                      ? "bg-primary/8 border-primary/20 text-foreground"
+                      : "bg-muted/40 border-border text-muted-foreground line-through opacity-60"}`}
                 >
-                  <div className="w-16 font-medium text-foreground shrink-0">{dayLabel}</div>
-                  <div className="flex items-center gap-1 text-muted-foreground flex-1">
-                    <Clock className="h-3 w-3" />
-                    {sched.start_time} – {sched.end_time}
-                  </div>
-                  {canManage && (
-                    <div className="flex items-center gap-1 shrink-0">
-                      <Switch
-                        checked={sched.active}
-                        onCheckedChange={() => onToggleSchedule(sched)}
-                        className="scale-75"
-                      />
-                      <Button
-                        size="icon"
-                        variant="ghost"
-                        className="h-5 w-5"
-                        onClick={() => onEditSchedule(sched)}
-                      >
-                        <Pencil className="h-3 w-3" />
-                      </Button>
-                      <AlertDialog>
-                        <AlertDialogTrigger asChild>
-                          <Button size="icon" variant="ghost" className="h-5 w-5 text-destructive hover:text-destructive">
-                            <Trash2 className="h-3 w-3" />
-                          </Button>
-                        </AlertDialogTrigger>
-                        <AlertDialogContent>
-                          <AlertDialogHeader>
-                            <AlertDialogTitle>Remover escala?</AlertDialogTitle>
-                            <AlertDialogDescription>
-                              Remove o turno de <strong>{dayLabel}</strong> ({sched.start_time}–{sched.end_time}).
-                            </AlertDialogDescription>
-                          </AlertDialogHeader>
-                          <AlertDialogFooter>
-                            <AlertDialogCancel>Cancelar</AlertDialogCancel>
-                            <AlertDialogAction
-                              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
-                              onClick={() => onDeleteSchedule(sched.id)}
-                            >
-                              Remover
-                            </AlertDialogAction>
-                          </AlertDialogFooter>
-                        </AlertDialogContent>
-                      </AlertDialog>
-                    </div>
-                  )}
+                  <span className="font-semibold">{day?.short}</span>
+                  <span className="text-muted-foreground">{sched.start_time}–{sched.end_time}</span>
                 </div>
               );
             })}
