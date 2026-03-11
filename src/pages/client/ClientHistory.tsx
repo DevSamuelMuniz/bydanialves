@@ -258,15 +258,7 @@ export default function ClientHistory() {
                   {/* Professional */}
                   {professionalName && (
                     <div className="flex items-center gap-2 text-sm">
-                      {professionalAvatar ? (
-                        <img
-                          src={professionalAvatar}
-                          alt={professionalName}
-                          className="h-5 w-5 rounded-full object-cover shrink-0 border border-border/40"
-                        />
-                      ) : (
-                        <UserCircle2 className="h-3.5 w-3.5 text-primary shrink-0" />
-                      )}
+                      <UserCircle2 className="h-3.5 w-3.5 text-primary shrink-0" />
                       <span className="text-muted-foreground text-xs truncate">{professionalName}</span>
                     </div>
                   )}
