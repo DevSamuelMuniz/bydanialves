@@ -225,22 +225,17 @@ export default function AdminProfessionalAgenda() {
           )}
           <Separator />
           <div className="flex items-center gap-1.5 flex-wrap">
-            {isConfirmCol && !isProfessional && (
-              <Button size="sm" className="h-7 text-xs gap-1 bg-blue-600 hover:bg-blue-700 text-white" onClick={() => updateStatus(a.id, "confirmed", a)}>
-                <CheckCircle2 className="h-3 w-3" />Confirmar
-              </Button>
-            )}
             {isTakeCol && isProfessional && (
               <Button size="sm" className="h-7 text-xs gap-1" variant="outline" onClick={() => takeAppointment(a)} disabled={takingId === a.id}>
                 <Handshake className="h-3 w-3" />{takingId === a.id ? "Pegando..." : "Pegar"}
               </Button>
             )}
-            {isCompleteCol && isProfessional && (
-              <Button size="sm" className="h-7 text-xs gap-1 bg-green-600 hover:bg-green-700 text-white" onClick={() => updateStatus(a.id, "completed")}>
+            {isCompleteCol && (isProfessional || isManager) && (
+              <Button size="sm" className="h-7 text-xs gap-1 bg-emerald-600 hover:bg-emerald-700 text-white" onClick={() => updateStatus(a.id, "completed")}>
                 <CheckCircle2 className="h-3 w-3" />Concluir
               </Button>
             )}
-            {col.key !== "cancelled" && isManager && (
+            {col.key !== "cancelled" && (
               <div className="ml-auto">
                 <AlertDialog>
                   <AlertDialogTrigger asChild>
