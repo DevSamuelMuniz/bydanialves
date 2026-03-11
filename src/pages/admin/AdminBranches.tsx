@@ -10,7 +10,7 @@ import { Switch } from "@/components/ui/switch";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { useToast } from "@/hooks/use-toast";
-import { Plus, MapPin, Building2, Pencil, Upload, X, ImageIcon } from "lucide-react";
+import { Plus, MapPin, Building2, Pencil, Upload, X, ImageIcon, Users } from "lucide-react";
 import { AccessDenied } from "@/components/admin/AccessDenied";
 
 interface Branch {
