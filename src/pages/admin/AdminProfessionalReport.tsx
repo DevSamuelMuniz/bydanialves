@@ -71,12 +71,12 @@ export default function AdminProfessionalReport() {
   const fetchData = useCallback(async () => {
     setLoading(true);
     try {
-      // 1. Fetch all admin roles with professional/attendant level
+      // 1. Fetch all admin roles with professional level only (no attendants)
       const { data: roles } = await supabase
         .from("user_roles")
         .select("user_id, admin_level, branch_id")
         .eq("role", "admin")
-        .in("admin_level", ["professional", "attendant", "manager", "ceo"]);
+        .in("admin_level", ["professional", "manager", "ceo"]);
 
       if (!roles || roles.length === 0) { setProfessionals([]); setLoading(false); return; }
 
