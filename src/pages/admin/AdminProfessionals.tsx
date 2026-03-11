@@ -754,10 +754,9 @@ function ProfessionalCard({ prof, canManage, onEditWeek, onDeleteAll, onRemove }
             Nenhuma escala cadastrada
           </div>
         ) : (
-          {(() => { const weekDates = getCurrentWeekDates(); return (
           <div className="flex flex-wrap gap-1.5">
             {sortedSchedules.map((sched) => {
-              const weekDate = weekDates[sched.day_of_week];
+              const weekDate = getCurrentWeekDates()[sched.day_of_week];
               return (
                 <div
                   key={sched.id}
@@ -772,7 +771,6 @@ function ProfessionalCard({ prof, canManage, onEditWeek, onDeleteAll, onRemove }
               );
             })}
           </div>
-          ); })()}
         )}
       </CardContent>
     </Card>
