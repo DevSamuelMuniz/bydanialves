@@ -698,6 +698,7 @@ export default function AdminProfessionals() {
                 <Select value={editBranchId} onValueChange={setEditBranchId}>
                   <SelectTrigger><SelectValue placeholder="Selecione" /></SelectTrigger>
                   <SelectContent>
+                    <SelectItem value="none">Sem filial</SelectItem>
                     {branches.map((b) => <SelectItem key={b.id} value={b.id}>{b.name}</SelectItem>)}
                   </SelectContent>
                 </Select>
