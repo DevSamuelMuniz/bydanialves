@@ -16,7 +16,7 @@ import {
 import {
   LayoutDashboard, Users, Calendar, Scissors, DollarSign,
   Crown, Activity, ClipboardList, Building2, Tag, Star, Tv2, UserCheck,
-  ChevronDown, BarChart2, LogOut, History,
+  ChevronDown, BarChart2, LogOut, History, CalendarDays,
 } from "lucide-react";
 import { useLocation } from "react-router-dom";
 import logoVertical from "@/assets/logo_vertical.png";
@@ -150,6 +150,7 @@ export function AdminSidebar() {
     { title: "Cupons",            url: "/admin/coupons",        icon: Tag,             tourId: "sidebar-admin-coupons" },
     { title: "Avaliações",        url: "/admin/reviews",        icon: Star,            tourId: "sidebar-admin-reviews" },
     { title: "TV de Fila",        url: "/admin/queue-tv",       icon: Tv2,             tourId: "sidebar-admin-queue-tv", badge: pendingCount },
+    { title: "Calendário",        url: "/admin/work-calendar",  icon: CalendarDays,    tourId: "sidebar-admin-work-calendar" },
     { title: "Logs",              url: "/admin/logs",           icon: Activity,        tourId: "sidebar-admin-logs" },
   ];
 
@@ -165,6 +166,7 @@ export function AdminSidebar() {
     "/admin/coupons":         perms.canManageCoupons,
     "/admin/reviews":         perms.canViewServices,
     "/admin/queue-tv":        perms.canViewQueueTV,
+    "/admin/work-calendar":   perms.canManageSystemSettings,
     "/admin/logs":            perms.canViewLogs,
   };
 

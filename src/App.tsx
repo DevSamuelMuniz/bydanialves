@@ -34,6 +34,7 @@ import AdminProfessionalReport from "./pages/admin/AdminProfessionalReport";
 import AdminProfessionalAgenda from "./pages/admin/AdminProfessionalAgenda";
 import AdminProfessionalHistory from "./pages/admin/AdminProfessionalHistory";
 import AdminReviews from "./pages/admin/AdminReviews";
+import AdminWorkCalendar from "./pages/admin/AdminWorkCalendar";
 import QueueTV from "./pages/admin/QueueTV";
 import TermosDeServico from "./pages/TermosDeServico";
 import PoliticaDePrivacidade from "./pages/PoliticaDePrivacidade";
@@ -92,6 +93,7 @@ const App = () => (
               <Route path="professionals/report" element={<AdminProfessionalReport />} />
               <Route path="professionals/agenda" element={<AdminProfessionalAgenda />} />
               <Route path="professionals/history" element={<AdminProfessionalHistory />} />
+              <Route path="work-calendar" element={<AdminWorkCalendar />} />
             </Route>
 
             <Route path="*" element={<NotFound />} />

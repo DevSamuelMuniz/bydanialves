@@ -121,6 +121,7 @@ export default function NewBooking() {
   const [escovasDisponiveis, setEscovasDisponiveis] = useState(0);
   const [blocked, setBlocked] = useState(false);
   const [blockedModalOpen, setBlockedModalOpen] = useState(false);
+  const [workCalendarMap, setWorkCalendarMap] = useState<Record<string, boolean>>({});
 
   const totalDuration = selectedServices.reduce((acc, s) => acc + s.duration_minutes, 0);
   const totalPrice = selectedServices.reduce((acc, s) => {
@@ -213,6 +214,24 @@ export default function NewBooking() {
   useEffect(() => {
     supabase.from("branches" as any).select("id, name, address, image_url").eq("active", true).order("name")
       .then(({ data }) => setBranches((data as unknown as Branch[]) || []));
+  }, []);
+
+  // Load work calendar for current and next 3 months so we can disable blocked dates
+  useEffect(() => {
+    const today = new Date();
+    const start = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, "0")}-01`;
+    const futureEnd = new Date(today.getFullYear(), today.getMonth() + 4, 0);
+    const end = `${futureEnd.getFullYear()}-${String(futureEnd.getMonth() + 1).padStart(2, "0")}-${String(futureEnd.getDate()).padStart(2, "0")}`;
+    (supabase as any)
+      .from("work_calendar")
+      .select("date, enabled")
+      .gte("date", start)
+      .lte("date", end)
+      .then(({ data }: { data: { date: string; enabled: boolean }[] | null }) => {
+        const map: Record<string, boolean> = {};
+        (data || []).forEach((row) => { map[row.date] = row.enabled; });
+        setWorkCalendarMap(map);
+      });
   }, []);
 
   // Load ALL professionals for the selected branch via SECURITY DEFINER RPC
@@ -681,7 +700,13 @@ export default function NewBooking() {
                   disabled={(date) => {
                     const today = new Date();
                     today.setHours(0, 0, 0, 0);
-                    return date < today || date.getDay() === 0;
+                    if (date < today) return true;
+                    const str = format(date, "yyyy-MM-dd");
+                    // Check work calendar: if date is explicitly stored, use that value
+                    if (str in workCalendarMap) return !workCalendarMap[str];
+                    // Otherwise use default: Tue–Sat (2–6) are work days
+                    const dow = date.getDay();
+                    return dow === 0 || dow === 1;
                   }}
                   locale={ptBR}
                   className="pointer-events-auto w-full"
