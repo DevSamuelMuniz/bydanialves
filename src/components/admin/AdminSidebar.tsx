@@ -239,7 +239,7 @@ export function AdminSidebar() {
           <SidebarGroupContent>
             <SidebarMenu>
               {itemsBefore.map(renderItem)}
-              {showProfDropdown && <ProfessionaisGroup canManage={perms.canViewProfessionals} />}
+              {showProfDropdownFinal && <ProfessionaisGroup canManage={perms.canViewProfessionals} />}
               {itemsAfter.map(renderItem)}
             </SidebarMenu>
           </SidebarGroupContent>
