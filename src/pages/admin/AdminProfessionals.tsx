@@ -246,7 +246,7 @@ export default function AdminProfessionals() {
     setClientSearch("");
     setClientResults([]);
     setNewLevel("professional");
-    setNewBranchId(adminBranchId || (branches[0]?.id ?? ""));
+    setNewBranchId(adminBranchId || (branches[0]?.id ?? "none"));
     setNewProfDialog(true);
   };
 
@@ -254,6 +254,7 @@ export default function AdminProfessionals() {
     if (selectedClients.length === 0) return;
     setCreatingProf(true);
 
+    const branchIdToSave = newBranchId === "none" || newBranchId === "" ? null : newBranchId;
     const errors: string[] = [];
 
     for (const client of selectedClients) {
@@ -270,14 +271,14 @@ export default function AdminProfessionals() {
         // UPDATE existing admin role
         ({ error } = await (supabase as any)
           .from("user_roles")
-          .update({ admin_level: newLevel, branch_id: newBranchId || null })
+          .update({ admin_level: newLevel, branch_id: branchIdToSave })
           .eq("user_id", client.user_id)
           .eq("role", "admin"));
       } else {
         // INSERT new admin role row (user keeps their client row too)
         ({ error } = await (supabase as any)
           .from("user_roles")
-          .insert({ user_id: client.user_id, role: "admin", admin_level: newLevel, branch_id: newBranchId || null }));
+          .insert({ user_id: client.user_id, role: "admin", admin_level: newLevel, branch_id: branchIdToSave }));
       }
 
       if (error) errors.push(`${client.full_name}: ${error.message}`);
@@ -381,7 +382,7 @@ export default function AdminProfessionals() {
     setEditName(prof.full_name);
     setEditBio(prof.bio || "");
     setEditLevel((prof.admin_level as NonNullable<AdminLevel>) || "professional");
-    setEditBranchId(prof.branch_id || "");
+    setEditBranchId(prof.branch_id ?? "none");
     setEditDialog(true);
   };
 
@@ -389,9 +390,15 @@ export default function AdminProfessionals() {
     if (!editProf) return;
     setEditSaving(true);
 
+    const branchIdToSave = editBranchId === "none" || editBranchId === "" ? null : editBranchId;
+
     const [{ error: profileError }, { error: roleError }] = await Promise.all([
       supabase.from("profiles").update({ full_name: editName, bio: editBio }).eq("user_id", editProf.user_id),
-      (supabase as any).from("user_roles").update({ admin_level: editLevel, branch_id: editBranchId || null }).eq("user_id", editProf.user_id).eq("role", "admin"),
+      (supabase as any)
+        .from("user_roles")
+        .update({ admin_level: editLevel, branch_id: branchIdToSave })
+        .eq("user_id", editProf.user_id)
+        .eq("role", "admin"),
     ]);
 
     if (profileError || roleError) {
@@ -539,6 +546,7 @@ export default function AdminProfessionals() {
                 <Select value={newBranchId} onValueChange={setNewBranchId}>
                   <SelectTrigger><SelectValue placeholder="Selecione" /></SelectTrigger>
                   <SelectContent>
+                    <SelectItem value="none">Sem filial</SelectItem>
                     {branches.map((b) => <SelectItem key={b.id} value={b.id}>{b.name}</SelectItem>)}
                   </SelectContent>
                 </Select>
@@ -690,6 +698,7 @@ export default function AdminProfessionals() {
                 <Select value={editBranchId} onValueChange={setEditBranchId}>
                   <SelectTrigger><SelectValue placeholder="Selecione" /></SelectTrigger>
                   <SelectContent>
+                    <SelectItem value="none">Sem filial</SelectItem>
                     {branches.map((b) => <SelectItem key={b.id} value={b.id}>{b.name}</SelectItem>)}
                   </SelectContent>
                 </Select>
