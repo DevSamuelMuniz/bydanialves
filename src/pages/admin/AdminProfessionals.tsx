@@ -11,7 +11,9 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { useToast } from "@/hooks/use-toast";
 import { Switch } from "@/components/ui/switch";
-import { Users, Building2, CalendarDays, Clock, Pencil, Trash2 } from "lucide-react";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Users, Building2, CalendarDays, Clock, Pencil, Trash2, Plus, Search, UserPlus } from "lucide-react";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
 import { ADMIN_LEVEL_LABELS, ADMIN_LEVEL_COLORS } from "@/hooks/use-admin-permissions";
 import type { AdminLevel } from "@/contexts/AuthContext";
@@ -31,6 +33,11 @@ const HOURS = Array.from({ length: 10 }, (_, i) => {
   return `${String(h).padStart(2, "0")}:00`;
 });
 
+const LEVEL_OPTIONS: { value: NonNullable<AdminLevel>; label: string }[] = [
+  { value: "attendant",    label: "Atendente" },
+  { value: "professional", label: "Profissional" },
+];
+
 interface Branch { id: string; name: string; }
 interface ProfessionalProfile {
   user_id: string;
@@ -49,13 +56,16 @@ interface Schedule {
   end_time: string;
   active: boolean;
 }
-
-// State for the weekly schedule dialog — one row per day
+interface ClientUser {
+  user_id: string;
+  full_name: string;
+  phone: string | null;
+}
 interface DayRow {
   enabled: boolean;
   start_time: string;
   end_time: string;
-  existing_id?: string; // if already saved in DB
+  existing_id?: string;
 }
 
 const defaultDayRow = (): DayRow => ({ enabled: false, start_time: "08:00", end_time: "17:00" });
@@ -77,11 +87,24 @@ export default function AdminProfessionals() {
   const { toast } = useToast();
 
   const [professionals, setProfessionals] = useState<ProfessionalProfile[]>([]);
+  const [branches, setBranches] = useState<Branch[]>([]);
   const [loading, setLoading] = useState(true);
+
+  // Week schedule dialog
   const [selectedProf, setSelectedProf] = useState<ProfessionalProfile | null>(null);
   const [weekDialog, setWeekDialog] = useState(false);
   const [weekState, setWeekState] = useState<Record<number, DayRow>>({});
   const [saving, setSaving] = useState(false);
+
+  // New professional dialog
+  const [newProfDialog, setNewProfDialog] = useState(false);
+  const [clientSearch, setClientSearch] = useState("");
+  const [clientResults, setClientResults] = useState<ClientUser[]>([]);
+  const [searchingClients, setSearchingClients] = useState(false);
+  const [selectedClient, setSelectedClient] = useState<ClientUser | null>(null);
+  const [newLevel, setNewLevel] = useState<NonNullable<AdminLevel>>("professional");
+  const [newBranchId, setNewBranchId] = useState<string>("");
+  const [creatingProf, setCreatingProf] = useState(false);
 
   const canManage = perms.canManageBranches;
 
@@ -97,13 +120,19 @@ export default function AdminProfessionals() {
     if (adminBranchId) rolesQuery = rolesQuery.eq("branch_id", adminBranchId);
 
     const { data: roles } = await rolesQuery;
+
+    const [{ data: branchData }] = await Promise.all([
+      supabase.from("branches" as any).select("id, name").eq("active", true),
+    ]);
+
+    setBranches((branchData as unknown as Branch[]) || []);
+
     if (!roles || roles.length === 0) { setProfessionals([]); setLoading(false); return; }
 
     const userIds = roles.map((r: any) => r.user_id);
 
-    const [{ data: profiles }, { data: branchData }, { data: schedulesData }] = await Promise.all([
+    const [{ data: profiles }, { data: schedulesData }] = await Promise.all([
       supabase.from("profiles").select("user_id, full_name, avatar_url, bio").in("user_id", userIds),
-      supabase.from("branches" as any).select("id, name").eq("active", true),
       (supabase as any).from("professional_schedules").select("*").in("professional_id", userIds),
     ]);
 
@@ -137,6 +166,58 @@ export default function AdminProfessionals() {
 
   useEffect(() => { fetchAll(); }, []);
 
+  // ── Busca clientes para promover ──
+  const searchClients = async (q: string) => {
+    if (q.trim().length < 2) { setClientResults([]); return; }
+    setSearchingClients(true);
+    const { data } = await supabase
+      .from("profiles")
+      .select("user_id, full_name, phone")
+      .ilike("full_name", `%${q}%`)
+      .limit(8);
+    setClientResults((data as unknown as ClientUser[]) || []);
+    setSearchingClients(false);
+  };
+
+  useEffect(() => {
+    const t = setTimeout(() => searchClients(clientSearch), 300);
+    return () => clearTimeout(t);
+  }, [clientSearch]);
+
+  const openNewProfDialog = () => {
+    setSelectedClient(null);
+    setClientSearch("");
+    setClientResults([]);
+    setNewLevel("professional");
+    setNewBranchId(adminBranchId || (branches[0]?.id ?? ""));
+    setNewProfDialog(true);
+  };
+
+  const createProfessional = async () => {
+    if (!selectedClient) return;
+    setCreatingProf(true);
+
+    // 1. Upsert user_role para admin + level
+    const { error: roleError } = await (supabase as any)
+      .from("user_roles")
+      .upsert(
+        { user_id: selectedClient.user_id, role: "admin", admin_level: newLevel, branch_id: newBranchId || null },
+        { onConflict: "user_id" }
+      );
+
+    if (roleError) {
+      toast({ title: "Erro ao criar profissional", description: roleError.message, variant: "destructive" });
+      setCreatingProf(false);
+      return;
+    }
+
+    toast({ title: `${selectedClient.full_name} adicionado como ${LEVEL_OPTIONS.find(l => l.value === newLevel)?.label}!` });
+    setNewProfDialog(false);
+    fetchAll();
+    setCreatingProf(false);
+  };
+
+  // ── Escala semanal ──
   const openWeekDialog = (prof: ProfessionalProfile) => {
     setSelectedProf(prof);
     setWeekState(buildWeekState(prof.schedules));
@@ -150,7 +231,6 @@ export default function AdminProfessionals() {
     }));
   };
 
-  // Apply same time to all enabled days
   const applyToAll = (start: string, end: string) => {
     setWeekState((prev) => {
       const next = { ...prev };
@@ -166,13 +246,10 @@ export default function AdminProfessionals() {
   const saveWeek = async () => {
     if (!selectedProf) return;
     setSaving(true);
-
     const ops: Promise<any>[] = [];
-
     DAYS.forEach((d) => {
       const row = weekState[d.value];
       if (!row) return;
-
       if (row.enabled) {
         const payload = {
           professional_id: selectedProf.user_id,
@@ -188,14 +265,11 @@ export default function AdminProfessionals() {
           ops.push((supabase as any).from("professional_schedules").insert(payload));
         }
       } else if (row.existing_id) {
-        // Day was disabled or unchecked — delete existing record
         ops.push((supabase as any).from("professional_schedules").delete().eq("id", row.existing_id));
       }
     });
-
     const results = await Promise.all(ops);
     const errors = results.filter((r) => r.error).map((r) => r.error.message);
-
     if (errors.length) {
       toast({ title: "Erro ao salvar escala", description: errors[0], variant: "destructive" });
     } else {
@@ -218,11 +292,20 @@ export default function AdminProfessionals() {
 
   return (
     <div className="space-y-6">
-      <div>
-        <h1 className="font-serif text-2xl">Profissionais</h1>
-        <p className="text-sm text-muted-foreground mt-0.5">
-          Gerencie a equipe e monte as escalas de trabalho semanais
-        </p>
+      {/* Header */}
+      <div className="flex items-start justify-between gap-4">
+        <div>
+          <h1 className="font-serif text-2xl">Profissionais</h1>
+          <p className="text-sm text-muted-foreground mt-0.5">
+            Gerencie a equipe e monte as escalas de trabalho semanais
+          </p>
+        </div>
+        {canManage && (
+          <Button onClick={openNewProfDialog} className="gap-2 shrink-0">
+            <UserPlus className="h-4 w-4" />
+            Novo Profissional
+          </Button>
+        )}
       </div>
 
       {loading ? (
@@ -231,10 +314,15 @@ export default function AdminProfessionals() {
         </div>
       ) : professionals.length === 0 ? (
         <Card className="border-dashed">
-          <CardContent className="py-16 text-center text-muted-foreground space-y-2">
+          <CardContent className="py-16 text-center text-muted-foreground space-y-3">
             <Users className="h-10 w-10 mx-auto opacity-30" />
             <p className="font-medium">Nenhum profissional cadastrado</p>
-            <p className="text-sm">Acesse <strong>Usuários</strong> para promover um usuário a Profissional ou Atendente.</p>
+            {canManage && (
+              <Button variant="outline" onClick={openNewProfDialog} className="gap-2">
+                <UserPlus className="h-4 w-4" />
+                Adicionar Profissional
+              </Button>
+            )}
           </CardContent>
         </Card>
       ) : (
@@ -251,7 +339,100 @@ export default function AdminProfessionals() {
         </div>
       )}
 
-      {/* ── Dialog Escala Semanal ── */}
+      {/* ── Dialog: Novo Profissional ── */}
+      <Dialog open={newProfDialog} onOpenChange={setNewProfDialog}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle className="font-serif text-lg">Novo Profissional</DialogTitle>
+            <p className="text-sm text-muted-foreground">Busque um cliente cadastrado para promovê-lo à equipe</p>
+          </DialogHeader>
+
+          <div className="space-y-4 py-1">
+            {/* Search */}
+            <div className="space-y-1.5">
+              <Label>Buscar por nome</Label>
+              <div className="relative">
+                <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
+                <Input
+                  placeholder="Digite o nome..."
+                  className="pl-8"
+                  value={clientSearch}
+                  onChange={(e) => { setClientSearch(e.target.value); setSelectedClient(null); }}
+                />
+              </div>
+            </div>
+
+            {/* Results */}
+            {clientSearch.length >= 2 && (
+              <div className="border border-border rounded-lg overflow-hidden max-h-44 overflow-y-auto">
+                {searchingClients ? (
+                  <div className="p-3 text-xs text-muted-foreground text-center">Buscando…</div>
+                ) : clientResults.length === 0 ? (
+                  <div className="p-3 text-xs text-muted-foreground text-center">Nenhum resultado</div>
+                ) : (
+                  clientResults.map((c) => (
+                    <button
+                      key={c.user_id}
+                      onClick={() => { setSelectedClient(c); setClientSearch(c.full_name); setClientResults([]); }}
+                      className={`w-full text-left px-3 py-2.5 text-sm flex items-center gap-2 hover:bg-muted/60 transition-colors border-b border-border/50 last:border-0
+                        ${selectedClient?.user_id === c.user_id ? "bg-primary/10" : ""}`}
+                    >
+                      <div className="h-7 w-7 rounded-full bg-primary/10 flex items-center justify-center text-primary font-bold text-xs shrink-0">
+                        {c.full_name.charAt(0).toUpperCase()}
+                      </div>
+                      <div>
+                        <p className="font-medium leading-tight">{c.full_name}</p>
+                        {c.phone && <p className="text-xs text-muted-foreground">{c.phone}</p>}
+                      </div>
+                    </button>
+                  ))
+                )}
+              </div>
+            )}
+
+            {/* Selected confirmation */}
+            {selectedClient && (
+              <div className="flex items-center gap-2 px-3 py-2 rounded-lg bg-primary/8 border border-primary/20 text-sm">
+                <div className="h-6 w-6 rounded-full bg-primary/20 flex items-center justify-center text-primary font-bold text-xs shrink-0">
+                  {selectedClient.full_name.charAt(0).toUpperCase()}
+                </div>
+                <span className="font-medium text-foreground">{selectedClient.full_name}</span>
+              </div>
+            )}
+
+            {/* Level + Branch */}
+            <div className="grid grid-cols-2 gap-3">
+              <div className="space-y-1.5">
+                <Label>Nível</Label>
+                <Select value={newLevel} onValueChange={(v) => setNewLevel(v as NonNullable<AdminLevel>)}>
+                  <SelectTrigger><SelectValue /></SelectTrigger>
+                  <SelectContent>
+                    {LEVEL_OPTIONS.map((l) => <SelectItem key={l.value} value={l.value}>{l.label}</SelectItem>)}
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="space-y-1.5">
+                <Label>Filial</Label>
+                <Select value={newBranchId} onValueChange={setNewBranchId}>
+                  <SelectTrigger><SelectValue placeholder="Selecione" /></SelectTrigger>
+                  <SelectContent>
+                    {branches.map((b) => <SelectItem key={b.id} value={b.id}>{b.name}</SelectItem>)}
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
+          </div>
+
+          <DialogFooter>
+            <Button variant="ghost" onClick={() => setNewProfDialog(false)}>Cancelar</Button>
+            <Button onClick={createProfessional} disabled={!selectedClient || creatingProf}>
+              {creatingProf ? "Salvando…" : "Adicionar à equipe"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* ── Dialog: Escala Semanal ── */}
       <Dialog open={weekDialog} onOpenChange={setWeekDialog}>
         <DialogContent className="max-w-lg">
           <DialogHeader>
@@ -263,12 +444,12 @@ export default function AdminProfessionals() {
 
           <div className="py-1 space-y-1">
             {/* Header row */}
-            <div className="grid grid-cols-[1.5rem_1fr_auto_auto_auto] gap-2 items-center px-1 pb-1 border-b border-border">
+            <div className="grid grid-cols-[1.5rem_1fr_auto_auto_auto] gap-4 items-center px-1 pb-1 border-b border-border">
               <div />
               <span className="text-xs font-medium text-muted-foreground">Dia</span>
               <span className="text-xs font-medium text-muted-foreground w-20 text-center">Início</span>
               <span className="text-xs font-medium text-muted-foreground w-20 text-center">Término</span>
-              <span className="text-xs font-medium text-muted-foreground w-6" />
+              <span className="w-6" />
             </div>
 
             {DAYS.map((d) => {
@@ -279,54 +460,41 @@ export default function AdminProfessionals() {
                   className={`grid grid-cols-[1.5rem_1fr_auto_auto_auto] gap-4 items-center rounded-lg px-1 py-1.5 transition-colors
                     ${row.enabled ? "bg-primary/5" : "opacity-50"}`}
                 >
-                  {/* Toggle */}
                   <Switch
                     checked={row.enabled}
                     onCheckedChange={(v) => setDayField(d.value, "enabled", v)}
                     className="scale-75 origin-left"
                   />
-
-                  {/* Day label */}
                   <span className={`text-sm font-medium pl-2 ${row.enabled ? "text-foreground" : "text-muted-foreground"}`}>
                     {d.label}
                   </span>
-
-                  {/* Start */}
                   <Select
                     value={row.start_time}
                     onValueChange={(v) => setDayField(d.value, "start_time", v)}
                     disabled={!row.enabled}
                   >
-                    <SelectTrigger className="w-20 h-7 text-xs">
-                      <SelectValue />
-                    </SelectTrigger>
+                    <SelectTrigger className="w-20 h-7 text-xs"><SelectValue /></SelectTrigger>
                     <SelectContent>
                       {HOURS.map((h) => <SelectItem key={h} value={h}>{h}</SelectItem>)}
                     </SelectContent>
                   </Select>
-
-                  {/* End */}
                   <Select
                     value={row.end_time}
                     onValueChange={(v) => setDayField(d.value, "end_time", v)}
                     disabled={!row.enabled}
                   >
-                    <SelectTrigger className="w-20 h-7 text-xs">
-                      <SelectValue />
-                    </SelectTrigger>
+                    <SelectTrigger className="w-20 h-7 text-xs"><SelectValue /></SelectTrigger>
                     <SelectContent>
                       {HOURS.map((h) => <SelectItem key={h} value={h}>{h}</SelectItem>)}
                     </SelectContent>
                   </Select>
-
-                  {/* Copy indicator */}
                   <div className="w-6" />
                 </div>
               );
             })}
           </div>
 
-          {/* Quick presets */}
+          {/* Atalhos */}
           <div className="flex flex-wrap gap-1.5 pt-1 border-t border-border">
             <span className="text-xs text-muted-foreground self-center mr-1">Atalhos:</span>
             <Button size="sm" variant="outline" className="h-6 text-xs px-2"
@@ -390,7 +558,6 @@ function ProfessionalCard({ prof, canManage, onEditWeek, onDeleteAll }: ProfCard
 
   return (
     <Card className="overflow-hidden border-border flex flex-col">
-      {/* Header */}
       <div className="p-4 pb-3 flex items-start gap-3">
         <div className="h-10 w-10 rounded-full bg-primary/10 flex items-center justify-center text-primary font-bold text-sm shrink-0 overflow-hidden">
           {prof.avatar_url
@@ -415,7 +582,6 @@ function ProfessionalCard({ prof, canManage, onEditWeek, onDeleteAll }: ProfCard
         </div>
       </div>
 
-      {/* Escala header */}
       <div className="px-4 pb-2 flex items-center justify-between border-t border-border pt-3">
         <div className="flex items-center gap-1.5 text-xs font-medium text-muted-foreground">
           <CalendarDays className="h-3.5 w-3.5" />
@@ -462,7 +628,6 @@ function ProfessionalCard({ prof, canManage, onEditWeek, onDeleteAll }: ProfCard
         )}
       </div>
 
-      {/* Schedules chips */}
       <CardContent className="px-4 pb-4 flex-1">
         {sortedSchedules.length === 0 ? (
           <div className="py-5 text-center text-xs text-muted-foreground border border-dashed rounded-lg">
