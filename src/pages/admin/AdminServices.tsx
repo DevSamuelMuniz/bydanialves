@@ -66,6 +66,7 @@ export default function AdminServices() {
   const openEdit = (s: any) => {
     setEditing(s);
     setPreviewImage(s.image_url || null);
+    setPendingImageFile(null);
     setForm({ name: s.name, description: s.description || "", price: String(s.price), duration_minutes: String(s.duration_minutes) });
     setDialogOpen(true);
   };
@@ -82,12 +83,38 @@ export default function AdminServices() {
       const { error } = await supabase.from("services").update(payload).eq("id", editing.id);
       if (error) { toast({ title: "Erro", description: error.message, variant: "destructive" }); return; }
     } else {
-      const { error } = await supabase.from("services").insert(payload);
+      const { data: created, error } = await supabase.from("services").insert(payload).select("id").single();
       if (error) { toast({ title: "Erro", description: error.message, variant: "destructive" }); return; }
+
+      // Upload pending image for new service
+      if (pendingImageFile && created?.id) {
+        setUploadingImage(true);
+        try {
+          const ext = pendingImageFile.name.split(".").pop();
+          const filePath = `services/${created.id}.${ext}`;
+          const { error: upErr } = await supabase.storage.from("service-images").upload(filePath, pendingImageFile, { upsert: true });
+          if (!upErr) {
+            const { data: pub } = supabase.storage.from("service-images").getPublicUrl(filePath);
+            await supabase.from("services").update({ image_url: pub.publicUrl }).eq("id", created.id);
+          }
+        } catch (_) {}
+        setUploadingImage(false);
+        setPendingImageFile(null);
+      }
     }
     toast({ title: editing ? "Serviço atualizado!" : "Serviço criado!" });
     setDialogOpen(false);
     fetchServices();
+  };
+
+  // Handle image pick for new services (local preview, actual upload happens on save)
+  const handleNewServiceImage = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    setPendingImageFile(file);
+    const reader = new FileReader();
+    reader.onload = (ev) => setPreviewImage(ev.target?.result as string);
+    reader.readAsDataURL(file);
   };
 
   const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
