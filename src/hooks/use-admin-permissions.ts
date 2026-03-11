@@ -69,6 +69,10 @@ export function useAdminPermissions() {
 
     // ── TV de Fila ─────────────────────────────────────
     canViewQueueTV: adminLevel === "attendant" || adminLevel === "manager" || adminLevel === "ceo",
+
+    // ── Profissionais ──────────────────────────────────
+    canViewProfessionals: r >= 3,
+    canManageProfessionals: r >= 3,
   };
 }
 
