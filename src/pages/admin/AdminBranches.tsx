@@ -10,7 +10,7 @@ import { Switch } from "@/components/ui/switch";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { useToast } from "@/hooks/use-toast";
-import { Plus, MapPin, Building2, Pencil, Upload, X, ImageIcon } from "lucide-react";
+import { Plus, MapPin, Building2, Pencil, Upload, X, ImageIcon, Users } from "lucide-react";
 import { AccessDenied } from "@/components/admin/AccessDenied";
 
 interface Branch {
@@ -21,6 +21,7 @@ interface Branch {
   created_at: string;
   image_url: string | null;
   staffCount?: number;
+  clientCount?: number;
 }
 
 export default function AdminBranches() {
@@ -39,17 +40,27 @@ export default function AdminBranches() {
   const [saving, setSaving] = useState(false);
 
   const fetchBranches = async () => {
-    const [branchesRes, rolesRes] = await Promise.all([
+    const [branchesRes, rolesRes, clientsRes] = await Promise.all([
       (supabase.from("branches" as any) as any).select("*").order("created_at"),
       (supabase.from("user_roles") as any).select("branch_id").eq("role", "admin").not("branch_id", "is", null),
+      supabase.from("profiles").select("branch_id").not("branch_id", "is", null),
     ]);
     const rawBranches = (branchesRes.data as unknown as Branch[]) || [];
     const roles = (rolesRes.data || []) as { branch_id: string }[];
-    const countMap: Record<string, number> = {};
+    const clients = (clientsRes.data || []) as { branch_id: string }[];
+    const staffMap: Record<string, number> = {};
     for (const r of roles) {
-      if (r.branch_id) countMap[r.branch_id] = (countMap[r.branch_id] || 0) + 1;
+      if (r.branch_id) staffMap[r.branch_id] = (staffMap[r.branch_id] || 0) + 1;
     }
-    setBranches(rawBranches.map((b) => ({ ...b, staffCount: countMap[b.id] || 0 })));
+    const clientMap: Record<string, number> = {};
+    for (const c of clients) {
+      if (c.branch_id) clientMap[c.branch_id] = (clientMap[c.branch_id] || 0) + 1;
+    }
+    setBranches(rawBranches.map((b) => ({
+      ...b,
+      staffCount: staffMap[b.id] || 0,
+      clientCount: clientMap[b.id] || 0,
+    })));
     setLoading(false);
   };
 
@@ -182,9 +193,16 @@ export default function AdminBranches() {
                           {b.address}
                         </p>
                       )}
-                      <p className="text-xs text-muted-foreground mt-0.5">
-                        👤 {b.staffCount ?? 0} funcionário{(b.staffCount ?? 0) !== 1 ? "s" : ""}
-                      </p>
+                      <div className="flex items-center gap-3 mt-1">
+                        <p className="text-xs text-muted-foreground flex items-center gap-1">
+                          <span>👤</span>
+                          {b.staffCount ?? 0} funcionário{(b.staffCount ?? 0) !== 1 ? "s" : ""}
+                        </p>
+                        <p className="text-xs text-muted-foreground flex items-center gap-1">
+                          <Users className="h-3 w-3 shrink-0" />
+                          {b.clientCount ?? 0} cliente{(b.clientCount ?? 0) !== 1 ? "s" : ""}
+                        </p>
+                      </div>
                     </div>
                   </div>
                   <Badge variant="outline" className={b.active
