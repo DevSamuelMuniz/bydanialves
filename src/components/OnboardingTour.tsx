@@ -8,6 +8,9 @@ interface OnboardingTourProps {
   adminLevel?: string | null;
 }
 
+// Global singleton to prevent multiple driver instances
+let activeDriverInstance: ReturnType<typeof driver> | null = null;
+
 const CLIENT_STEPS = [
   {
     element: "#sidebar-dashboard",
@@ -164,49 +167,70 @@ const ADMIN_STEPS_BASE = [
 export function OnboardingTour({ role, adminLevel }: OnboardingTourProps) {
   const { user } = useAuth();
   const driverRef = useRef<ReturnType<typeof driver> | null>(null);
+  const startedRef = useRef(false);
 
   useEffect(() => {
-    if (!user) return;
+    if (!user || startedRef.current) return;
 
     const storageKey = `onboarding_done_${user.id}_${role}`;
     const alreadyDone = localStorage.getItem(storageKey);
     if (alreadyDone) return;
 
-    // Small delay to ensure DOM is ready
+    // Destroy any existing global instance before creating a new one
+    if (activeDriverInstance) {
+      try { activeDriverInstance.destroy(); } catch {}
+      activeDriverInstance = null;
+    }
+
+    startedRef.current = true;
+
     const timer = setTimeout(() => {
       const steps = role === "client" ? CLIENT_STEPS : ADMIN_STEPS_BASE;
 
-      // Filter out steps whose element doesn't exist in DOM
       const validSteps = steps.filter((step) => {
         if (!("element" in step) || !step.element) return true;
         return !!document.querySelector(step.element as string);
       });
 
-      driverRef.current = driver({
+      if (validSteps.length === 0) return;
+
+      const instance = driver({
         showProgress: true,
         progressText: "{{current}} de {{total}}",
         nextBtnText: "Próximo →",
         prevBtnText: "← Anterior",
         doneBtnText: "Concluir ✓",
-        overlayColor: "rgba(0,0,0,0.65)",
+        overlayOpacity: 0.35,
         smoothScroll: true,
         allowClose: true,
         popoverClass: "onboarding-popover",
         onDestroyStarted: () => {
           localStorage.setItem(storageKey, "true");
-          driverRef.current?.destroy();
+          instance.destroy();
+          activeDriverInstance = null;
         },
         steps: validSteps,
       });
 
-      driverRef.current.drive();
-    }, 800);
+      driverRef.current = instance;
+      activeDriverInstance = instance;
+      instance.drive();
+    }, 1000);
 
     return () => {
       clearTimeout(timer);
-      driverRef.current?.destroy();
     };
   }, [user, role]);
+
+  // Cleanup on unmount
+  useEffect(() => {
+    return () => {
+      if (driverRef.current) {
+        try { driverRef.current.destroy(); } catch {}
+        activeDriverInstance = null;
+      }
+    };
+  }, []);
 
   return null;
 }
