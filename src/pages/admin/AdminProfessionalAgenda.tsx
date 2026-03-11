@@ -27,13 +27,28 @@ export default function AdminProfessionalAgenda() {
 
   const isManager = adminLevel === "manager" || adminLevel === "ceo";
   const isProfessional = adminLevel === "professional";
-  const isAttendant = adminLevel === "attendant";
-...
+
+  const [appointments, setAppointments] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [takingId, setTakingId] = useState<string | null>(null);
+  const [professionals, setProfessionals] = useState<{ user_id: string; full_name: string }[]>([]);
+  const [profFilter, setProfFilter] = useState<string>("self");
+  const [branches, setBranches] = useState<any[]>([]);
+  const [branchFilter, setBranchFilter] = useState<string>("all");
+  const [dateFrom, setDateFrom] = useState<Date | undefined>();
+  const [dateTo, setDateTo] = useState<Date | undefined>();
+  const [editingNotes, setEditingNotes] = useState<string | null>(null);
+  const [notesValue, setNotesValue] = useState("");
+
+  // Fetch professionals list for manager/ceo filter (professional level only, no attendants)
+  useEffect(() => {
+    if (!isManager) return;
+    const load = async () => {
       const { data: roles } = await supabase
         .from("user_roles")
         .select("user_id, admin_level")
         .eq("role", "admin")
-        .in("admin_level", ["professional"]);
+        .eq("admin_level", "professional");
       if (!roles?.length) return;
       const ids = roles.map((r) => r.user_id);
       const { data: profs } = await supabase
