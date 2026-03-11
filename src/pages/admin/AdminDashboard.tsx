@@ -59,6 +59,7 @@ export default function AdminDashboard() {
   const [branchFilter, setBranchFilter] = useState<string>("all");
   const [avgRating, setAvgRating] = useState<number | null>(null);
   const [reviewCount, setReviewCount] = useState(0);
+  const [allReviews, setAllReviews] = useState<{ rating: number; comment: string | null; created_at: string; service_name: string }[]>([]);
 
   const [loading, setLoading] = useState(true);
 
