@@ -8,12 +8,12 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { useToast } from "@/hooks/use-toast";
 import { Switch } from "@/components/ui/switch";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Users, Building2, CalendarDays, Clock, Pencil, Trash2, Plus, Search, UserPlus } from "lucide-react";
+import { Users, Building2, CalendarDays, Clock, Pencil, Trash2, Search, UserPlus } from "lucide-react";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
 import { ADMIN_LEVEL_LABELS, ADMIN_LEVEL_COLORS } from "@/hooks/use-admin-permissions";
 import type { AdminLevel } from "@/contexts/AuthContext";
@@ -546,12 +546,12 @@ export default function AdminProfessionals() {
             </div>
           </div>
 
-          <DialogFooter className="gap-2">
+          <div className="flex justify-end gap-2 pt-2">
             <Button variant="ghost" onClick={() => setNewProfDialog(false)}>Cancelar</Button>
             <Button onClick={createProfessionals} disabled={selectedClients.length === 0 || creatingProf}>
               {creatingProf ? "Adicionando…" : `Adicionar${selectedClients.length > 1 ? ` (${selectedClients.length})` : ""} à equipe`}
             </Button>
-          </DialogFooter>
+          </div>
         </DialogContent>
       </Dialog>
 
@@ -652,12 +652,12 @@ export default function AdminProfessionals() {
             </Button>
           </div>
 
-          <DialogFooter>
+          <div className="flex justify-end gap-2 pt-1 border-t border-border">
             <Button variant="ghost" onClick={() => setWeekDialog(false)}>Cancelar</Button>
             <Button onClick={saveWeek} disabled={saving}>
               {saving ? "Salvando…" : "Salvar Escala"}
             </Button>
-          </DialogFooter>
+          </div>
         </DialogContent>
       </Dialog>
 
@@ -700,12 +700,12 @@ export default function AdminProfessionals() {
             </div>
           </div>
 
-          <DialogFooter className="gap-2">
+          <div className="flex justify-end gap-2 pt-2">
             <Button variant="ghost" onClick={() => setEditDialog(false)}>Cancelar</Button>
             <Button onClick={saveEdit} disabled={editSaving || !editName.trim()}>
               {editSaving ? "Salvando…" : "Salvar alterações"}
             </Button>
-          </DialogFooter>
+          </div>
         </DialogContent>
       </Dialog>
     </div>
