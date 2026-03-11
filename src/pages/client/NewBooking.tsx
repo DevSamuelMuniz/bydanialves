@@ -261,15 +261,18 @@ export default function NewBooking() {
       ]);
 
       const scheduleMap: Record<string, ProfSchedule[]> = {};
-      ((schedules as any[]) || []).forEach((s: any) => {
-        if (!scheduleMap[s.professional_id]) scheduleMap[s.professional_id] = [];
-        scheduleMap[s.professional_id].push({
-          day_of_week: s.day_of_week,
-          start_time: s.start_time.slice(0, 5),
-          end_time: s.end_time.slice(0, 5),
-          active: s.active,
+      ((schedules as any[]) || [])
+        // Only include schedules matching this branch OR with null branch_id (works everywhere)
+        .filter((s: any) => !s.branch_id || s.branch_id === selectedBranch.id)
+        .forEach((s: any) => {
+          if (!scheduleMap[s.professional_id]) scheduleMap[s.professional_id] = [];
+          scheduleMap[s.professional_id].push({
+            day_of_week: s.day_of_week,
+            start_time: s.start_time.slice(0, 5),
+            end_time: s.end_time.slice(0, 5),
+            active: s.active,
+          });
         });
-      });
 
       const allProfs = ((profiles as any[]) || []).map((p) => {
         let avatarUrl = p.avatar_url;
