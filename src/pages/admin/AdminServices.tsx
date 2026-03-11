@@ -14,7 +14,7 @@ import { Textarea } from "@/components/ui/textarea";
 
 export default function AdminServices() {
   const { toast } = useToast();
-  const { canManageServices } = useAdminPermissions();
+  const { canManageServices, canManageSystemServices } = useAdminPermissions();
   const [services, setServices] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [dialogOpen, setDialogOpen] = useState(false);
