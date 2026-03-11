@@ -29,12 +29,19 @@ interface ServiceItem {
   is_system: boolean;
 }
 
+interface ProfSchedule {
+  day_of_week: number;
+  start_time: string; // "HH:MM"
+  end_time: string;   // "HH:MM"
+  active: boolean;
+}
+
 interface Professional {
   user_id: string;
   full_name: string;
   avatar_url: string | null;
   bio: string | null;
-  schedules?: { day_of_week: number; start_time: string; end_time: string; active: boolean }[];
+  schedules: ProfSchedule[];
 }
 
 function parseEscovasFromIncludes(includes: string): number {
@@ -49,14 +56,25 @@ function getBranchImage(branch: Branch) {
   return branch.image_url || DEFAULT_BRANCH_IMAGE;
 }
 
-function generateTimeSlots(totalMinutes: number): string[] {
+/** Parse "HH:MM:SS" or "HH:MM" → minutes since midnight */
+function toMin(t: string): number {
+  const parts = t.split(":").map(Number);
+  return parts[0] * 60 + (parts[1] ?? 0);
+}
+
+/**
+ * Generate time slots (full hours only) between start and end,
+ * ensuring the service fits before end.
+ */
+function generateTimeSlots(
+  totalMinutes: number,
+  workStart = 8 * 60,
+  workEnd = 17 * 60
+): string[] {
   const slots: string[] = [];
-  const start = 8 * 60;
-  const end = 17 * 60;
-  let t = start;
-  while (t + totalMinutes <= end) {
-    const m = t % 60;
-    if (m === 0) {
+  let t = workStart;
+  while (t + totalMinutes <= workEnd) {
+    if (t % 60 === 0) {
       slots.push(`${String(Math.floor(t / 60)).padStart(2, "0")}:00`);
     }
     t += 60;
@@ -68,7 +86,7 @@ function isSlotAvailable(
   slot: string,
   totalMinutes: number,
   bookedRanges: { start: number; end: number }[],
-  professionals: number
+  capacity: number
 ): boolean {
   const [h, m] = slot.split(":").map(Number);
   const slotStart = h * 60 + m;
@@ -76,7 +94,7 @@ function isSlotAvailable(
   const conflicts = bookedRanges.filter(
     (r) => slotStart < r.end && slotEnd > r.start
   ).length;
-  return conflicts < professionals;
+  return conflicts < capacity;
 }
 
 export default function NewBooking() {
@@ -85,6 +103,7 @@ export default function NewBooking() {
   const [searchParams] = useSearchParams();
   const preselectedServiceId = searchParams.get("serviceId");
 
+  // Steps: 1=Filial 2=Serviços 3=Data 4=Profissional 5=Horário 6=Confirmação
   const [step, setStep] = useState(1);
   const [branches, setBranches] = useState<Branch[]>([]);
   const [selectedBranch, setSelectedBranch] = useState<Branch | null>(null);
@@ -94,7 +113,7 @@ export default function NewBooking() {
   const [selectedTime, setSelectedTime] = useState<string | null>(null);
   const [bookedRanges, setBookedRanges] = useState<{ start: number; end: number }[]>([]);
   const [professionals, setProfessionals] = useState<Professional[]>([]);
-  const [selectedProfessional, setSelectedProfessional] = useState<Professional | null>(null);
+  const [selectedProfessional, setSelectedProfessional] = useState<Professional | "none" | null>(null);
   const [loadingProfessionals, setLoadingProfessionals] = useState(false);
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
@@ -109,11 +128,40 @@ export default function NewBooking() {
     return acc + (free ? 0 : Number(s.price));
   }, 0);
 
-  const availableSlots = selectedDate
-    ? generateTimeSlots(totalDuration).filter((slot) =>
-        isSlotAvailable(slot, totalDuration, bookedRanges, simultaneousProfessionals)
-      )
-    : [];
+  // Compute available slots based on selected professional's schedule
+  const availableSlots = (() => {
+    if (!selectedDate) return [];
+    const dayOfWeek = selectedDate.getDay();
+
+    // Determine work window for the selected professional
+    let workStart = 8 * 60;
+    let workEnd = 17 * 60;
+
+    if (selectedProfessional && selectedProfessional !== "none") {
+      const daySchedule = selectedProfessional.schedules.find(
+        (s) => s.day_of_week === dayOfWeek && s.active
+      );
+      if (daySchedule) {
+        workStart = toMin(daySchedule.start_time);
+        workEnd = toMin(daySchedule.end_time);
+      }
+    }
+
+    // If a specific professional is chosen, check only bookings for that professional
+    const relevantRanges =
+      selectedProfessional && selectedProfessional !== "none"
+        ? bookedRanges.filter((r) => r.professionalId === selectedProfessional.user_id)
+        : bookedRanges;
+
+    const capacity =
+      selectedProfessional && selectedProfessional !== "none"
+        ? 1
+        : simultaneousProfessionals;
+
+    return generateTimeSlots(totalDuration, workStart, workEnd).filter((slot) =>
+      isSlotAvailable(slot, totalDuration, relevantRanges, capacity)
+    );
+  })();
 
   useEffect(() => {
     supabase.from("branches" as any).select("id, name, address, image_url").eq("active", true).order("name")
@@ -180,12 +228,13 @@ export default function NewBooking() {
     }
   }, [preselectedServiceId, services]);
 
+  // Load booked ranges when date + branch changes (include professional_id for precise filtering)
   useEffect(() => {
     if (!selectedDate || !selectedBranch) return;
     const dateStr = selectedDate.toISOString().split("T")[0];
     supabase
       .from("appointments")
-      .select("appointment_time, services(duration_minutes)")
+      .select("appointment_time, professional_id, services(duration_minutes)")
       .eq("appointment_date", dateStr)
       .eq("branch_id", selectedBranch.id)
       .neq("status", "cancelled")
@@ -194,18 +243,18 @@ export default function NewBooking() {
           const [h, m] = (a.appointment_time || "00:00").slice(0, 5).split(":").map(Number);
           const start = h * 60 + m;
           const dur = a.services?.duration_minutes || 60;
-          return { start, end: start + dur };
+          return { start, end: start + dur, professionalId: a.professional_id };
         });
         setBookedRanges(ranges);
       });
   }, [selectedDate, selectedBranch]);
 
-  // Load professionals when reaching step 5 — filter by schedule on selected day
+  // Load professionals when reaching step 4
   useEffect(() => {
-    if (step !== 5 || !selectedBranch || !selectedDate) return;
+    if (step !== 4 || !selectedBranch || !selectedDate) return;
     setLoadingProfessionals(true);
 
-    const dayOfWeek = selectedDate.getDay(); // 0=Dom ... 6=Sáb
+    const dayOfWeek = selectedDate.getDay();
 
     supabase
       .from("user_roles" as any)
@@ -232,7 +281,6 @@ export default function NewBooking() {
 
         const userIds = filtered.map((r: any) => r.user_id);
 
-        // Fetch profiles and schedules in parallel
         const [{ data: profiles }, { data: schedules }] = await Promise.all([
           supabase.from("profiles").select("user_id, full_name, avatar_url, bio").in("user_id", userIds),
           (supabase as any)
@@ -242,25 +290,38 @@ export default function NewBooking() {
             .eq("active", true),
         ]);
 
-        // Only include professionals who have a schedule for the selected day_of_week
-        const scheduleMap: Record<string, { day_of_week: number; start_time: string; end_time: string; active: boolean }[]> = {};
+        const scheduleMap: Record<string, ProfSchedule[]> = {};
         ((schedules as any[]) || []).forEach((s: any) => {
           if (!scheduleMap[s.professional_id]) scheduleMap[s.professional_id] = [];
-          scheduleMap[s.professional_id].push(s);
+          scheduleMap[s.professional_id].push({
+            day_of_week: s.day_of_week,
+            start_time: s.start_time.slice(0, 5),
+            end_time: s.end_time.slice(0, 5),
+            active: s.active,
+          });
         });
 
+        // Only include professionals who have a schedule for the selected day (or no schedules = always available)
         const availableProfs = ((profiles as any[]) || []).filter((p) => {
           const profSchedules = scheduleMap[p.user_id] || [];
-          // If no schedules configured at all, show them (fallback)
-          if (profSchedules.length === 0) return true;
-          // Otherwise require a matching day
-          return profSchedules.some((s) => s.day_of_week === dayOfWeek);
-        }).map((p) => ({
-          ...p,
-          schedules: scheduleMap[p.user_id] || [],
-        }));
+          if (profSchedules.length === 0) return true; // no schedule = always available
+          return profSchedules.some((s) => s.day_of_week === dayOfWeek && s.active);
+        }).map((p) => {
+          // Resolve avatar URL
+          let avatarUrl = p.avatar_url;
+          if (avatarUrl && !avatarUrl.startsWith("http")) {
+            avatarUrl = supabase.storage.from("avatars").getPublicUrl(avatarUrl).data.publicUrl;
+          }
+          return {
+            user_id: p.user_id,
+            full_name: p.full_name,
+            avatar_url: avatarUrl,
+            bio: p.bio,
+            schedules: scheduleMap[p.user_id] || [],
+          };
+        });
 
-        setProfessionals(availableProfs as unknown as Professional[]);
+        setProfessionals(availableProfs);
         setLoadingProfessionals(false);
       });
   }, [step, selectedBranch, selectedDate]);
@@ -279,6 +340,9 @@ export default function NewBooking() {
 
     const dateStr = selectedDate.toISOString().split("T")[0];
     const errors: string[] = [];
+    const profId = selectedProfessional && selectedProfessional !== "none"
+      ? selectedProfessional.user_id
+      : null;
 
     for (const service of selectedServices) {
       const { error } = await supabase.from("appointments").insert({
@@ -288,7 +352,7 @@ export default function NewBooking() {
         appointment_time: selectedTime + ":00",
         status: "pending",
         branch_id: selectedBranch?.id || null,
-        professional_id: selectedProfessional?.user_id || null,
+        professional_id: profId,
       } as any);
       if (error) errors.push(error.message);
     }
@@ -366,9 +430,14 @@ export default function NewBooking() {
     );
   }
 
-  // Step labels — now 6 steps
-  const STEP_LABELS = ["Filial", "Serviços", "Data", "Horário", "Profissional", "Confirmação"];
+  // Step labels — 6 steps (Profissional now before Horário)
+  const STEP_LABELS = ["Filial", "Serviços", "Data", "Profissional", "Horário", "Confirmação"];
   const isRescheduling = !!preselectedServiceId;
+
+  // Helpers for display
+  const selectedProfDisplay = selectedProfessional === "none" || selectedProfessional === null
+    ? null
+    : selectedProfessional;
 
   return (
     <div className="w-full space-y-6">
@@ -394,7 +463,7 @@ export default function NewBooking() {
         </div>
       </div>
 
-      {/* Steps indicator — 6 steps */}
+      {/* Steps indicator */}
       <div className="flex gap-1.5">
         {[1, 2, 3, 4, 5, 6].map((s) => (
           <div key={s} className="flex-1 flex flex-col items-center gap-1">
@@ -588,19 +657,135 @@ export default function NewBooking() {
             <Sparkles className="h-4 w-4 text-primary mt-0.5 shrink-0" />
             <span>
               Os horários disponíveis serão calculados com base na duração total dos seus serviços ({totalDuration} min)
-              e na disponibilidade de {simultaneousProfessionals} profissionais simultâneos.
+              e no horário de trabalho do profissional escolhido.
             </span>
           </div>
         </div>
       )}
 
-      {/* ── STEP 4: Horários disponíveis ── */}
+      {/* ── STEP 4: Escolha do Profissional ── */}
       {step === 4 && (
         <div className="space-y-4">
-          <div className="flex items-center justify-between flex-wrap gap-2">
-            <p className="text-muted-foreground text-sm">
-              Horários disponíveis · <span className="font-medium text-foreground">{selectedDate && format(selectedDate, "EEEE, dd 'de' MMMM", { locale: ptBR })}</span>
+          <div className="flex items-center gap-2 p-3 bg-secondary/60 rounded-xl flex-wrap gap-y-1">
+            <CalendarDays className="h-4 w-4 text-primary shrink-0" />
+            <p className="text-sm">
+              <span className="font-medium capitalize">
+                {selectedDate && format(selectedDate, "EEEE, dd 'de' MMMM", { locale: ptBR })}
+              </span>
+              {" · "}<span className="text-muted-foreground">{totalDuration} min</span>
             </p>
+          </div>
+
+          <p className="text-muted-foreground text-sm">Escolha o profissional que irá te atender</p>
+
+          {loadingProfessionals ? (
+            <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
+              {[1, 2, 3].map((i) => <Skeleton key={i} className="h-28 rounded-xl" />)}
+            </div>
+          ) : (
+            <>
+              {/* "Sem preferência" option */}
+              <div
+                onClick={() => { setSelectedProfessional("none"); setStep(5); }}
+                className="flex items-center gap-3 p-4 rounded-xl border-2 border-border/50 bg-card hover:border-primary/40 hover:bg-accent/30 cursor-pointer transition-all duration-200"
+              >
+                <div className="h-11 w-11 rounded-full bg-muted flex items-center justify-center shrink-0">
+                  <Sparkles className="h-5 w-5 text-muted-foreground" />
+                </div>
+                <div className="flex-1">
+                  <p className="font-semibold text-sm">Sem preferência</p>
+                  <p className="text-xs text-muted-foreground">Mostra todos os horários disponíveis na filial</p>
+                </div>
+                <ChevronRight className="h-4 w-4 text-muted-foreground" />
+              </div>
+
+              {professionals.length === 0 ? (
+                <div className="text-center py-6 space-y-2">
+                  <div className="h-12 w-12 rounded-2xl bg-muted flex items-center justify-center mx-auto">
+                    <User className="h-6 w-6 text-muted-foreground" />
+                  </div>
+                  <p className="text-sm text-muted-foreground">Nenhum profissional disponível nesta data</p>
+                </div>
+              ) : (
+                <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
+                  {professionals.map((p) => {
+                    const isSelected = selectedProfessional !== "none" && (selectedProfessional as Professional | null)?.user_id === p.user_id;
+                    const initials = p.full_name.split(" ").map((n) => n[0]).slice(0, 2).join("").toUpperCase();
+
+                    // Get schedule for selected day to show hours
+                    const daySchedule = selectedDate
+                      ? p.schedules.find((s) => s.day_of_week === selectedDate.getDay() && s.active)
+                      : null;
+
+                    return (
+                      <div
+                        key={p.user_id}
+                        onClick={() => { setSelectedProfessional(p); setStep(5); }}
+                        className={`relative flex flex-col items-center gap-2.5 p-4 rounded-xl border-2 cursor-pointer transition-all duration-200 text-center
+                          ${isSelected
+                            ? "border-primary bg-primary/5 shadow-elevated"
+                            : "border-border/50 bg-card hover:border-primary/40 hover:bg-accent/30 hover:shadow-elegant"
+                          }`}
+                      >
+                        {/* Avatar */}
+                        <div className="relative">
+                          {p.avatar_url ? (
+                            <img
+                              src={p.avatar_url}
+                              alt={p.full_name}
+                              className="h-14 w-14 rounded-full object-cover border-2 border-border/60"
+                            />
+                          ) : (
+                            <div className="h-14 w-14 rounded-full bg-primary/10 border-2 border-primary/20 flex items-center justify-center">
+                              <span className="font-serif font-bold text-primary text-lg">{initials}</span>
+                            </div>
+                          )}
+                          {isSelected && (
+                            <div className="absolute -bottom-1 -right-1 h-5 w-5 rounded-full bg-primary flex items-center justify-center shadow">
+                              <Check className="h-3 w-3 text-primary-foreground" />
+                            </div>
+                          )}
+                        </div>
+                        <div>
+                          <p className="font-semibold text-sm leading-tight">{p.full_name}</p>
+                          {/* Show working hours for that day */}
+                          {daySchedule && (
+                            <div className="flex items-center justify-center gap-1 mt-1">
+                              <Clock className="h-3 w-3 text-primary" />
+                              <span className="text-xs text-primary font-medium">
+                                {daySchedule.start_time}–{daySchedule.end_time}
+                              </span>
+                            </div>
+                          )}
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              )}
+            </>
+          )}
+        </div>
+      )}
+
+      {/* ── STEP 5: Horários disponíveis ── */}
+      {step === 5 && (
+        <div className="space-y-4">
+          {/* Context summary */}
+          <div className="flex items-center gap-2 p-3 bg-secondary/60 rounded-xl flex-wrap gap-y-1">
+            <CalendarDays className="h-4 w-4 text-primary shrink-0" />
+            <p className="text-sm">
+              <span className="font-medium capitalize">
+                {selectedDate && format(selectedDate, "EEEE, dd 'de' MMMM", { locale: ptBR })}
+              </span>
+              {selectedProfDisplay && (
+                <> · <span className="text-primary font-medium">{selectedProfDisplay.full_name}</span></>
+              )}
+            </p>
+          </div>
+
+          <div className="flex items-center justify-between flex-wrap gap-2">
+            <p className="text-muted-foreground text-sm">Selecione o horário do atendimento</p>
             <Badge variant="secondary" className="text-xs">
               <Timer className="h-3 w-3 mr-1" /> {totalDuration} min
             </Badge>
@@ -612,8 +797,17 @@ export default function NewBooking() {
                 <CalendarDays className="h-7 w-7 text-muted-foreground" />
               </div>
               <p className="font-medium">Nenhum horário disponível</p>
-              <p className="text-sm text-muted-foreground">Tente outra data ou reduza os serviços selecionados.</p>
-              <Button variant="outline" onClick={() => setStep(3)}>Escolher outra data</Button>
+              <p className="text-sm text-muted-foreground">
+                {selectedProfDisplay
+                  ? "Este profissional não tem horários livres nesta data. Escolha outro profissional ou outra data."
+                  : "Tente outra data ou reduza os serviços selecionados."}
+              </p>
+              <div className="flex gap-2 justify-center">
+                <Button variant="outline" onClick={() => setStep(4)}>
+                  {selectedProfDisplay ? "Outro profissional" : "Voltar"}
+                </Button>
+                <Button variant="outline" onClick={() => setStep(3)}>Outra data</Button>
+              </div>
             </div>
           ) : (
             <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
@@ -627,7 +821,7 @@ export default function NewBooking() {
                 return (
                   <button
                     key={t}
-                    onClick={() => { setSelectedTime(t); setStep(5); }}
+                    onClick={() => { setSelectedTime(t); setStep(6); }}
                     className={`group relative rounded-xl border-2 p-4 text-left transition-all duration-200 cursor-pointer
                       ${isSelected
                         ? "border-primary bg-primary text-primary-foreground shadow-elevated"
@@ -653,98 +847,6 @@ export default function NewBooking() {
                 );
               })}
             </div>
-          )}
-        </div>
-      )}
-
-      {/* ── STEP 5: Escolha do Profissional ── */}
-      {step === 5 && (
-        <div className="space-y-4">
-          <p className="text-muted-foreground text-sm">Escolha o profissional que irá te atender</p>
-
-          {loadingProfessionals ? (
-            <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
-              {[1, 2, 3].map((i) => <Skeleton key={i} className="h-28 rounded-xl" />)}
-            </div>
-          ) : professionals.length === 0 ? (
-            <div className="space-y-3">
-              <div className="text-center py-10 space-y-2">
-                <div className="h-14 w-14 rounded-2xl bg-muted flex items-center justify-center mx-auto">
-                  <User className="h-7 w-7 text-muted-foreground" />
-                </div>
-                <p className="font-medium text-sm">Nenhum profissional disponível</p>
-                <p className="text-xs text-muted-foreground">Pule esta etapa e um profissional será atribuído no momento do atendimento.</p>
-              </div>
-              <Button className="w-full rounded-xl" onClick={() => setStep(6)}>
-                Continuar sem escolher <ChevronRight className="ml-1 h-4 w-4" />
-              </Button>
-            </div>
-          ) : (
-            <>
-              {/* "Sem preferência" option */}
-              <div
-                onClick={() => { setSelectedProfessional(null); setStep(6); }}
-                className={`flex items-center gap-3 p-4 rounded-xl border-2 cursor-pointer transition-all duration-200
-                  ${selectedProfessional === null
-                    ? "border-primary bg-primary/5"
-                    : "border-border/50 bg-card hover:border-primary/40 hover:bg-accent/30"
-                  }`}
-              >
-                <div className="h-11 w-11 rounded-full bg-muted flex items-center justify-center shrink-0">
-                  <Sparkles className="h-5 w-5 text-muted-foreground" />
-                </div>
-                <div className="flex-1">
-                  <p className="font-semibold text-sm">Sem preferência</p>
-                  <p className="text-xs text-muted-foreground">Um profissional será atribuído automaticamente</p>
-                </div>
-                <ChevronRight className="h-4 w-4 text-muted-foreground" />
-              </div>
-
-              {/* Professionals grid */}
-              <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
-                {professionals.map((p) => {
-                  const isSelected = selectedProfessional?.user_id === p.user_id;
-                  const initials = p.full_name.split(" ").map((n) => n[0]).slice(0, 2).join("").toUpperCase();
-                  return (
-                    <div
-                      key={p.user_id}
-                      onClick={() => { setSelectedProfessional(p); setStep(6); }}
-                      className={`relative flex flex-col items-center gap-2.5 p-4 rounded-xl border-2 cursor-pointer transition-all duration-200 text-center
-                        ${isSelected
-                          ? "border-primary bg-primary/5 shadow-elevated"
-                          : "border-border/50 bg-card hover:border-primary/40 hover:bg-accent/30 hover:shadow-elegant"
-                        }`}
-                    >
-                      {/* Avatar */}
-                      <div className="relative">
-                        {p.avatar_url ? (
-                          <img
-                            src={p.avatar_url}
-                            alt={p.full_name}
-                            className="h-14 w-14 rounded-full object-cover border-2 border-border/60"
-                          />
-                        ) : (
-                          <div className="h-14 w-14 rounded-full bg-primary/10 border-2 border-primary/20 flex items-center justify-center">
-                            <span className="font-serif font-bold text-primary text-lg">{initials}</span>
-                          </div>
-                        )}
-                        {isSelected && (
-                          <div className="absolute -bottom-1 -right-1 h-5 w-5 rounded-full bg-primary flex items-center justify-center shadow">
-                            <Check className="h-3 w-3 text-primary-foreground" />
-                          </div>
-                        )}
-                      </div>
-                      <div>
-                        <p className="font-semibold text-sm leading-tight">{p.full_name}</p>
-                        {p.bio && (
-                          <p className="text-xs text-muted-foreground mt-0.5 line-clamp-2">{p.bio}</p>
-                        )}
-                      </div>
-                    </div>
-                  );
-                })}
-              </div>
-            </>
           )}
         </div>
       )}
@@ -812,15 +914,15 @@ export default function NewBooking() {
                 <div className="flex-1">
                   <p className="text-xs text-muted-foreground">Profissional</p>
                   <p className="font-semibold text-sm">
-                    {selectedProfessional ? selectedProfessional.full_name : "Sem preferência"}
+                    {selectedProfDisplay ? selectedProfDisplay.full_name : "Sem preferência"}
                   </p>
                 </div>
-                {selectedProfessional?.avatar_url ? (
-                  <img src={selectedProfessional.avatar_url} alt="" className="h-9 w-9 rounded-full object-cover border border-border/60" />
-                ) : selectedProfessional ? (
+                {selectedProfDisplay?.avatar_url ? (
+                  <img src={selectedProfDisplay.avatar_url} alt="" className="h-9 w-9 rounded-full object-cover border border-border/60" />
+                ) : selectedProfDisplay ? (
                   <div className="h-9 w-9 rounded-full bg-primary/10 flex items-center justify-center">
                     <span className="text-xs font-bold text-primary">
-                      {selectedProfessional.full_name.split(" ").map((n) => n[0]).slice(0, 2).join("").toUpperCase()}
+                      {selectedProfDisplay.full_name.split(" ").map((n) => n[0]).slice(0, 2).join("").toUpperCase()}
                     </span>
                   </div>
                 ) : (
