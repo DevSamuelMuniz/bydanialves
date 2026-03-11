@@ -30,7 +30,6 @@ export default function AdminProfessionalHistory() {
 
   const isManager = adminLevel === "manager" || adminLevel === "ceo";
   const isProfessional = adminLevel === "professional";
-  const isAttendant = adminLevel === "attendant";
 
   const [appointments, setAppointments] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
@@ -50,7 +49,7 @@ export default function AdminProfessionalHistory() {
         .from("user_roles")
         .select("user_id, admin_level")
         .eq("role", "admin")
-        .in("admin_level", ["professional", "attendant"]);
+        .eq("admin_level", "professional");
       if (!roles?.length) return;
       const ids = roles.map((r) => r.user_id);
       const { data: profs } = await supabase
