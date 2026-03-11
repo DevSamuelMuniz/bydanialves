@@ -16,30 +16,39 @@ Deno.serve(async (req) => {
     const serviceRoleKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
     const authHeader = req.headers.get("Authorization");
 
-    if (!authHeader) {
+    if (!authHeader?.startsWith("Bearer ")) {
       return new Response(JSON.stringify({ error: "Unauthorized" }), {
         status: 401,
         headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
     }
 
-    // Verify caller is admin using the token directly (ES256 compatible)
+    const token = authHeader.replace("Bearer ", "");
+
+    // Use getClaims for local JWT validation (works with ES256 + expired sessions)
     const anonClient = createClient(supabaseUrl, Deno.env.get("SUPABASE_ANON_KEY")!, {
       global: { headers: { Authorization: authHeader } },
     });
-    const token = authHeader.replace("Bearer ", "");
-    const { data: { user } } = await anonClient.auth.getUser(token);
-    if (!user) {
+
+    const { data: claimsData, error: claimsError } = await anonClient.auth.getClaims(token);
+
+    if (claimsError || !claimsData?.claims) {
+      console.error("getClaims error:", claimsError);
       return new Response(JSON.stringify({ error: "Unauthorized" }), {
         status: 401,
         headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
     }
 
-    const { data: roleData } = await anonClient
+    const userId = claimsData.claims.sub;
+
+    // Check admin role using service role to bypass RLS
+    const adminClient = createClient(supabaseUrl, serviceRoleKey);
+
+    const { data: roleData } = await adminClient
       .from("user_roles")
       .select("role")
-      .eq("user_id", user.id)
+      .eq("user_id", userId)
       .eq("role", "admin");
 
     if (!roleData || roleData.length === 0) {
@@ -49,8 +58,7 @@ Deno.serve(async (req) => {
       });
     }
 
-    // Use service role to list auth users
-    const adminClient = createClient(supabaseUrl, serviceRoleKey);
+    // List all auth users
     const { data: { users }, error } = await adminClient.auth.admin.listUsers({ perPage: 1000 });
 
     if (error) {
