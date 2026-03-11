@@ -1,0 +1,1 @@
+ALTER TABLE public.appointments ADD CONSTRAINT appointments_professional_id_fkey FOREIGN KEY (professional_id) REFERENCES public.profiles(user_id) ON DELETE SET NULL;

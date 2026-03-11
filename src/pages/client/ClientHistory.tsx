@@ -85,7 +85,7 @@ export default function ClientHistory() {
     setLoading(true);
     let query = supabase
       .from("appointments")
-      .select("*, services(name, price, description, duration_minutes), branches(name, address), profiles!appointments_professional_id_fkey(full_name, avatar_url)")
+      .select("*, services(name, price, description, duration_minutes), branches(name, address), professional:profiles!appointments_professional_id_fkey(full_name, avatar_url)")
       .eq("client_id", user.id)
       .order("appointment_date", { ascending: false })
       .order("appointment_time", { ascending: false });
@@ -187,8 +187,8 @@ export default function ClientHistory() {
             const duration = appt.services?.duration_minutes;
             const branchName = appt.branches?.name;
             const branchAddress = appt.branches?.address;
-            const professionalName = (appt.profiles as any)?.full_name;
-            const professionalAvatar = (appt.profiles as any)?.avatar_url;
+            const professionalName = (appt.professional as any)?.full_name;
+            const professionalAvatar = (appt.professional as any)?.avatar_url;
             const serviceDescription = appt.services?.description;
             const canReview = appt.status === "completed" && !reviewedIds.has(appt.id);
             const hasReview = appt.status === "completed" && reviewedIds.has(appt.id);
