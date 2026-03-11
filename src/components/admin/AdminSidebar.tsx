@@ -56,11 +56,17 @@ const PROF_PERSONAL_ITEMS = [
   { title: "Histórico do Profissional", url: "/admin/professionals/history",  icon: ClipboardList },
 ];
 
-function ProfessionaisGroup() {
+function ProfessionaisGroup({ canManage }: { canManage: boolean }) {
   const { state } = useSidebar();
   const collapsed = state === "collapsed";
   const { pathname } = useLocation();
-  const isActive = PROF_SUB_ITEMS.some((i) => pathname.startsWith(i.url.split("/report")[0]));
+
+  const allSubItems = [
+    ...(canManage ? PROF_MANAGE_ITEMS : []),
+    ...PROF_PERSONAL_ITEMS,
+  ];
+
+  const isActive = allSubItems.some((i) => pathname.startsWith(i.url));
   const [open, setOpen] = useState(isActive);
 
   if (collapsed) {
@@ -68,7 +74,7 @@ function ProfessionaisGroup() {
       <SidebarMenuItem>
         <SidebarMenuButton asChild tooltip="Profissionais">
           <NavLink
-            to="/admin/professionals"
+            to={canManage ? "/admin/professionals" : "/admin/professionals/agenda"}
             end
             className="rounded-lg transition-all duration-200 hover:bg-sidebar-accent mx-1 px-2 py-2.5 justify-center flex items-center"
             activeClassName="bg-primary/10 text-primary font-medium shadow-sm"
@@ -94,7 +100,7 @@ function ProfessionaisGroup() {
         </CollapsibleTrigger>
         <CollapsibleContent>
           <div className="ml-7 mt-0.5 space-y-0.5 border-l border-sidebar-border/50 pl-3">
-            {PROF_SUB_ITEMS.map((item) => (
+            {allSubItems.map((item) => (
               <NavLink
                 key={item.url}
                 to={item.url}
