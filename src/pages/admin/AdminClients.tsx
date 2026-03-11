@@ -328,14 +328,17 @@ export default function AdminClients() {
                     </div>
                   </div>
                 ) : (
-                  <div className="flex items-start justify-between">
-                    <div>
-                      <p className="font-medium text-lg">{selectedClient.full_name || "Sem nome"}</p>
-                      <p className="text-sm text-muted-foreground">{selectedClient.phone || "Sem telefone"}</p>
-                      {emails[selectedClient.user_id] && (
-                        <p className="text-sm text-muted-foreground">{emails[selectedClient.user_id].email}</p>
-                      )}
-                    </div>
+                   <div className="flex items-start justify-between">
+                     <div className="space-y-0.5">
+                       <p className="font-medium text-lg">{selectedClient.full_name || "Sem nome"}</p>
+                       <p className="text-sm text-muted-foreground">{selectedClient.phone || "Sem telefone"}</p>
+                       {emails[selectedClient.user_id] && (
+                         <div className="flex items-center gap-1.5 text-sm text-muted-foreground">
+                           <Mail className="h-3.5 w-3.5 shrink-0" />
+                           <span>{emails[selectedClient.user_id].email}</span>
+                         </div>
+                       )}
+                     </div>
                     {!isProfessional && (
                       <Button size="icon" variant="ghost" onClick={() => setEditing(true)}>
                         <Edit2 className="h-4 w-4" />
