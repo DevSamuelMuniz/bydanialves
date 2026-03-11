@@ -34,10 +34,11 @@ export default function AdminDashboard() {
   const { canViewDashboard, canViewDashboardFinancials, canViewBranchKpis, adminLevel } = useAdminPermissions();
   const { adminBranchId } = useAuth();
 
+  const isProfessional = adminLevel === "professional";
   const isManager = adminLevel === "manager" || adminLevel === "ceo";
 
   useEffect(() => {
-    if (!canViewDashboard) navigate("/admin/professionals/agenda", { replace: true });
+    if (!canViewDashboard) navigate("/admin/my-appointments", { replace: true });
   }, [canViewDashboard]);
 
   const [todayAppointments, setTodayAppointments] = useState<any[]>([]);
