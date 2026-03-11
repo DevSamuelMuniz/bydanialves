@@ -246,7 +246,7 @@ export default function AdminProfessionals() {
     setClientSearch("");
     setClientResults([]);
     setNewLevel("professional");
-    setNewBranchId(adminBranchId || (branches[0]?.id ?? ""));
+    setNewBranchId(adminBranchId || (branches[0]?.id ?? "none"));
     setNewProfDialog(true);
   };
 
@@ -254,6 +254,7 @@ export default function AdminProfessionals() {
     if (selectedClients.length === 0) return;
     setCreatingProf(true);
 
+    const branchIdToSave = newBranchId === "none" || newBranchId === "" ? null : newBranchId;
     const errors: string[] = [];
 
     for (const client of selectedClients) {
@@ -270,14 +271,14 @@ export default function AdminProfessionals() {
         // UPDATE existing admin role
         ({ error } = await (supabase as any)
           .from("user_roles")
-          .update({ admin_level: newLevel, branch_id: newBranchId || null })
+          .update({ admin_level: newLevel, branch_id: branchIdToSave })
           .eq("user_id", client.user_id)
           .eq("role", "admin"));
       } else {
         // INSERT new admin role row (user keeps their client row too)
         ({ error } = await (supabase as any)
           .from("user_roles")
-          .insert({ user_id: client.user_id, role: "admin", admin_level: newLevel, branch_id: newBranchId || null }));
+          .insert({ user_id: client.user_id, role: "admin", admin_level: newLevel, branch_id: branchIdToSave }));
       }
 
       if (error) errors.push(`${client.full_name}: ${error.message}`);
