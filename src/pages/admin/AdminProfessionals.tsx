@@ -652,12 +652,12 @@ export default function AdminProfessionals() {
             </Button>
           </div>
 
-          <DialogFooter>
+          <div className="flex justify-end gap-2 pt-1 border-t border-border">
             <Button variant="ghost" onClick={() => setWeekDialog(false)}>Cancelar</Button>
             <Button onClick={saveWeek} disabled={saving}>
               {saving ? "Salvando…" : "Salvar Escala"}
             </Button>
-          </DialogFooter>
+          </div>
         </DialogContent>
       </Dialog>
 
