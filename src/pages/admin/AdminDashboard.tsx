@@ -59,6 +59,7 @@ export default function AdminDashboard() {
   const [branchFilter, setBranchFilter] = useState<string>("all");
   const [avgRating, setAvgRating] = useState<number | null>(null);
   const [reviewCount, setReviewCount] = useState(0);
+  const [allReviews, setAllReviews] = useState<{ rating: number; comment: string | null; created_at: string; service_name: string }[]>([]);
 
   const [loading, setLoading] = useState(true);
 
@@ -165,15 +166,23 @@ export default function AdminDashboard() {
       setLoading(false);
     });
 
-    // Reviews average
+    // Reviews average + comments
     (async () => {
-      const { data: reviewsData } = await (supabase as any)
+      const { data: reviewsData } = await supabase
         .from("reviews")
-        .select("rating");
+        .select("rating, comment, created_at, appointments(service_id, services(name))")
+        .order("created_at", { ascending: false })
+        .limit(50);
       if (reviewsData && reviewsData.length > 0) {
         const avg = reviewsData.reduce((s: number, r: any) => s + r.rating, 0) / reviewsData.length;
         setAvgRating(Math.round(avg * 10) / 10);
         setReviewCount(reviewsData.length);
+        setAllReviews(reviewsData.map((r: any) => ({
+          rating: r.rating,
+          comment: r.comment ?? null,
+          created_at: r.created_at,
+          service_name: r.appointments?.services?.name ?? "Serviço",
+        })));
       }
     })();
 
@@ -232,14 +241,16 @@ export default function AdminDashboard() {
 
   const BAR_COLORS = ["hsl(40,65%,48%)", "hsl(40,55%,52%)", "hsl(40,45%,56%)", "hsl(40,38%,60%)", "hsl(40,30%,65%)"];
 
-  // ── View simplificada para Profissional (apenas avaliações) ──────────────
+  // ── View simplificada para Profissional (avaliações + comentários) ────────
   if (isProfessional) {
     return (
       <div className="space-y-6">
         <h1 className="font-serif text-2xl md:text-3xl tracking-tight">Dashboard</h1>
-        <div className="max-w-sm">
+
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+          {/* Card média */}
           <Card className="border-border/60">
-            <CardContent className="pt-6 flex flex-col items-center justify-center gap-3">
+            <CardContent className="pt-6 flex flex-col items-center justify-center gap-3 h-full">
               <div className="flex items-center gap-2 self-start">
                 <Star className="h-4 w-4 text-primary" />
                 <h3 className="font-serif text-base font-medium tracking-tight">Avaliações</h3>
@@ -250,16 +261,50 @@ export default function AdminDashboard() {
                   <p className="text-5xl font-serif font-bold text-primary">{avgRating.toFixed(1)}</p>
                   <div className="flex gap-0.5">
                     {[1, 2, 3, 4, 5].map((s) => (
-                      <Star
-                        key={s}
-                        className={`h-5 w-5 ${s <= Math.round(avgRating!) ? "fill-primary text-primary" : "text-muted-foreground/30"}`}
-                      />
+                      <Star key={s} className={`h-5 w-5 ${s <= Math.round(avgRating!) ? "fill-primary text-primary" : "text-muted-foreground/30"}`} />
                     ))}
                   </div>
                   <p className="text-xs text-muted-foreground">{reviewCount} avaliação{reviewCount !== 1 ? "ões" : ""}</p>
                 </>
               ) : (
                 <p className="text-sm text-muted-foreground text-center py-4">Sem avaliações ainda.</p>
+              )}
+            </CardContent>
+          </Card>
+
+          {/* Lista de comentários */}
+          <Card className="border-border/60 sm:col-span-1 lg:col-span-2">
+            <CardContent className="pt-6">
+              <div className="flex items-center gap-2 mb-1">
+                <Star className="h-4 w-4 text-primary" />
+                <h3 className="font-serif text-base font-medium tracking-tight">Comentários dos Clientes</h3>
+              </div>
+              <p className="text-xs text-muted-foreground mb-4">Avaliações mais recentes</p>
+              {allReviews.length === 0 ? (
+                <p className="text-sm text-muted-foreground text-center py-8">Sem avaliações ainda.</p>
+              ) : (
+                <div className="space-y-3 max-h-[340px] overflow-y-auto pr-1">
+                  {allReviews.map((r, i) => (
+                    <div key={i} className="p-3 rounded-xl border border-border/50 bg-muted/30 space-y-1.5">
+                      <div className="flex items-center justify-between gap-2">
+                        <div className="flex gap-0.5">
+                          {[1, 2, 3, 4, 5].map((s) => (
+                            <Star key={s} className={`h-3.5 w-3.5 ${s <= r.rating ? "fill-primary text-primary" : "text-muted-foreground/30"}`} />
+                          ))}
+                        </div>
+                        <span className="text-[10px] text-muted-foreground shrink-0">
+                          {new Date(r.created_at).toLocaleDateString("pt-BR")}
+                        </span>
+                      </div>
+                      <p className="text-xs font-medium text-muted-foreground">{r.service_name}</p>
+                      {r.comment ? (
+                        <p className="text-sm text-foreground leading-relaxed">"{r.comment}"</p>
+                      ) : (
+                        <p className="text-xs text-muted-foreground italic">Sem comentário.</p>
+                      )}
+                    </div>
+                  ))}
+                </div>
               )}
             </CardContent>
           </Card>
