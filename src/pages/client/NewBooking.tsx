@@ -268,13 +268,17 @@ export default function NewBooking() {
 
       // Fetch ALL schedules (active and inactive) so we can distinguish
       // "has schedules but not today" from "no schedules configured"
-      const [{ data: profiles }, { data: schedules }] = await Promise.all([
+      const [{ data: profiles, error: profilesError }, { data: schedules, error: schedulesError }] = await Promise.all([
         supabase.from("profiles").select("user_id, full_name, avatar_url, bio").in("user_id", userIds),
         (supabase as any)
           .from("professional_schedules")
           .select("professional_id, day_of_week, start_time, end_time, active, branch_id")
           .in("professional_id", userIds),
       ]);
+
+      if (profilesError) console.error("[NewBooking] Profiles error:", profilesError);
+      if (schedulesError) console.error("[NewBooking] Schedules error:", schedulesError);
+      console.log("[NewBooking] Profiles loaded:", profiles?.length, "| Schedules loaded:", schedules?.length);
 
       const scheduleMap: Record<string, ProfSchedule[]> = {};
       ((schedules as any[]) || [])
