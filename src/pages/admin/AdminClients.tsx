@@ -27,6 +27,7 @@ interface ClientProfile {
   created_at: string;
   gender?: string | null;
   branch_id?: string | null;
+  avatar_url?: string | null;
 }
 
 interface Appointment {
