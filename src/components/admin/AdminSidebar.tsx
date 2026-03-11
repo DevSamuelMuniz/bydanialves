@@ -134,9 +134,13 @@ export function AdminSidebar() {
   const { state } = useSidebar();
   const collapsed = state === "collapsed";
 
+  const isProfessional = adminLevel === "professional";
+  const isManager = adminLevel === "manager" || adminLevel === "ceo";
+  // Professional sees only the professionals dropdown (no other items except what perms allow)
+  const showProfDropdown = isProfessional || perms.canViewProfessionals;
+
   const allItems: NavItemDef[] = [
     { title: "Dashboard",         url: "/admin",                icon: LayoutDashboard, tourId: "sidebar-admin-dashboard" },
-    { title: "Agenda",            url: "/admin/agenda",         icon: Calendar,        tourId: "sidebar-admin-agenda" },
     { title: "Meus Atendimentos", url: "/admin/my-appointments",icon: ClipboardList,   tourId: "sidebar-admin-my-appointments" },
     { title: "Clientes",          url: "/admin/clients",        icon: Users,           tourId: "sidebar-admin-clients" },
     { title: "Serviços",          url: "/admin/services",       icon: Scissors,        tourId: "sidebar-admin-services" },
@@ -151,8 +155,7 @@ export function AdminSidebar() {
 
   const permMap: Record<string, boolean> = {
     "/admin":                 perms.canViewDashboard,
-    "/admin/agenda":          perms.canViewAgenda,
-    "/admin/my-appointments": perms.adminLevel === "professional",
+    "/admin/my-appointments": adminLevel === "attendant",
     "/admin/clients":         perms.canViewClients,
     "/admin/services":        perms.canViewServices,
     "/admin/plans":           perms.canViewPlans,
@@ -175,7 +178,6 @@ export function AdminSidebar() {
 
   const levelLabel = adminLevel ? ADMIN_LEVEL_LABELS[adminLevel] : null;
   const levelColor = adminLevel ? ADMIN_LEVEL_COLORS[adminLevel] : "";
-  const imgClass = collapsed ? "w-8 h-8 object-contain rounded-md" : "w-28 h-auto object-contain";
 
   const renderItem = (item: NavItemDef) => (
     <SidebarMenuItem key={item.title}>
@@ -232,7 +234,7 @@ export function AdminSidebar() {
           <SidebarGroupContent>
             <SidebarMenu>
               {itemsBefore.map(renderItem)}
-              {perms.canViewProfessionals && <ProfessionaisGroup />}
+              {showProfDropdown && <ProfessionaisGroup canManage={perms.canViewProfessionals} />}
               {itemsAfter.map(renderItem)}
             </SidebarMenu>
           </SidebarGroupContent>
