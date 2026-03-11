@@ -16,7 +16,7 @@ import {
 import {
   LayoutDashboard, Users, Calendar, Scissors, DollarSign,
   Crown, Activity, ClipboardList, Building2, Tag, Star, Tv2, UserCheck,
-  ChevronDown, BarChart2, LogOut,
+  ChevronDown, BarChart2, LogOut, History,
 } from "lucide-react";
 import { useLocation } from "react-router-dom";
 import logoVertical from "@/assets/logo_vertical.png";
@@ -44,16 +44,29 @@ function usePendingQueueCount() {
   return count;
 }
 
-const PROF_SUB_ITEMS = [
-  { title: "Profissionais",            url: "/admin/professionals",        icon: UserCheck },
-  { title: "Relatório do Profissional", url: "/admin/professionals/report", icon: BarChart2 },
+// Sub-items visible to manager/ceo only
+const PROF_MANAGE_ITEMS = [
+  { title: "Profissionais",             url: "/admin/professionals",         icon: UserCheck },
+  { title: "Relatório do Profissional", url: "/admin/professionals/report",  icon: BarChart2 },
 ];
 
-function ProfessionaisGroup() {
+// Sub-items visible to professional + manager/ceo
+const PROF_PERSONAL_ITEMS = [
+  { title: "Agenda do Profissional",    url: "/admin/professionals/agenda",   icon: Calendar },
+  { title: "Histórico do Profissional", url: "/admin/professionals/history",  icon: ClipboardList },
+];
+
+function ProfessionaisGroup({ canManage }: { canManage: boolean }) {
   const { state } = useSidebar();
   const collapsed = state === "collapsed";
   const { pathname } = useLocation();
-  const isActive = PROF_SUB_ITEMS.some((i) => pathname.startsWith(i.url.split("/report")[0]));
+
+  const allSubItems = [
+    ...(canManage ? PROF_MANAGE_ITEMS : []),
+    ...PROF_PERSONAL_ITEMS,
+  ];
+
+  const isActive = allSubItems.some((i) => pathname.startsWith(i.url));
   const [open, setOpen] = useState(isActive);
 
   if (collapsed) {
@@ -61,7 +74,7 @@ function ProfessionaisGroup() {
       <SidebarMenuItem>
         <SidebarMenuButton asChild tooltip="Profissionais">
           <NavLink
-            to="/admin/professionals"
+            to={canManage ? "/admin/professionals" : "/admin/professionals/agenda"}
             end
             className="rounded-lg transition-all duration-200 hover:bg-sidebar-accent mx-1 px-2 py-2.5 justify-center flex items-center"
             activeClassName="bg-primary/10 text-primary font-medium shadow-sm"
@@ -87,7 +100,7 @@ function ProfessionaisGroup() {
         </CollapsibleTrigger>
         <CollapsibleContent>
           <div className="ml-7 mt-0.5 space-y-0.5 border-l border-sidebar-border/50 pl-3">
-            {PROF_SUB_ITEMS.map((item) => (
+            {allSubItems.map((item) => (
               <NavLink
                 key={item.url}
                 to={item.url}
@@ -121,9 +134,13 @@ export function AdminSidebar() {
   const { state } = useSidebar();
   const collapsed = state === "collapsed";
 
+  const isProfessional = adminLevel === "professional";
+  const isManager = adminLevel === "manager" || adminLevel === "ceo";
+  // Professional sees only the professionals dropdown (no other items except what perms allow)
+  const showProfDropdown = isProfessional || perms.canViewProfessionals;
+
   const allItems: NavItemDef[] = [
     { title: "Dashboard",         url: "/admin",                icon: LayoutDashboard, tourId: "sidebar-admin-dashboard" },
-    { title: "Agenda",            url: "/admin/agenda",         icon: Calendar,        tourId: "sidebar-admin-agenda" },
     { title: "Meus Atendimentos", url: "/admin/my-appointments",icon: ClipboardList,   tourId: "sidebar-admin-my-appointments" },
     { title: "Clientes",          url: "/admin/clients",        icon: Users,           tourId: "sidebar-admin-clients" },
     { title: "Serviços",          url: "/admin/services",       icon: Scissors,        tourId: "sidebar-admin-services" },
@@ -138,8 +155,7 @@ export function AdminSidebar() {
 
   const permMap: Record<string, boolean> = {
     "/admin":                 perms.canViewDashboard,
-    "/admin/agenda":          perms.canViewAgenda,
-    "/admin/my-appointments": perms.adminLevel === "professional",
+    "/admin/my-appointments": adminLevel === "attendant",
     "/admin/clients":         perms.canViewClients,
     "/admin/services":        perms.canViewServices,
     "/admin/plans":           perms.canViewPlans,
@@ -162,7 +178,6 @@ export function AdminSidebar() {
 
   const levelLabel = adminLevel ? ADMIN_LEVEL_LABELS[adminLevel] : null;
   const levelColor = adminLevel ? ADMIN_LEVEL_COLORS[adminLevel] : "";
-  const imgClass = collapsed ? "w-8 h-8 object-contain rounded-md" : "w-28 h-auto object-contain";
 
   const renderItem = (item: NavItemDef) => (
     <SidebarMenuItem key={item.title}>
@@ -219,7 +234,7 @@ export function AdminSidebar() {
           <SidebarGroupContent>
             <SidebarMenu>
               {itemsBefore.map(renderItem)}
-              {perms.canViewProfessionals && <ProfessionaisGroup />}
+              {showProfDropdown && <ProfessionaisGroup canManage={perms.canViewProfessionals} />}
               {itemsAfter.map(renderItem)}
             </SidebarMenu>
           </SidebarGroupContent>
