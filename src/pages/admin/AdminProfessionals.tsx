@@ -381,7 +381,7 @@ export default function AdminProfessionals() {
     setEditName(prof.full_name);
     setEditBio(prof.bio || "");
     setEditLevel((prof.admin_level as NonNullable<AdminLevel>) || "professional");
-    setEditBranchId(prof.branch_id || "");
+    setEditBranchId(prof.branch_id ?? "none");
     setEditDialog(true);
   };
 
@@ -389,9 +389,15 @@ export default function AdminProfessionals() {
     if (!editProf) return;
     setEditSaving(true);
 
+    const branchIdToSave = editBranchId === "none" || editBranchId === "" ? null : editBranchId;
+
     const [{ error: profileError }, { error: roleError }] = await Promise.all([
       supabase.from("profiles").update({ full_name: editName, bio: editBio }).eq("user_id", editProf.user_id),
-      (supabase as any).from("user_roles").update({ admin_level: editLevel, branch_id: editBranchId || null }).eq("user_id", editProf.user_id).eq("role", "admin"),
+      (supabase as any)
+        .from("user_roles")
+        .update({ admin_level: editLevel, branch_id: branchIdToSave })
+        .eq("user_id", editProf.user_id)
+        .eq("role", "admin"),
     ]);
 
     if (profileError || roleError) {
