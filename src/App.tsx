@@ -30,6 +30,7 @@ import AdminLogs from "./pages/admin/AdminLogs";
 import AdminBranches from "./pages/admin/AdminBranches";
 import AdminCoupons from "./pages/admin/AdminCoupons";
 import AdminProfessionals from "./pages/admin/AdminProfessionals";
+import AdminProfessionalReport from "./pages/admin/AdminProfessionalReport";
 import AdminReviews from "./pages/admin/AdminReviews";
 import QueueTV from "./pages/admin/QueueTV";
 import TermosDeServico from "./pages/TermosDeServico";
@@ -86,6 +87,7 @@ const App = () => (
               <Route path="logs" element={<AdminLogs />} />
               <Route path="queue-tv" element={<QueueTV />} />
               <Route path="professionals" element={<AdminProfessionals />} />
+              <Route path="professionals/report" element={<AdminProfessionalReport />} />
             </Route>
 
             <Route path="*" element={<NotFound />} />
