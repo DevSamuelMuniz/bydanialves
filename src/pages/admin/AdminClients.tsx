@@ -27,6 +27,7 @@ interface ClientProfile {
   created_at: string;
   gender?: string | null;
   branch_id?: string | null;
+  avatar_url?: string | null;
 }
 
 interface Appointment {
@@ -72,7 +73,13 @@ export default function AdminClients() {
       query = query.eq("branch_id", adminBranchId);
     }
     const { data } = await query;
-    setClients((data as any[]) || []);
+    const resolved = ((data as any[]) || []).map((p) => {
+      if (p.avatar_url && !p.avatar_url.startsWith("http")) {
+        p = { ...p, avatar_url: supabase.storage.from("avatars").getPublicUrl(p.avatar_url).data.publicUrl };
+      }
+      return p;
+    });
+    setClients(resolved);
     setLoading(false);
   };
 
@@ -551,9 +558,19 @@ function ClientProfileCard({ client, email, freqBranch, isProfessional, onClick,
         </div>
       )}
 
-      {/* Avatar 3D */}
+      {/* Avatar */}
       <div className="relative mt-2 transition-transform duration-300 group-hover:scale-105">
-        <Avatar3D name={client.full_name || "?"} blocked={client.blocked} gender={client.gender ?? undefined} />
+        {client.avatar_url ? (
+          <div className="h-20 w-20 rounded-full overflow-hidden ring-2 ring-primary/20">
+            <img
+              src={client.avatar_url}
+              alt={client.full_name}
+              className="h-full w-full object-cover"
+            />
+          </div>
+        ) : (
+          <Avatar3D name={client.full_name || "?"} blocked={client.blocked} gender={client.gender ?? undefined} />
+        )}
         <div className="absolute inset-0 rounded-full ring-2 ring-primary/0 transition-all duration-300 group-hover:ring-primary/40 group-hover:ring-offset-2" />
       </div>
 
