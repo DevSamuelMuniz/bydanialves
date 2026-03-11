@@ -14,7 +14,7 @@ import AdminLayout from "./layouts/AdminLayout";
 import ClientDashboard from "./pages/client/ClientDashboard";
 import NewBooking from "./pages/client/NewBooking";
 import ClientHistory from "./pages/client/ClientHistory";
-import ClientPendingAppointments from "./pages/client/ClientPendingAppointments";
+
 import ClientProfile from "./pages/client/ClientProfile";
 import ClientPlans from "./pages/client/ClientPlans";
 import AdminDashboard from "./pages/admin/AdminDashboard";
@@ -66,7 +66,7 @@ const App = () => (
             <Route path="/client" element={<ProtectedRoute requiredRole="client"><ClientLayout /></ProtectedRoute>}>
               <Route index element={<ClientDashboard />} />
               <Route path="booking" element={<NewBooking />} />
-              <Route path="pending" element={<ClientPendingAppointments />} />
+              
               <Route path="history" element={<ClientHistory />} />
               <Route path="plans" element={<ClientPlans />} />
               <Route path="profile" element={<ClientProfile />} />

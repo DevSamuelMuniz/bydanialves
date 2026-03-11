@@ -156,7 +156,6 @@ export default function ClientHistory() {
           </SelectTrigger>
           <SelectContent>
             <SelectItem value="all">Todos os status</SelectItem>
-            <SelectItem value="pending">Pendente</SelectItem>
             <SelectItem value="confirmed">Confirmado</SelectItem>
             <SelectItem value="completed">Concluído</SelectItem>
             <SelectItem value="cancelled">Cancelado</SelectItem>
