@@ -292,13 +292,23 @@ export default function AdminClients() {
                          onChange={(e) => setEditForm({ ...editForm, full_name: e.target.value })}
                        />
                      </div>
-                     <div className="space-y-1">
-                       <Label>Telefone</Label>
-                       <Input
-                         value={editForm.phone}
-                         onChange={(e) => setEditForm({ ...editForm, phone: e.target.value })}
-                       />
-                     </div>
+                      <div className="space-y-1">
+                        <Label>Telefone</Label>
+                        <Input
+                          value={editForm.phone}
+                          onChange={(e) => setEditForm({ ...editForm, phone: e.target.value })}
+                        />
+                      </div>
+                      {emails[selectedClient.user_id] && (
+                        <div className="space-y-1">
+                          <Label>E-mail</Label>
+                          <Input
+                            value={emails[selectedClient.user_id].email}
+                            disabled
+                            className="opacity-60 cursor-not-allowed"
+                          />
+                        </div>
+                      )}
                      <div className="space-y-1">
                        <Label>Gênero</Label>
                        <RadioGroup
