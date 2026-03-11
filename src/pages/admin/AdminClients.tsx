@@ -559,7 +559,7 @@ function ClientProfileCard({ client, email, freqBranch, isProfessional, onClick,
             <img
               src={client.avatar_url.startsWith("http")
                 ? client.avatar_url
-                : (() => { const { data } = require("@/integrations/supabase/client").supabase.storage.from("avatars").getPublicUrl(client.avatar_url!); return data.publicUrl; })()
+                : supabase.storage.from("avatars").getPublicUrl(client.avatar_url).data.publicUrl
               }
               alt={client.full_name}
               className="h-full w-full object-cover"
