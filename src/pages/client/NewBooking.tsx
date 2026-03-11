@@ -391,7 +391,7 @@ export default function NewBooking() {
         service_id: service.id,
         appointment_date: dateStr,
         appointment_time: selectedTime + ":00",
-        status: "pending",
+        status: "confirmed",
         branch_id: selectedBranch?.id || null,
         professional_id: profId,
       } as any);

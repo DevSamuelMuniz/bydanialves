@@ -13,7 +13,7 @@ import { Calendar } from "@/components/ui/calendar";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
 import { useToast } from "@/hooks/use-toast";
-import { Clock, CalendarDays, StickyNote, Trash2, DollarSign, Handshake, CheckCircle2, User, Scissors, RefreshCw, AlertCircle, XCircle, Building2, Filter, UserCheck } from "lucide-react";
+import { Clock, CalendarDays, StickyNote, Trash2, DollarSign, Handshake, CheckCircle2, User, Scissors, RefreshCw, XCircle, Building2, Filter, UserCheck } from "lucide-react";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { AccessDenied } from "@/components/admin/AccessDenied";
@@ -77,7 +77,7 @@ export default function AdminProfessionalAgenda() {
     let query = supabase
       .from("appointments")
       .select("*, services(name, price, duration_minutes), profiles!appointments_client_profile_fkey(full_name, phone)")
-      .in("status", ["pending", "confirmed", "cancelled"]);
+      .in("status", ["confirmed", "cancelled"]);
 
     // Professional sees only their own
     if (!isManager) {
@@ -160,20 +160,17 @@ export default function AdminProfessionalAgenda() {
 
   function hasAttendant(a: any) { return a.notes && a.notes.includes("[Atendido por:"); }
 
-  const toConfirm = appointments.filter((a) => a.status === "pending");
   const toTake    = appointments.filter((a) => a.status === "confirmed" && !hasAttendant(a));
   const toDo      = appointments.filter((a) => a.status === "confirmed" && hasAttendant(a));
   const cancelled = appointments.filter((a) => a.status === "cancelled");
 
   const columns = [
-    { key: "confirm",   title: "A Confirmar", icon: <AlertCircle className="h-4 w-4" />, dot: "bg-amber-400",     headerColor: "bg-amber-50 dark:bg-amber-950/30 text-amber-700 dark:text-amber-400",   items: toConfirm, emptyMsg: "Nenhum agendamento pendente" },
-    { key: "take",      title: "A Pegar",     icon: <Handshake className="h-4 w-4" />,   dot: "bg-blue-400",      headerColor: "bg-blue-50 dark:bg-blue-950/30 text-blue-700 dark:text-blue-400",       items: toTake,    emptyMsg: "Nenhum aguardando" },
-    { key: "complete",  title: "A Concluir",  icon: <CheckCircle2 className="h-4 w-4" />,dot: "bg-green-400",     headerColor: "bg-green-50 dark:bg-green-950/30 text-green-700 dark:text-green-400",   items: toDo,      emptyMsg: "Nenhum em andamento" },
-    { key: "cancelled", title: "Cancelados",  icon: <XCircle className="h-4 w-4" />,     dot: "bg-destructive",   headerColor: "bg-destructive/10 text-destructive",                                     items: cancelled, emptyMsg: "Nenhum cancelado" },
+    { key: "take",      title: "Confirmados",  icon: <Handshake className="h-4 w-4" />,   dot: "bg-blue-400",    headerColor: "bg-blue-50 dark:bg-blue-950/30 text-blue-700 dark:text-blue-400",     items: toTake, emptyMsg: "Nenhum aguardando" },
+    { key: "complete",  title: "A Concluir",   icon: <CheckCircle2 className="h-4 w-4" />, dot: "bg-green-400",   headerColor: "bg-green-50 dark:bg-green-950/30 text-green-700 dark:text-green-400", items: toDo,   emptyMsg: "Nenhum em andamento" },
+    { key: "cancelled", title: "Cancelados",   icon: <XCircle className="h-4 w-4" />,      dot: "bg-destructive", headerColor: "bg-destructive/10 text-destructive",                                   items: cancelled, emptyMsg: "Nenhum cancelado" },
   ];
 
   const AppointmentCard = ({ a, col }: { a: any; col: typeof columns[0] }) => {
-    const isConfirmCol  = col.key === "confirm";
     const isTakeCol     = col.key === "take";
     const isCompleteCol = col.key === "complete";
 
@@ -228,22 +225,17 @@ export default function AdminProfessionalAgenda() {
           )}
           <Separator />
           <div className="flex items-center gap-1.5 flex-wrap">
-            {isConfirmCol && !isProfessional && (
-              <Button size="sm" className="h-7 text-xs gap-1 bg-blue-600 hover:bg-blue-700 text-white" onClick={() => updateStatus(a.id, "confirmed", a)}>
-                <CheckCircle2 className="h-3 w-3" />Confirmar
-              </Button>
-            )}
             {isTakeCol && isProfessional && (
               <Button size="sm" className="h-7 text-xs gap-1" variant="outline" onClick={() => takeAppointment(a)} disabled={takingId === a.id}>
                 <Handshake className="h-3 w-3" />{takingId === a.id ? "Pegando..." : "Pegar"}
               </Button>
             )}
-            {isCompleteCol && isProfessional && (
-              <Button size="sm" className="h-7 text-xs gap-1 bg-green-600 hover:bg-green-700 text-white" onClick={() => updateStatus(a.id, "completed")}>
+            {isCompleteCol && (isProfessional || isManager) && (
+              <Button size="sm" className="h-7 text-xs gap-1 bg-success hover:bg-success/90 text-success-foreground" onClick={() => updateStatus(a.id, "completed")}>
                 <CheckCircle2 className="h-3 w-3" />Concluir
               </Button>
             )}
-            {col.key !== "cancelled" && isManager && (
+            {col.key !== "cancelled" && (
               <div className="ml-auto">
                 <AlertDialog>
                   <AlertDialogTrigger asChild>
