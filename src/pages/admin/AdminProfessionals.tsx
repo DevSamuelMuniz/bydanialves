@@ -96,12 +96,12 @@ export default function AdminProfessionals() {
   const [weekState, setWeekState] = useState<Record<number, DayRow>>({});
   const [saving, setSaving] = useState(false);
 
-  // New professional dialog
+  // New professional dialog — multi-select
   const [newProfDialog, setNewProfDialog] = useState(false);
   const [clientSearch, setClientSearch] = useState("");
   const [clientResults, setClientResults] = useState<ClientUser[]>([]);
   const [searchingClients, setSearchingClients] = useState(false);
-  const [selectedClient, setSelectedClient] = useState<ClientUser | null>(null);
+  const [selectedClients, setSelectedClients] = useState<ClientUser[]>([]);
   const [newLevel, setNewLevel] = useState<NonNullable<AdminLevel>>("professional");
   const [newBranchId, setNewBranchId] = useState<string>("");
   const [creatingProf, setCreatingProf] = useState(false);
@@ -166,7 +166,9 @@ export default function AdminProfessionals() {
 
   useEffect(() => { fetchAll(); }, []);
 
-  // ── Busca clientes para promover ──
+  // ── Busca clientes (exclui já-profissionais) ──
+  const alreadyProfIds = new Set(professionals.map((p) => p.user_id));
+
   const searchClients = async (q: string) => {
     if (q.trim().length < 2) { setClientResults([]); return; }
     setSearchingClients(true);
@@ -174,8 +176,12 @@ export default function AdminProfessionals() {
       .from("profiles")
       .select("user_id, full_name, phone")
       .ilike("full_name", `%${q}%`)
-      .limit(8);
-    setClientResults((data as unknown as ClientUser[]) || []);
+      .limit(15);
+    // Filter out users already on the team
+    const filtered = ((data as unknown as ClientUser[]) || []).filter(
+      (c) => !alreadyProfIds.has(c.user_id)
+    );
+    setClientResults(filtered);
     setSearchingClients(false);
   };
 
@@ -184,8 +190,15 @@ export default function AdminProfessionals() {
     return () => clearTimeout(t);
   }, [clientSearch]);
 
+  const toggleClientSelect = (c: ClientUser) => {
+    setSelectedClients((prev) => {
+      const already = prev.find((x) => x.user_id === c.user_id);
+      return already ? prev.filter((x) => x.user_id !== c.user_id) : [...prev, c];
+    });
+  };
+
   const openNewProfDialog = () => {
-    setSelectedClient(null);
+    setSelectedClients([]);
     setClientSearch("");
     setClientResults([]);
     setNewLevel("professional");
@@ -193,27 +206,48 @@ export default function AdminProfessionals() {
     setNewProfDialog(true);
   };
 
-  const createProfessional = async () => {
-    if (!selectedClient) return;
+  const createProfessionals = async () => {
+    if (selectedClients.length === 0) return;
     setCreatingProf(true);
 
-    // 1. Upsert user_role para admin + level
-    const { error: roleError } = await (supabase as any)
-      .from("user_roles")
-      .upsert(
-        { user_id: selectedClient.user_id, role: "admin", admin_level: newLevel, branch_id: newBranchId || null },
-        { onConflict: "user_id" }
-      );
+    const errors: string[] = [];
 
-    if (roleError) {
-      toast({ title: "Erro ao criar profissional", description: roleError.message, variant: "destructive" });
-      setCreatingProf(false);
-      return;
+    for (const client of selectedClients) {
+      // Check if user already has an admin role row
+      const { data: existing } = await (supabase as any)
+        .from("user_roles")
+        .select("id")
+        .eq("user_id", client.user_id)
+        .eq("role", "admin")
+        .maybeSingle();
+
+      let error: any;
+      if (existing) {
+        // UPDATE existing admin role
+        ({ error } = await (supabase as any)
+          .from("user_roles")
+          .update({ admin_level: newLevel, branch_id: newBranchId || null })
+          .eq("user_id", client.user_id)
+          .eq("role", "admin"));
+      } else {
+        // INSERT new admin role row (user keeps their client row too)
+        ({ error } = await (supabase as any)
+          .from("user_roles")
+          .insert({ user_id: client.user_id, role: "admin", admin_level: newLevel, branch_id: newBranchId || null }));
+      }
+
+      if (error) errors.push(`${client.full_name}: ${error.message}`);
     }
 
-    toast({ title: `${selectedClient.full_name} adicionado como ${LEVEL_OPTIONS.find(l => l.value === newLevel)?.label}!` });
-    setNewProfDialog(false);
-    fetchAll();
+    if (errors.length) {
+      toast({ title: "Erro ao adicionar", description: errors.join("\n"), variant: "destructive" });
+    } else {
+      const levelLabel = LEVEL_OPTIONS.find((l) => l.value === newLevel)?.label;
+      const names = selectedClients.map((c) => c.full_name.split(" ")[0]).join(", ");
+      toast({ title: `${names} adicionado${selectedClients.length > 1 ? "s" : ""} como ${levelLabel}! ✅` });
+      setNewProfDialog(false);
+      fetchAll();
+    }
     setCreatingProf(false);
   };
 
@@ -339,69 +373,74 @@ export default function AdminProfessionals() {
         </div>
       )}
 
-      {/* ── Dialog: Novo Profissional ── */}
+      {/* ── Dialog: Novo Profissional (multi-select) ── */}
       <Dialog open={newProfDialog} onOpenChange={setNewProfDialog}>
         <DialogContent className="max-w-md">
           <DialogHeader>
-            <DialogTitle className="font-serif text-lg">Novo Profissional</DialogTitle>
-            <p className="text-sm text-muted-foreground">Busque um cliente cadastrado para promovê-lo à equipe</p>
+            <DialogTitle className="font-serif text-lg">Adicionar Profissionais</DialogTitle>
+            <p className="text-sm text-muted-foreground">Selecione um ou mais clientes para adicionar à equipe</p>
           </DialogHeader>
 
-          <div className="space-y-4 py-1">
-            {/* Search */}
-            <div className="space-y-1.5">
-              <Label>Buscar por nome</Label>
-              <div className="relative">
-                <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
-                <Input
-                  placeholder="Digite o nome..."
-                  className="pl-8"
-                  value={clientSearch}
-                  onChange={(e) => { setClientSearch(e.target.value); setSelectedClient(null); }}
-                />
+          <div className="space-y-3 py-1">
+            {/* Selected chips */}
+            {selectedClients.length > 0 && (
+              <div className="flex flex-wrap gap-1.5 p-2 rounded-lg bg-primary/5 border border-primary/15 min-h-[2.5rem]">
+                {selectedClients.map((c) => (
+                  <span key={c.user_id} className="inline-flex items-center gap-1 bg-primary text-primary-foreground rounded-full px-2.5 py-0.5 text-xs font-medium">
+                    {c.full_name.split(" ")[0]}
+                    <button onClick={() => toggleClientSelect(c)} className="hover:opacity-70 ml-0.5 leading-none">×</button>
+                  </span>
+                ))}
               </div>
+            )}
+
+            {/* Search */}
+            <div className="relative">
+              <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
+              <Input
+                placeholder="Buscar por nome…"
+                className="pl-8"
+                value={clientSearch}
+                onChange={(e) => setClientSearch(e.target.value)}
+              />
             </div>
 
-            {/* Results */}
+            {/* Results dropdown */}
             {clientSearch.length >= 2 && (
-              <div className="border border-border rounded-lg overflow-hidden max-h-44 overflow-y-auto">
+              <div className="border border-border rounded-lg overflow-hidden max-h-48 overflow-y-auto">
                 {searchingClients ? (
                   <div className="p-3 text-xs text-muted-foreground text-center">Buscando…</div>
                 ) : clientResults.length === 0 ? (
-                  <div className="p-3 text-xs text-muted-foreground text-center">Nenhum resultado</div>
+                  <div className="p-3 text-xs text-muted-foreground text-center">
+                    Nenhum resultado — todos os usuários com esse nome já fazem parte da equipe ou não existem.
+                  </div>
                 ) : (
-                  clientResults.map((c) => (
-                    <button
-                      key={c.user_id}
-                      onClick={() => { setSelectedClient(c); setClientSearch(c.full_name); setClientResults([]); }}
-                      className={`w-full text-left px-3 py-2.5 text-sm flex items-center gap-2 hover:bg-muted/60 transition-colors border-b border-border/50 last:border-0
-                        ${selectedClient?.user_id === c.user_id ? "bg-primary/10" : ""}`}
-                    >
-                      <div className="h-7 w-7 rounded-full bg-primary/10 flex items-center justify-center text-primary font-bold text-xs shrink-0">
-                        {c.full_name.charAt(0).toUpperCase()}
-                      </div>
-                      <div>
-                        <p className="font-medium leading-tight">{c.full_name}</p>
-                        {c.phone && <p className="text-xs text-muted-foreground">{c.phone}</p>}
-                      </div>
-                    </button>
-                  ))
+                  clientResults.map((c) => {
+                    const isSelected = selectedClients.some((x) => x.user_id === c.user_id);
+                    return (
+                      <button
+                        key={c.user_id}
+                        onClick={() => toggleClientSelect(c)}
+                        className={`w-full text-left px-3 py-2.5 text-sm flex items-center gap-2.5 transition-colors border-b border-border/40 last:border-0
+                          ${isSelected ? "bg-primary/10" : "hover:bg-muted/60"}`}
+                      >
+                        <div className={`h-7 w-7 rounded-full flex items-center justify-center font-bold text-xs shrink-0
+                          ${isSelected ? "bg-primary text-primary-foreground" : "bg-primary/10 text-primary"}`}>
+                          {isSelected ? "✓" : c.full_name.charAt(0).toUpperCase()}
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <p className="font-medium leading-tight truncate">{c.full_name}</p>
+                          {c.phone && <p className="text-xs text-muted-foreground">{c.phone}</p>}
+                        </div>
+                      </button>
+                    );
+                  })
                 )}
               </div>
             )}
 
-            {/* Selected confirmation */}
-            {selectedClient && (
-              <div className="flex items-center gap-2 px-3 py-2 rounded-lg bg-primary/8 border border-primary/20 text-sm">
-                <div className="h-6 w-6 rounded-full bg-primary/20 flex items-center justify-center text-primary font-bold text-xs shrink-0">
-                  {selectedClient.full_name.charAt(0).toUpperCase()}
-                </div>
-                <span className="font-medium text-foreground">{selectedClient.full_name}</span>
-              </div>
-            )}
-
             {/* Level + Branch */}
-            <div className="grid grid-cols-2 gap-3">
+            <div className="grid grid-cols-2 gap-3 pt-1">
               <div className="space-y-1.5">
                 <Label>Nível</Label>
                 <Select value={newLevel} onValueChange={(v) => setNewLevel(v as NonNullable<AdminLevel>)}>
@@ -423,10 +462,10 @@ export default function AdminProfessionals() {
             </div>
           </div>
 
-          <DialogFooter>
+          <DialogFooter className="gap-2">
             <Button variant="ghost" onClick={() => setNewProfDialog(false)}>Cancelar</Button>
-            <Button onClick={createProfessional} disabled={!selectedClient || creatingProf}>
-              {creatingProf ? "Salvando…" : "Adicionar à equipe"}
+            <Button onClick={createProfessionals} disabled={selectedClients.length === 0 || creatingProf}>
+              {creatingProf ? "Adicionando…" : `Adicionar${selectedClients.length > 1 ? ` (${selectedClients.length})` : ""} à equipe`}
             </Button>
           </DialogFooter>
         </DialogContent>
