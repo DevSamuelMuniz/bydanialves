@@ -56,7 +56,7 @@ export function AdminSidebar() {
     { title: "Financeiro",         url: "/admin/finance",        icon: DollarSign,      tourId: "sidebar-admin-finance" },
     { title: "Profissionais",      url: "/admin/professionals",  icon: UserCheck,       tourId: "sidebar-admin-professionals" },
     { title: "Filiais",            url: "/admin/branches",       icon: Building2,       tourId: "sidebar-admin-branches" },
-    { title: "Usuários",           url: "/admin/users",          icon: ShieldCheck,     tourId: "sidebar-admin-users" },
+    
     { title: "Cupons",             url: "/admin/coupons",        icon: Tag,             tourId: "sidebar-admin-coupons" },
     { title: "Avaliações",         url: "/admin/reviews",        icon: Star,            tourId: "sidebar-admin-reviews" },
     { title: "TV de Fila",         url: "/admin/queue-tv",       icon: Tv2,             tourId: "sidebar-admin-queue-tv", badge: pendingCount },
