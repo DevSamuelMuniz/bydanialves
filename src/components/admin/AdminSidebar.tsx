@@ -72,6 +72,7 @@ export function AdminSidebar() {
       "/admin/finance":         perms.canViewFinance,
       "/admin/branches":        perms.canViewBranches,
       "/admin/users":           perms.canViewUsers,
+      "/admin/professionals":   perms.canViewProfessionals,
       "/admin/coupons":         perms.canManageCoupons,
       "/admin/reviews":         perms.canViewServices,
       "/admin/queue-tv":        perms.canViewQueueTV,
