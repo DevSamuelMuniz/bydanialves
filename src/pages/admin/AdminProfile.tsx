@@ -17,76 +17,50 @@ export default function AdminProfile() {
   const { user } = useAuth();
   const { toast } = useToast();
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const { profile, loading, avatarUrl, uploadAvatar, setProfile } = useProfile();
 
-  const [profile, setProfile] = useState<any>(null);
-  const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [uploading, setUploading] = useState(false);
   const [editing, setEditing] = useState(false);
-  const [avatarUrl, setAvatarUrl] = useState<string | null>(null);
   const [form, setForm] = useState({ full_name: "", phone: "", bio: "" });
 
   useEffect(() => {
-    if (!user) return;
-    supabase.
-    from("profiles").
-    select("*").
-    eq("user_id", user.id).
-    single().
-    then(({ data }) => {
-      if (data) {
-        setProfile(data);
-        setForm({ full_name: data.full_name || "", phone: data.phone || "", bio: (data as any).bio || "" });
-        if (data.avatar_url) {
-          const { data: urlData } = supabase.storage.from("avatars").getPublicUrl(data.avatar_url);
-          setAvatarUrl(urlData.publicUrl);
-        }
-      }
-      setLoading(false);
+    if (!profile) return;
+    setForm({
+      full_name: profile.full_name || "",
+      phone: profile.phone || "",
+      bio: profile.bio || "",
     });
-  }, [user]);
+  }, [profile]);
 
   const handleAvatarUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
-    if (!file || !user) return;
+    if (!file) return;
     setUploading(true);
-    const ext = file.name.split(".").pop();
-    const filePath = `${user.id}/avatar.${ext}`;
-    const { error: uploadError } = await supabase.storage.
-    from("avatars").
-    upload(filePath, file, { upsert: true });
-    if (uploadError) {
-      toast({ title: "Erro ao enviar foto", description: uploadError.message, variant: "destructive" });
-      setUploading(false);
-      return;
-    }
-    const { error: updateError } = await supabase.
-    from("profiles").
-    update({ avatar_url: filePath }).
-    eq("user_id", user.id);
-    if (updateError) {
-      toast({ title: "Erro ao salvar foto", description: updateError.message, variant: "destructive" });
-    } else {
-      const { data: urlData } = supabase.storage.from("avatars").getPublicUrl(filePath);
-      setAvatarUrl(urlData.publicUrl + "?t=" + Date.now());
+    try {
+      await uploadAvatar(file);
       toast({ title: "Foto atualizada! 📸" });
+    } catch (err: any) {
+      toast({ title: "Erro ao enviar foto", description: err.message, variant: "destructive" });
+    } finally {
+      setUploading(false);
+      if (fileInputRef.current) fileInputRef.current.value = "";
     }
-    setUploading(false);
   };
 
   const handleSave = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!user) return;
     setSaving(true);
-    const { error } = await supabase.
-    from("profiles").
-    update({ full_name: form.full_name, phone: form.phone, bio: form.bio } as any).
-    eq("user_id", user.id);
+    const { error } = await supabase
+      .from("profiles")
+      .update({ full_name: form.full_name, phone: form.phone, bio: form.bio } as any)
+      .eq("user_id", user.id);
     setSaving(false);
     if (error) {
       toast({ title: "Erro", description: error.message, variant: "destructive" });
     } else {
-      setProfile({ ...profile, ...form });
+      setProfile({ ...profile, ...form } as any);
       setEditing(false);
       toast({ title: "Perfil atualizado! ✨" });
     }
