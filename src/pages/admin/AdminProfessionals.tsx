@@ -276,7 +276,7 @@ export default function AdminProfessionals() {
               return (
                 <div
                   key={d.value}
-                  className={`grid grid-cols-[1.5rem_1fr_auto_auto_auto] gap-2 items-center rounded-lg px-1 py-1.5 transition-colors
+                  className={`grid grid-cols-[1.5rem_1fr_auto_auto_auto] gap-4 items-center rounded-lg px-1 py-1.5 transition-colors
                     ${row.enabled ? "bg-primary/5" : "opacity-50"}`}
                 >
                   {/* Toggle */}
@@ -287,7 +287,7 @@ export default function AdminProfessionals() {
                   />
 
                   {/* Day label */}
-                  <span className={`text-sm font-medium ${row.enabled ? "text-foreground" : "text-muted-foreground"}`}>
+                  <span className={`text-sm font-medium pl-2 ${row.enabled ? "text-foreground" : "text-muted-foreground"}`}>
                     {d.label}
                   </span>
 
