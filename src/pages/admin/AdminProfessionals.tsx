@@ -28,6 +28,29 @@ const DAYS = [
   { value: 0, label: "Domingo",  short: "Dom" },
 ];
 
+/** Returns a map of day_of_week (0=Sun..6=Sat) → Date for the current week (Mon–Sun) */
+function getCurrentWeekDates(): Record<number, Date> {
+  const today = new Date();
+  const dow = today.getDay(); // 0=Sun
+  // Monday of this week
+  const monday = new Date(today);
+  monday.setDate(today.getDate() - (dow === 0 ? 6 : dow - 1));
+  monday.setHours(0, 0, 0, 0);
+
+  const map: Record<number, Date> = {};
+  for (let i = 0; i < 7; i++) {
+    const d = new Date(monday);
+    d.setDate(monday.getDate() + i);
+    const dayVal = d.getDay(); // 0=Sun, 1=Mon …
+    map[dayVal] = d;
+  }
+  return map;
+}
+
+function fmtDate(d: Date): string {
+  return `${String(d.getDate()).padStart(2, "0")}/${String(d.getMonth() + 1).padStart(2, "0")}`;
+}
+
 const HOURS = Array.from({ length: 10 }, (_, i) => {
   const h = i + 8;
   return `${String(h).padStart(2, "0")}:00`;
@@ -516,6 +539,7 @@ export default function AdminProfessionals() {
 
             {DAYS.map((d) => {
               const row = weekState[d.value] ?? defaultDayRow();
+              const weekDate = getCurrentWeekDates()[d.value];
               return (
                 <div
                   key={d.value}
@@ -527,9 +551,14 @@ export default function AdminProfessionals() {
                     onCheckedChange={(v) => setDayField(d.value, "enabled", v)}
                     className="scale-75 origin-left"
                   />
-                  <span className={`text-sm font-medium pl-2 ${row.enabled ? "text-foreground" : "text-muted-foreground"}`}>
-                    {d.label}
-                  </span>
+                  <div className="pl-2 flex flex-col">
+                    <span className={`text-sm font-medium leading-tight ${row.enabled ? "text-foreground" : "text-muted-foreground"}`}>
+                      {d.label}
+                    </span>
+                    {weekDate && (
+                      <span className="text-[10px] text-muted-foreground leading-tight">{fmtDate(weekDate)}</span>
+                    )}
+                  </div>
                   <Select
                     value={row.start_time}
                     onValueChange={(v) => setDayField(d.value, "start_time", v)}
@@ -728,7 +757,7 @@ function ProfessionalCard({ prof, canManage, onEditWeek, onDeleteAll, onRemove }
         ) : (
           <div className="flex flex-wrap gap-1.5">
             {sortedSchedules.map((sched) => {
-              const day = DAYS.find((d) => d.value === sched.day_of_week);
+              const weekDate = getCurrentWeekDates()[sched.day_of_week];
               return (
                 <div
                   key={sched.id}
@@ -737,7 +766,7 @@ function ProfessionalCard({ prof, canManage, onEditWeek, onDeleteAll, onRemove }
                       ? "bg-primary/8 border-primary/20 text-foreground"
                       : "bg-muted/40 border-border text-muted-foreground line-through opacity-60"}`}
                 >
-                  <span className="font-semibold">{day?.short}</span>
+                  <span className="font-semibold">{weekDate ? fmtDate(weekDate) : ""}</span>
                   <span className="text-muted-foreground">{sched.start_time}–{sched.end_time}</span>
                 </div>
               );
