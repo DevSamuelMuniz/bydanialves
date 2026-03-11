@@ -6,7 +6,7 @@ import { Badge } from "@/components/ui/badge";
 import { supabase } from "@/integrations/supabase/client";
 import {
   LayoutDashboard, Users, Calendar, Scissors, DollarSign,
-  ShieldCheck, Crown, Activity, ClipboardList, Building2, Tag, Star, Tv2,
+  ShieldCheck, Crown, Activity, ClipboardList, Building2, Tag, Star, Tv2, UserCheck,
 } from "lucide-react";
 
 function usePendingQueueCount() {
@@ -54,6 +54,7 @@ export function AdminSidebar() {
     { title: "Serviços",           url: "/admin/services",       icon: Scissors,        tourId: "sidebar-admin-services" },
     { title: "Planos",             url: "/admin/plans",          icon: Crown,           tourId: "sidebar-admin-plans" },
     { title: "Financeiro",         url: "/admin/finance",        icon: DollarSign,      tourId: "sidebar-admin-finance" },
+    { title: "Profissionais",      url: "/admin/professionals",  icon: UserCheck,       tourId: "sidebar-admin-professionals" },
     { title: "Filiais",            url: "/admin/branches",       icon: Building2,       tourId: "sidebar-admin-branches" },
     { title: "Usuários",           url: "/admin/users",          icon: ShieldCheck,     tourId: "sidebar-admin-users" },
     { title: "Cupons",             url: "/admin/coupons",        icon: Tag,             tourId: "sidebar-admin-coupons" },
@@ -71,6 +72,7 @@ export function AdminSidebar() {
       "/admin/finance":         perms.canViewFinance,
       "/admin/branches":        perms.canViewBranches,
       "/admin/users":           perms.canViewUsers,
+      "/admin/professionals":   perms.canViewProfessionals,
       "/admin/coupons":         perms.canManageCoupons,
       "/admin/reviews":         perms.canViewServices,
       "/admin/queue-tv":        perms.canViewQueueTV,

@@ -34,6 +34,7 @@ interface Professional {
   full_name: string;
   avatar_url: string | null;
   bio: string | null;
+  schedules?: { day_of_week: number; start_time: string; end_time: string; active: boolean }[];
 }
 
 function parseEscovasFromIncludes(includes: string): number {
@@ -199,12 +200,13 @@ export default function NewBooking() {
       });
   }, [selectedDate, selectedBranch]);
 
-  // Load professionals when reaching step 5
+  // Load professionals when reaching step 5 — filter by schedule on selected day
   useEffect(() => {
-    if (step !== 5 || !selectedBranch) return;
+    if (step !== 5 || !selectedBranch || !selectedDate) return;
     setLoadingProfessionals(true);
 
-    // Fetch admin users with professional or attendant level linked to the selected branch (or global)
+    const dayOfWeek = selectedDate.getDay(); // 0=Dom ... 6=Sáb
+
     supabase
       .from("user_roles" as any)
       .select("user_id, admin_level, branch_id")
@@ -217,7 +219,7 @@ export default function NewBooking() {
           return;
         }
 
-        // Filter by branch: include those assigned to this branch OR without a branch assigned
+        // Filter by branch
         const filtered = (roles as any[]).filter(
           (r) => !r.branch_id || r.branch_id === selectedBranch.id
         );
@@ -229,15 +231,39 @@ export default function NewBooking() {
         }
 
         const userIds = filtered.map((r: any) => r.user_id);
-        const { data: profiles } = await supabase
-          .from("profiles")
-          .select("user_id, full_name, avatar_url, bio")
-          .in("user_id", userIds);
 
-        setProfessionals((profiles as unknown as Professional[]) || []);
+        // Fetch profiles and schedules in parallel
+        const [{ data: profiles }, { data: schedules }] = await Promise.all([
+          supabase.from("profiles").select("user_id, full_name, avatar_url, bio").in("user_id", userIds),
+          (supabase as any)
+            .from("professional_schedules")
+            .select("professional_id, day_of_week, start_time, end_time, active")
+            .in("professional_id", userIds)
+            .eq("active", true),
+        ]);
+
+        // Only include professionals who have a schedule for the selected day_of_week
+        const scheduleMap: Record<string, { day_of_week: number; start_time: string; end_time: string; active: boolean }[]> = {};
+        ((schedules as any[]) || []).forEach((s: any) => {
+          if (!scheduleMap[s.professional_id]) scheduleMap[s.professional_id] = [];
+          scheduleMap[s.professional_id].push(s);
+        });
+
+        const availableProfs = ((profiles as any[]) || []).filter((p) => {
+          const profSchedules = scheduleMap[p.user_id] || [];
+          // If no schedules configured at all, show them (fallback)
+          if (profSchedules.length === 0) return true;
+          // Otherwise require a matching day
+          return profSchedules.some((s) => s.day_of_week === dayOfWeek);
+        }).map((p) => ({
+          ...p,
+          schedules: scheduleMap[p.user_id] || [],
+        }));
+
+        setProfessionals(availableProfs as unknown as Professional[]);
         setLoadingProfessionals(false);
       });
-  }, [step, selectedBranch]);
+  }, [step, selectedBranch, selectedDate]);
 
   const toggleService = (s: ServiceItem) => {
     setSelectedServices((prev) => {
