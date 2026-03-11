@@ -216,6 +216,24 @@ export default function NewBooking() {
       .then(({ data }) => setBranches((data as unknown as Branch[]) || []));
   }, []);
 
+  // Load work calendar for current and next 3 months so we can disable blocked dates
+  useEffect(() => {
+    const today = new Date();
+    const start = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, "0")}-01`;
+    const futureEnd = new Date(today.getFullYear(), today.getMonth() + 4, 0);
+    const end = `${futureEnd.getFullYear()}-${String(futureEnd.getMonth() + 1).padStart(2, "0")}-${String(futureEnd.getDate()).padStart(2, "0")}`;
+    (supabase as any)
+      .from("work_calendar")
+      .select("date, enabled")
+      .gte("date", start)
+      .lte("date", end)
+      .then(({ data }: { data: { date: string; enabled: boolean }[] | null }) => {
+        const map: Record<string, boolean> = {};
+        (data || []).forEach((row) => { map[row.date] = row.enabled; });
+        setWorkCalendarMap(map);
+      });
+  }, []);
+
   // Load ALL professionals for the selected branch via SECURITY DEFINER RPC
   // This bypasses RLS so clients can always see professionals, regardless of their own role
   useEffect(() => {
