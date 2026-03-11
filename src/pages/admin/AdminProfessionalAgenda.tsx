@@ -6,19 +6,32 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Textarea } from "@/components/ui/textarea";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Separator } from "@/components/ui/separator";
 import { Calendar } from "@/components/ui/calendar";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
 import { useToast } from "@/hooks/use-toast";
-import { Clock, CalendarDays, StickyNote, Trash2, DollarSign, Handshake, CheckCircle2, User, Scissors, RefreshCw, XCircle, Building2, Filter, UserCheck } from "lucide-react";
+import { Clock, CalendarDays, StickyNote, Trash2, DollarSign, Handshake, CheckCircle2, User, Scissors, RefreshCw, XCircle, Building2, Filter, UserCheck, Plus, Search } from "lucide-react";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { AccessDenied } from "@/components/admin/AccessDenied";
 
 const PAGE_SIZE = 100;
+
+// Generate time slots every 30 min
+function generateSlots(start = 8, end = 20): string[] {
+  const slots: string[] = [];
+  for (let h = start; h < end; h++) {
+    slots.push(`${String(h).padStart(2, "0")}:00`);
+    slots.push(`${String(h).padStart(2, "0")}:30`);
+  }
+  return slots;
+}
 
 export default function AdminProfessionalAgenda() {
   const { toast } = useToast();
@@ -39,6 +52,22 @@ export default function AdminProfessionalAgenda() {
   const [dateTo, setDateTo] = useState<Date | undefined>();
   const [editingNotes, setEditingNotes] = useState<string | null>(null);
   const [notesValue, setNotesValue] = useState("");
+
+  // --- Manual booking dialog state ---
+  const [bookingOpen, setBookingOpen] = useState(false);
+  const [bookingLoading, setBookingLoading] = useState(false);
+  const [services, setServices] = useState<any[]>([]);
+  const [allClients, setAllClients] = useState<{ user_id: string; full_name: string; phone: string | null }[]>([]);
+  const [clientSearch, setClientSearch] = useState("");
+  const [bookingForm, setBookingForm] = useState({
+    client_id: "",
+    service_id: "",
+    professional_id: "",
+    branch_id: "",
+    date: undefined as Date | undefined,
+    time: "",
+    notes: "",
+  });
 
   // Fetch professionals list for manager/ceo filter (professional level only, no attendants)
   useEffect(() => {
@@ -71,6 +100,28 @@ export default function AdminProfessionalAgenda() {
     load();
   }, [isManager]);
 
+  // Load services and clients for booking dialog
+  const loadBookingData = useCallback(async () => {
+    const [{ data: svcs }, { data: roles }] = await Promise.all([
+      supabase.from("services").select("id, name, price, duration_minutes").eq("active", true).order("name"),
+      supabase.from("user_roles").select("user_id").eq("role", "client"),
+    ]);
+    setServices(svcs || []);
+    if (roles?.length) {
+      const ids = roles.map((r) => r.user_id);
+      const { data: clients } = await supabase
+        .from("profiles")
+        .select("user_id, full_name, phone")
+        .in("user_id", ids)
+        .order("full_name");
+      setAllClients(clients || []);
+    }
+    if (branches.length === 0 && isManager) {
+      const { data: brs } = await supabase.from("branches").select("id, name").eq("active", true).order("name");
+      setBranches(brs || []);
+    }
+  }, [branches.length, isManager]);
+
   const fetchAppointments = useCallback(async () => {
     setLoading(true);
     let query = supabase
@@ -78,11 +129,9 @@ export default function AdminProfessionalAgenda() {
       .select("*, services(name, price, duration_minutes), profiles!appointments_client_profile_fkey(full_name, phone)")
       .in("status", ["confirmed", "cancelled"]);
 
-    // Professional sees only their own
     if (!isManager) {
       query = query.eq("professional_id", user?.id ?? "");
     } else {
-      // Manager/CEO: filter by selected professional or branch
       if (profFilter !== "all" && profFilter !== "self") {
         query = query.eq("professional_id", profFilter);
       }
@@ -158,6 +207,54 @@ export default function AdminProfessionalAgenda() {
   };
 
   function hasAttendant(a: any) { return a.notes && a.notes.includes("[Atendido por:"); }
+
+  // --- Manual booking ---
+  const openBookingDialog = async () => {
+    setBookingForm({
+      client_id: "",
+      service_id: "",
+      professional_id: isManager ? "" : (user?.id ?? ""),
+      branch_id: adminBranchId ?? "",
+      date: undefined,
+      time: "",
+      notes: "",
+    });
+    setClientSearch("");
+    setBookingOpen(true);
+    await loadBookingData();
+  };
+
+  const handleManualBooking = async () => {
+    const { client_id, service_id, professional_id, branch_id, date, time } = bookingForm;
+    if (!client_id || !service_id || !date || !time) {
+      toast({ title: "Preencha todos os campos obrigatórios", variant: "destructive" });
+      return;
+    }
+    setBookingLoading(true);
+    const { error } = await supabase.from("appointments").insert({
+      client_id,
+      service_id,
+      professional_id: professional_id || null,
+      branch_id: branch_id || null,
+      appointment_date: format(date, "yyyy-MM-dd"),
+      appointment_time: time + ":00",
+      status: "confirmed",
+      notes: bookingForm.notes || null,
+    });
+    setBookingLoading(false);
+    if (error) {
+      toast({ title: "Erro ao agendar", description: error.message, variant: "destructive" });
+    } else {
+      toast({ title: "✅ Agendamento criado!", description: "Serviço agendado manualmente com sucesso." });
+      setBookingOpen(false);
+      fetchAppointments();
+    }
+  };
+
+  const filteredClients = allClients.filter((c) =>
+    c.full_name.toLowerCase().includes(clientSearch.toLowerCase()) ||
+    (c.phone && c.phone.includes(clientSearch))
+  );
 
   const toTake    = appointments.filter((a) => a.status === "confirmed" && !hasAttendant(a));
   const toDo      = appointments.filter((a) => a.status === "confirmed" && hasAttendant(a));
@@ -268,10 +365,16 @@ export default function AdminProfessionalAgenda() {
             {isProfessional ? "Seus agendamentos ativos" : `${appointments.length} agendamento(s) ativos`}
           </p>
         </div>
-        <Button variant="outline" size="sm" className="gap-2" onClick={() => fetchAppointments()} disabled={loading}>
-          <RefreshCw className={`h-4 w-4 ${loading ? "animate-spin" : ""}`} />
-          Atualizar
-        </Button>
+        <div className="flex items-center gap-2">
+          <Button size="sm" className="gap-2" onClick={openBookingDialog}>
+            <Plus className="h-4 w-4" />
+            Agendar
+          </Button>
+          <Button variant="outline" size="sm" className="gap-2" onClick={() => fetchAppointments()} disabled={loading}>
+            <RefreshCw className={`h-4 w-4 ${loading ? "animate-spin" : ""}`} />
+            Atualizar
+          </Button>
+        </div>
       </div>
 
       {/* Filters */}
@@ -363,6 +466,171 @@ export default function AdminProfessionalAgenda() {
           ))}
         </div>
       )}
+
+      {/* Manual Booking Dialog */}
+      <Dialog open={bookingOpen} onOpenChange={setBookingOpen}>
+        <DialogContent className="max-w-lg max-h-[90vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle className="font-serif text-xl flex items-center gap-2">
+              <Scissors className="h-5 w-5 text-primary" />
+              Agendar Manualmente
+            </DialogTitle>
+          </DialogHeader>
+
+          <div className="space-y-4 py-2">
+            {/* Client search */}
+            <div className="space-y-2">
+              <Label>Cliente <span className="text-destructive">*</span></Label>
+              <div className="relative">
+                <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
+                <Input
+                  placeholder="Buscar cliente por nome ou telefone..."
+                  value={clientSearch}
+                  onChange={(e) => setClientSearch(e.target.value)}
+                  className="pl-8"
+                />
+              </div>
+              {clientSearch && (
+                <div className="border border-border rounded-lg max-h-40 overflow-y-auto divide-y divide-border">
+                  {filteredClients.length === 0 ? (
+                    <p className="text-xs text-muted-foreground p-3 text-center">Nenhum cliente encontrado</p>
+                  ) : (
+                    filteredClients.slice(0, 8).map((c) => (
+                      <button
+                        key={c.user_id}
+                        className={`w-full text-left px-3 py-2 text-sm hover:bg-muted/50 transition-colors ${bookingForm.client_id === c.user_id ? "bg-primary/10 font-semibold" : ""}`}
+                        onClick={() => { setBookingForm((f) => ({ ...f, client_id: c.user_id })); setClientSearch(c.full_name); }}
+                      >
+                        <span>{c.full_name}</span>
+                        {c.phone && <span className="text-muted-foreground text-xs ml-2">{c.phone}</span>}
+                      </button>
+                    ))
+                  )}
+                </div>
+              )}
+              {bookingForm.client_id && (
+                <p className="text-xs text-primary font-medium">
+                  ✓ {allClients.find(c => c.user_id === bookingForm.client_id)?.full_name} selecionado(a)
+                </p>
+              )}
+            </div>
+
+            {/* Service */}
+            <div className="space-y-2">
+              <Label>Serviço <span className="text-destructive">*</span></Label>
+              <Select value={bookingForm.service_id} onValueChange={(v) => setBookingForm((f) => ({ ...f, service_id: v }))}>
+                <SelectTrigger>
+                  <SelectValue placeholder="Selecione o serviço" />
+                </SelectTrigger>
+                <SelectContent>
+                  {services.map((s) => (
+                    <SelectItem key={s.id} value={s.id}>
+                      {s.name} — R$ {Number(s.price).toFixed(2)} ({s.duration_minutes}min)
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+
+            {/* Professional (manager can pick) */}
+            {isManager && (
+              <div className="space-y-2">
+                <Label>Profissional</Label>
+                <Select value={bookingForm.professional_id} onValueChange={(v) => setBookingForm((f) => ({ ...f, professional_id: v }))}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Sem preferência" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="none">Sem preferência</SelectItem>
+                    {professionals.map((p) => (
+                      <SelectItem key={p.user_id} value={p.user_id}>{p.full_name}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+            )}
+
+            {/* Branch */}
+            {branches.length > 0 && (
+              <div className="space-y-2">
+                <Label>Filial</Label>
+                <Select value={bookingForm.branch_id} onValueChange={(v) => setBookingForm((f) => ({ ...f, branch_id: v }))}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Selecione a filial" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {branches.map((b) => (
+                      <SelectItem key={b.id} value={b.id}>{b.name}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+            )}
+
+            {/* Date */}
+            <div className="space-y-2">
+              <Label>Data <span className="text-destructive">*</span></Label>
+              <Popover>
+                <PopoverTrigger asChild>
+                  <Button variant="outline" className="w-full justify-start font-normal">
+                    <CalendarDays className="mr-2 h-4 w-4" />
+                    {bookingForm.date ? format(bookingForm.date, "dd 'de' MMMM 'de' yyyy", { locale: ptBR }) : "Selecionar data"}
+                  </Button>
+                </PopoverTrigger>
+                <PopoverContent className="w-auto p-0">
+                  <Calendar
+                    mode="single"
+                    selected={bookingForm.date}
+                    onSelect={(d) => setBookingForm((f) => ({ ...f, date: d }))}
+                    locale={ptBR}
+                    disabled={(d) => d < new Date(new Date().setHours(0, 0, 0, 0))}
+                  />
+                </PopoverContent>
+              </Popover>
+            </div>
+
+            {/* Time */}
+            <div className="space-y-2">
+              <Label>Horário <span className="text-destructive">*</span></Label>
+              <div className="grid grid-cols-4 sm:grid-cols-6 gap-1.5 max-h-36 overflow-y-auto pr-1">
+                {generateSlots().map((slot) => (
+                  <button
+                    key={slot}
+                    onClick={() => setBookingForm((f) => ({ ...f, time: slot }))}
+                    className={`rounded-lg border text-xs py-1.5 font-medium transition-colors ${
+                      bookingForm.time === slot
+                        ? "bg-primary text-primary-foreground border-primary"
+                        : "border-border hover:bg-muted"
+                    }`}
+                  >
+                    {slot}
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            {/* Notes */}
+            <div className="space-y-2">
+              <Label>Observações</Label>
+              <Textarea
+                placeholder="Observações sobre o agendamento..."
+                value={bookingForm.notes}
+                onChange={(e) => setBookingForm((f) => ({ ...f, notes: e.target.value }))}
+                rows={2}
+                className="text-sm"
+              />
+            </div>
+          </div>
+
+          <DialogFooter className="gap-2">
+            <Button variant="outline" onClick={() => setBookingOpen(false)}>Cancelar</Button>
+            <Button onClick={handleManualBooking} disabled={bookingLoading} className="gap-2">
+              <Plus className="h-4 w-4" />
+              {bookingLoading ? "Agendando..." : "Confirmar Agendamento"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
