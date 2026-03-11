@@ -248,13 +248,16 @@ export default function NewBooking() {
 
       const userIds = filtered.map((r: any) => r.user_id);
 
+      const schedulesQuery = (supabase as any)
+        .from("professional_schedules")
+        .select("professional_id, day_of_week, start_time, end_time, active, branch_id")
+        .in("professional_id", userIds)
+        .eq("active", true);
+
+      // Include schedules for this branch OR with null branch_id (global)
       const [{ data: profiles }, { data: schedules }] = await Promise.all([
         supabase.from("profiles").select("user_id, full_name, avatar_url, bio").in("user_id", userIds),
-        (supabase as any)
-          .from("professional_schedules")
-          .select("professional_id, day_of_week, start_time, end_time, active")
-          .in("professional_id", userIds)
-          .eq("active", true),
+        schedulesQuery,
       ]);
 
       const scheduleMap: Record<string, ProfSchedule[]> = {};
