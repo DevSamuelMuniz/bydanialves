@@ -203,17 +203,23 @@ export default function AdminDashboard() {
   if (loading) return (
     <div className="space-y-6">
       <Skeleton className="h-10 w-48 rounded-lg" />
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-        {[...Array(4)].map((_, i) => <Skeleton key={i} className="h-28 rounded-xl" />)}
-      </div>
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        <Skeleton className="lg:col-span-2 h-64 rounded-xl" />
-        <Skeleton className="h-64 rounded-xl" />
-      </div>
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        <Skeleton className="h-56 rounded-xl" />
-        <Skeleton className="h-56 rounded-xl" />
-      </div>
+      {isProfessional ? (
+        <Skeleton className="h-48 w-full max-w-xs rounded-xl" />
+      ) : (
+        <>
+          <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+            {[...Array(4)].map((_, i) => <Skeleton key={i} className="h-28 rounded-xl" />)}
+          </div>
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+            <Skeleton className="lg:col-span-2 h-64 rounded-xl" />
+            <Skeleton className="h-64 rounded-xl" />
+          </div>
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            <Skeleton className="h-56 rounded-xl" />
+            <Skeleton className="h-56 rounded-xl" />
+          </div>
+        </>
+      )}
     </div>
   );
 
@@ -225,6 +231,42 @@ export default function AdminDashboard() {
   ];
 
   const BAR_COLORS = ["hsl(40,65%,48%)", "hsl(40,55%,52%)", "hsl(40,45%,56%)", "hsl(40,38%,60%)", "hsl(40,30%,65%)"];
+
+  // ── View simplificada para Profissional (apenas avaliações) ──────────────
+  if (isProfessional) {
+    return (
+      <div className="space-y-6">
+        <h1 className="font-serif text-2xl md:text-3xl tracking-tight">Dashboard</h1>
+        <div className="max-w-sm">
+          <Card className="border-border/60">
+            <CardContent className="pt-6 flex flex-col items-center justify-center gap-3">
+              <div className="flex items-center gap-2 self-start">
+                <Star className="h-4 w-4 text-primary" />
+                <h3 className="font-serif text-base font-medium tracking-tight">Avaliações</h3>
+              </div>
+              <p className="text-xs text-muted-foreground self-start -mt-2">Média geral dos atendimentos</p>
+              {avgRating !== null ? (
+                <>
+                  <p className="text-5xl font-serif font-bold text-primary">{avgRating.toFixed(1)}</p>
+                  <div className="flex gap-0.5">
+                    {[1, 2, 3, 4, 5].map((s) => (
+                      <Star
+                        key={s}
+                        className={`h-5 w-5 ${s <= Math.round(avgRating!) ? "fill-primary text-primary" : "text-muted-foreground/30"}`}
+                      />
+                    ))}
+                  </div>
+                  <p className="text-xs text-muted-foreground">{reviewCount} avaliação{reviewCount !== 1 ? "ões" : ""}</p>
+                </>
+              ) : (
+                <p className="text-sm text-muted-foreground text-center py-4">Sem avaliações ainda.</p>
+              )}
+            </CardContent>
+          </Card>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-8">
