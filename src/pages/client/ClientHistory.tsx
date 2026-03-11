@@ -65,6 +65,11 @@ function StarRating({ value, onChange }: { value: number; onChange: (v: number) 
   );
 }
 
+function parseEscovasFromIncludes(includes: string): number {
+  const match = includes.match(/(\d+)\s*escova/i);
+  return match ? parseInt(match[1], 10) : 0;
+}
+
 export default function ClientHistory() {
   const { user } = useAuth();
   const navigate = useNavigate();
@@ -72,6 +77,7 @@ export default function ClientHistory() {
   const [loading, setLoading] = useState(true);
   const [statusFilter, setStatusFilter] = useState("all");
   const [reviewedIds, setReviewedIds] = useState<Set<string>>(new Set());
+  const [escovasDisponiveis, setEscovasDisponiveis] = useState(0);
 
   // Review modal state
   const [reviewOpen, setReviewOpen] = useState(false);
@@ -85,7 +91,7 @@ export default function ClientHistory() {
     setLoading(true);
     let query = supabase
       .from("appointments")
-      .select("*, services(name, price, description, duration_minutes), branches(name, address), professional:profiles!appointments_professional_id_fkey(full_name, avatar_url)")
+      .select("*, services(name, price, description, duration_minutes, is_system), branches(name, address), professional:profiles!appointments_professional_id_fkey(full_name, avatar_url)")
       .eq("client_id", user.id)
       .order("appointment_date", { ascending: false })
       .order("appointment_time", { ascending: false });
@@ -109,10 +115,41 @@ export default function ClientHistory() {
     setReviewedIds(new Set((data || []).map((r: any) => r.appointment_id)));
   }, [user]);
 
+  // Fetch active subscription to know available escovas
+  const fetchSubscription = useCallback(async () => {
+    if (!user) return;
+    const { data: sub } = await supabase
+      .from("subscriptions")
+      .select("*, plans(*)")
+      .eq("client_id", user.id)
+      .eq("status", "active")
+      .maybeSingle();
+
+    if (sub && (sub as any).plans) {
+      const totalEscovas = parseEscovasFromIncludes((sub as any).plans.includes);
+      const now = new Date();
+      const startOfMonth = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}-01`;
+      const endOfMonth = new Date(now.getFullYear(), now.getMonth() + 1, 0);
+      const endStr = `${endOfMonth.getFullYear()}-${String(endOfMonth.getMonth() + 1).padStart(2, "0")}-${String(endOfMonth.getDate()).padStart(2, "0")}`;
+      const { data: appts } = await supabase
+        .from("appointments")
+        .select("*, services(is_system)")
+        .eq("client_id", user.id)
+        .gte("appointment_date", startOfMonth)
+        .lte("appointment_date", endStr)
+        .neq("status", "cancelled");
+      const escovasUsadas = (appts || []).filter((a: any) => a.services?.is_system === true).length;
+      setEscovasDisponiveis(Math.max(0, totalEscovas - escovasUsadas));
+    } else {
+      setEscovasDisponiveis(0);
+    }
+  }, [user]);
+
   useEffect(() => {
     fetchAppointments();
     fetchReviewed();
-  }, [fetchAppointments, fetchReviewed]);
+    fetchSubscription();
+  }, [fetchAppointments, fetchReviewed, fetchSubscription]);
 
   const openReview = (appt: any) => {
     setReviewAppt(appt);
@@ -180,10 +217,14 @@ export default function ClientHistory() {
               year: "numeric",
             });
             const timeFormatted = appt.appointment_time?.slice(0, 5);
-            const price = Number(appt.services?.price ?? 0).toLocaleString("pt-BR", {
-              style: "currency",
-              currency: "BRL",
-            });
+            const isSystemService = appt.services?.is_system === true;
+            const isFree = isSystemService && escovasDisponiveis > 0;
+            const price = isFree
+              ? "Grátis"
+              : Number(appt.services?.price ?? 0).toLocaleString("pt-BR", {
+                  style: "currency",
+                  currency: "BRL",
+                });
             const duration = appt.services?.duration_minutes;
             const branchName = appt.branches?.name;
             const branchAddress = appt.branches?.address;
@@ -274,8 +315,17 @@ export default function ClientHistory() {
                   <div className="flex items-center justify-between">
                     <div className="flex items-center gap-2">
                       <BanknoteIcon className="h-3.5 w-3.5 text-primary shrink-0" />
-                      <span className="font-serif font-semibold text-foreground text-sm">{price}</span>
+                      {isFree ? (
+                        <span className="font-serif font-semibold text-primary text-sm">Grátis</span>
+                      ) : (
+                        <span className="font-serif font-semibold text-foreground text-sm">{price}</span>
+                      )}
                     </div>
+                    {isFree && (
+                      <span className="text-xs text-muted-foreground line-through">
+                        {Number(appt.services?.price ?? 0).toLocaleString("pt-BR", { style: "currency", currency: "BRL" })}
+                      </span>
+                    )}
                   </div>
 
                   {/* Notes */}
