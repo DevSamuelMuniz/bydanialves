@@ -334,6 +334,16 @@ export default function AdminProfessionals() {
     fetchAll();
   };
 
+  const removeProfessional = async (prof: ProfessionalProfile) => {
+    await (supabase as any)
+      .from("user_roles")
+      .delete()
+      .eq("user_id", prof.user_id)
+      .eq("role", "admin");
+    toast({ title: `${prof.full_name} removido da equipe.` });
+    fetchAll();
+  };
+
   if (!perms.canViewBranches) return <AccessDenied />;
 
   return (
