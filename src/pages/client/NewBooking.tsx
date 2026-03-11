@@ -215,99 +215,55 @@ export default function NewBooking() {
       .then(({ data }) => setBranches((data as unknown as Branch[]) || []));
   }, []);
 
-  // Load ALL professionals for the selected branch (background, as soon as branch is picked)
+  // Load ALL professionals for the selected branch via SECURITY DEFINER RPC
+  // This bypasses RLS so clients can always see professionals, regardless of their own role
   useEffect(() => {
     if (!selectedBranch) return;
     setLoadingProfessionals(true);
 
     const fetchProfessionals = async () => {
-      // Fetch ALL admin roles (CEO can also be a professional, but mainly we want professional/attendant)
-      // We fetch all admin roles and filter by admin_level client-side to avoid enum casting issues
-      const { data: roles, error: rolesError } = await supabase
-        .from("user_roles" as any)
-        .select("user_id, admin_level, branch_id, role")
-        .eq("role", "admin");
-
-      if (rolesError) {
-        console.error("[NewBooking] Error fetching roles:", rolesError);
-        setAllBranchProfessionals([]);
-        setProfessionals([]);
-        setLoadingProfessionals(false);
-        return;
-      }
-
-      // Filter client-side: only professional and attendant levels
-      const profRoles = ((roles as any[]) || []).filter(
-        (r) => r.admin_level === "professional" || r.admin_level === "attendant"
+      const { data: rows, error } = await (supabase as any).rpc(
+        "get_professionals_for_booking",
+        { p_branch_id: selectedBranch.id }
       );
 
-      console.log("[NewBooking] All admin roles:", roles?.length, "| Professional/Attendant:", profRoles.length);
-
-      if (profRoles.length === 0) {
+      if (error) {
+        console.error("[NewBooking] RPC error:", error);
         setAllBranchProfessionals([]);
         setProfessionals([]);
         setLoadingProfessionals(false);
         return;
       }
 
-      // Filter to this branch (null branch_id = works at all branches)
-      const filtered = profRoles.filter(
-        (r: any) => !r.branch_id || r.branch_id === selectedBranch.id
-      );
-
-      console.log("[NewBooking] Branch filter (branch:", selectedBranch.id, ") → filtered:", filtered.length);
-
-      if (filtered.length === 0) {
-        setAllBranchProfessionals([]);
-        setProfessionals([]);
-        setLoadingProfessionals(false);
-        return;
-      }
-
-      const userIds = filtered.map((r: any) => r.user_id);
-
-      // Fetch ALL schedules (active and inactive) so we can distinguish
-      // "has schedules but not today" from "no schedules configured"
-      const [{ data: profiles, error: profilesError }, { data: schedules, error: schedulesError }] = await Promise.all([
-        supabase.from("profiles").select("user_id, full_name, avatar_url, bio").in("user_id", userIds),
-        (supabase as any)
-          .from("professional_schedules")
-          .select("professional_id, day_of_week, start_time, end_time, active, branch_id")
-          .in("professional_id", userIds),
-      ]);
-
-      if (profilesError) console.error("[NewBooking] Profiles error:", profilesError);
-      if (schedulesError) console.error("[NewBooking] Schedules error:", schedulesError);
-      console.log("[NewBooking] Profiles loaded:", profiles?.length, "| Schedules loaded:", schedules?.length);
-
-      const scheduleMap: Record<string, ProfSchedule[]> = {};
-      ((schedules as any[]) || [])
-        // Only include schedules matching this branch OR with null branch_id (global)
-        .filter((s: any) => !s.branch_id || s.branch_id === selectedBranch.id)
-        .forEach((s: any) => {
-          if (!scheduleMap[s.professional_id]) scheduleMap[s.professional_id] = [];
-          scheduleMap[s.professional_id].push({
-            day_of_week: s.day_of_week,
-            start_time: s.start_time.slice(0, 5),
-            end_time: s.end_time.slice(0, 5),
-            active: s.active,
-          });
-        });
-
-      const allProfs = ((profiles as any[]) || []).map((p) => {
-        let avatarUrl = p.avatar_url;
-        if (avatarUrl && !avatarUrl.startsWith("http")) {
-          avatarUrl = supabase.storage.from("avatars").getPublicUrl(avatarUrl).data.publicUrl;
+      // Group rows by professional (each row = one schedule day)
+      const profMap: Record<string, Professional> = {};
+      ((rows as any[]) || []).forEach((row: any) => {
+        if (!profMap[row.user_id]) {
+          let avatarUrl = row.avatar_url;
+          if (avatarUrl && !avatarUrl.startsWith("http")) {
+            avatarUrl = supabase.storage.from("avatars").getPublicUrl(avatarUrl).data.publicUrl;
+          }
+          profMap[row.user_id] = {
+            user_id: row.user_id,
+            full_name: row.full_name,
+            avatar_url: avatarUrl,
+            bio: row.bio,
+            schedules: [],
+          };
         }
-        return {
-          user_id: p.user_id,
-          full_name: p.full_name,
-          avatar_url: avatarUrl,
-          bio: p.bio,
-          schedules: scheduleMap[p.user_id] || [],
-        };
+        // Add schedule if present (LEFT JOIN can return null)
+        if (row.day_of_week !== null && row.day_of_week !== undefined) {
+          profMap[row.user_id].schedules.push({
+            day_of_week: row.day_of_week,
+            start_time: (row.start_time || "08:00").slice(0, 5),
+            end_time: (row.end_time || "17:00").slice(0, 5),
+            active: row.schedule_active ?? true,
+          });
+        }
       });
 
+      const allProfs = Object.values(profMap);
+      console.log("[NewBooking] Professionals loaded via RPC:", allProfs.length, allProfs.map(p => p.full_name));
       setAllBranchProfessionals(allProfs);
       setProfessionals(allProfs);
       setLoadingProfessionals(false);
