@@ -37,7 +37,7 @@ export default function AdminDashboard() {
   const isManager = adminLevel === "manager" || adminLevel === "ceo";
 
   useEffect(() => {
-    if (!canViewDashboard) navigate("/admin/agenda", { replace: true });
+    if (!canViewDashboard) navigate("/admin/professionals/agenda", { replace: true });
   }, [canViewDashboard]);
 
   const [todayAppointments, setTodayAppointments] = useState<any[]>([]);
