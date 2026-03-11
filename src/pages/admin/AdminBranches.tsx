@@ -40,17 +40,27 @@ export default function AdminBranches() {
   const [saving, setSaving] = useState(false);
 
   const fetchBranches = async () => {
-    const [branchesRes, rolesRes] = await Promise.all([
+    const [branchesRes, rolesRes, clientsRes] = await Promise.all([
       (supabase.from("branches" as any) as any).select("*").order("created_at"),
       (supabase.from("user_roles") as any).select("branch_id").eq("role", "admin").not("branch_id", "is", null),
+      supabase.from("profiles").select("branch_id").not("branch_id", "is", null),
     ]);
     const rawBranches = (branchesRes.data as unknown as Branch[]) || [];
     const roles = (rolesRes.data || []) as { branch_id: string }[];
-    const countMap: Record<string, number> = {};
+    const clients = (clientsRes.data || []) as { branch_id: string }[];
+    const staffMap: Record<string, number> = {};
     for (const r of roles) {
-      if (r.branch_id) countMap[r.branch_id] = (countMap[r.branch_id] || 0) + 1;
+      if (r.branch_id) staffMap[r.branch_id] = (staffMap[r.branch_id] || 0) + 1;
     }
-    setBranches(rawBranches.map((b) => ({ ...b, staffCount: countMap[b.id] || 0 })));
+    const clientMap: Record<string, number> = {};
+    for (const c of clients) {
+      if (c.branch_id) clientMap[c.branch_id] = (clientMap[c.branch_id] || 0) + 1;
+    }
+    setBranches(rawBranches.map((b) => ({
+      ...b,
+      staffCount: staffMap[b.id] || 0,
+      clientCount: clientMap[b.id] || 0,
+    })));
     setLoading(false);
   };
 
