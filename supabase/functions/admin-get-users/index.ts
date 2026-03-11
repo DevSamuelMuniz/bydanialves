@@ -23,11 +23,12 @@ Deno.serve(async (req) => {
       });
     }
 
-    // Verify caller is admin
+    // Verify caller is admin using the token directly (ES256 compatible)
     const anonClient = createClient(supabaseUrl, Deno.env.get("SUPABASE_ANON_KEY")!, {
       global: { headers: { Authorization: authHeader } },
     });
-    const { data: { user } } = await anonClient.auth.getUser();
+    const token = authHeader.replace("Bearer ", "");
+    const { data: { user } } = await anonClient.auth.getUser(token);
     if (!user) {
       return new Response(JSON.stringify({ error: "Unauthorized" }), {
         status: 401,
