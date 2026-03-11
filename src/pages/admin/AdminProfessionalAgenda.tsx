@@ -160,20 +160,17 @@ export default function AdminProfessionalAgenda() {
 
   function hasAttendant(a: any) { return a.notes && a.notes.includes("[Atendido por:"); }
 
-  const toConfirm = appointments.filter((a) => a.status === "pending");
   const toTake    = appointments.filter((a) => a.status === "confirmed" && !hasAttendant(a));
   const toDo      = appointments.filter((a) => a.status === "confirmed" && hasAttendant(a));
   const cancelled = appointments.filter((a) => a.status === "cancelled");
 
   const columns = [
-    { key: "confirm",   title: "A Confirmar", icon: <AlertCircle className="h-4 w-4" />, dot: "bg-amber-400",     headerColor: "bg-amber-50 dark:bg-amber-950/30 text-amber-700 dark:text-amber-400",   items: toConfirm, emptyMsg: "Nenhum agendamento pendente" },
-    { key: "take",      title: "A Pegar",     icon: <Handshake className="h-4 w-4" />,   dot: "bg-blue-400",      headerColor: "bg-blue-50 dark:bg-blue-950/30 text-blue-700 dark:text-blue-400",       items: toTake,    emptyMsg: "Nenhum aguardando" },
-    { key: "complete",  title: "A Concluir",  icon: <CheckCircle2 className="h-4 w-4" />,dot: "bg-green-400",     headerColor: "bg-green-50 dark:bg-green-950/30 text-green-700 dark:text-green-400",   items: toDo,      emptyMsg: "Nenhum em andamento" },
-    { key: "cancelled", title: "Cancelados",  icon: <XCircle className="h-4 w-4" />,     dot: "bg-destructive",   headerColor: "bg-destructive/10 text-destructive",                                     items: cancelled, emptyMsg: "Nenhum cancelado" },
+    { key: "take",      title: "Confirmados",  icon: <Handshake className="h-4 w-4" />,   dot: "bg-blue-400",    headerColor: "bg-blue-50 dark:bg-blue-950/30 text-blue-700 dark:text-blue-400",     items: toTake, emptyMsg: "Nenhum aguardando" },
+    { key: "complete",  title: "A Concluir",   icon: <CheckCircle2 className="h-4 w-4" />, dot: "bg-green-400",   headerColor: "bg-green-50 dark:bg-green-950/30 text-green-700 dark:text-green-400", items: toDo,   emptyMsg: "Nenhum em andamento" },
+    { key: "cancelled", title: "Cancelados",   icon: <XCircle className="h-4 w-4" />,      dot: "bg-destructive", headerColor: "bg-destructive/10 text-destructive",                                   items: cancelled, emptyMsg: "Nenhum cancelado" },
   ];
 
   const AppointmentCard = ({ a, col }: { a: any; col: typeof columns[0] }) => {
-    const isConfirmCol  = col.key === "confirm";
     const isTakeCol     = col.key === "take";
     const isCompleteCol = col.key === "complete";
 
