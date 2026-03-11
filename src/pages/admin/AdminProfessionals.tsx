@@ -849,7 +849,7 @@ function ProfessionalCard({ prof, canManage, onEdit, onEditWeek, onDeleteAll, on
         ) : (
           <div className="flex flex-wrap gap-1.5">
             {sortedSchedules.map((sched) => {
-              const weekDate = getCurrentWeekDates()[sched.day_of_week];
+              const dayLabel = DAYS.find((d) => d.value === sched.day_of_week)?.short ?? "";
               return (
                 <div
                   key={sched.id}
@@ -858,7 +858,7 @@ function ProfessionalCard({ prof, canManage, onEdit, onEditWeek, onDeleteAll, on
                       ? "bg-primary/8 border-primary/20 text-foreground"
                       : "bg-muted/40 border-border text-muted-foreground line-through opacity-60"}`}
                 >
-                  <span className="font-semibold">{weekDate ? fmtDate(weekDate) : ""}</span>
+                  <span className="font-semibold">{dayLabel}</span>
                   <span className="text-muted-foreground">{sched.start_time}–{sched.end_time}</span>
                 </div>
               );
