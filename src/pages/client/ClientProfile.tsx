@@ -19,44 +19,38 @@ export default function ClientProfile() {
   const { user } = useAuth();
   const { toast } = useToast();
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const { profile, loading, avatarUrl, uploadAvatar, setProfile } = useProfile();
 
-  const [profile, setProfile] = useState<any>(null);
   const [subscription, setSubscription] = useState<any>(null);
   const [branches, setBranches] = useState<{ id: string; name: string; address: string | null }[]>([]);
-  const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [uploading, setUploading] = useState(false);
   const [editing, setEditing] = useState(false);
-  const [avatarUrl, setAvatarUrl] = useState<string | null>(null);
   const [form, setForm] = useState({ full_name: "", phone: "", bio: "", branch_id: "" });
 
   useEffect(() => {
-    if (!user) return;
-    Promise.all([
-      supabase.from("profiles").select("*").eq("user_id", user.id).single(),
-      supabase
-        .from("subscriptions")
-        .select("*, plans(name, price)")
-        .eq("client_id", user.id)
-        .eq("status", "active")
-        .order("created_at", { ascending: false })
-        .limit(1)
-        .maybeSingle(),
-    ]).then(([{ data: profileData }, { data: subData }]) => {
-      if (profileData) {
-        setProfile(profileData);
-        setForm({ full_name: profileData.full_name || "", phone: profileData.phone || "", bio: (profileData as any).bio || "", branch_id: profileData.branch_id || "" });
-        if (profileData.avatar_url) {
-          const { data: urlData } = supabase.storage.from("avatars").getPublicUrl(profileData.avatar_url);
-          setAvatarUrl(urlData.publicUrl);
-        }
-      }
-      if (subData) setSubscription(subData);
-      setLoading(false);
+    if (!profile) return;
+    setForm({
+      full_name: profile.full_name || "",
+      phone: profile.phone || "",
+      bio: profile.bio || "",
+      branch_id: profile.branch_id || "",
     });
+  }, [profile]);
+
+  useEffect(() => {
+    if (!user) return;
+    supabase
+      .from("subscriptions")
+      .select("*, plans(name, price)")
+      .eq("client_id", user.id)
+      .eq("status", "active")
+      .order("created_at", { ascending: false })
+      .limit(1)
+      .maybeSingle()
+      .then(({ data }) => { if (data) setSubscription(data); });
   }, [user]);
 
-  // Fetch branches for the select
   useEffect(() => {
     supabase.from("branches").select("id, name, address").eq("active", true).order("name")
       .then(({ data }) => setBranches(data || []));
@@ -64,30 +58,18 @@ export default function ClientProfile() {
 
   const handleAvatarUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
-    if (!file || !user) return;
+    if (!file) return;
     setUploading(true);
-    const ext = file.name.split(".").pop();
-    const filePath = `${user.id}/avatar.${ext}`;
-    const { error: uploadError } = await supabase.storage
-      .from("avatars")
-      .upload(filePath, file, { upsert: true });
-    if (uploadError) {
-      toast({ title: "Erro ao enviar foto", description: uploadError.message, variant: "destructive" });
-      setUploading(false);
-      return;
-    }
-    const { error: updateError } = await supabase
-      .from("profiles")
-      .update({ avatar_url: filePath })
-      .eq("user_id", user.id);
-    if (updateError) {
-      toast({ title: "Erro ao salvar foto", description: updateError.message, variant: "destructive" });
-    } else {
-      const { data: urlData } = supabase.storage.from("avatars").getPublicUrl(filePath);
-      setAvatarUrl(urlData.publicUrl + "?t=" + Date.now());
+    try {
+      await uploadAvatar(file);
       toast({ title: "Foto atualizada! 📸" });
+    } catch (err: any) {
+      toast({ title: "Erro ao enviar foto", description: err.message, variant: "destructive" });
+    } finally {
+      setUploading(false);
+      // reset input so same file can be re-selected
+      if (fileInputRef.current) fileInputRef.current.value = "";
     }
-    setUploading(false);
   };
 
   const handleSave = async (e: React.FormEvent) => {
@@ -104,7 +86,7 @@ export default function ClientProfile() {
     if (error) {
       toast({ title: "Erro", description: error.message, variant: "destructive" });
     } else {
-      setProfile({ ...profile, ...form });
+      setProfile({ ...profile, ...form } as any);
       setEditing(false);
       toast({ title: "Perfil atualizado! ✨" });
     }
