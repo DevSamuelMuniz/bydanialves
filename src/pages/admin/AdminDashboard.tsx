@@ -166,15 +166,23 @@ export default function AdminDashboard() {
       setLoading(false);
     });
 
-    // Reviews average
+    // Reviews average + comments
     (async () => {
-      const { data: reviewsData } = await (supabase as any)
+      const { data: reviewsData } = await supabase
         .from("reviews")
-        .select("rating");
+        .select("rating, comment, created_at, appointments(service_id, services(name))")
+        .order("created_at", { ascending: false })
+        .limit(50);
       if (reviewsData && reviewsData.length > 0) {
         const avg = reviewsData.reduce((s: number, r: any) => s + r.rating, 0) / reviewsData.length;
         setAvgRating(Math.round(avg * 10) / 10);
         setReviewCount(reviewsData.length);
+        setAllReviews(reviewsData.map((r: any) => ({
+          rating: r.rating,
+          comment: r.comment ?? null,
+          created_at: r.created_at,
+          service_name: r.appointments?.services?.name ?? "Serviço",
+        })));
       }
     })();
 
