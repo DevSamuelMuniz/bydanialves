@@ -629,7 +629,7 @@ function ProfessionalCard({ prof, canManage, onEditWeek, onDeleteAll }: ProfCard
               </span>
             )}
           </div>
-          {prof.bio && <p className="text-xs text-muted-foreground line-clamp-1 mt-0.5">{prof.bio}</p>}
+          
         </div>
       </div>
 
