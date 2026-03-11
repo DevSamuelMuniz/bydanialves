@@ -85,7 +85,7 @@ function generateTimeSlots(
 function isSlotAvailable(
   slot: string,
   totalMinutes: number,
-  bookedRanges: { start: number; end: number }[],
+  bookedRanges: { start: number; end: number; professionalId?: string | null }[],
   capacity: number
 ): boolean {
   const [h, m] = slot.split(":").map(Number);
