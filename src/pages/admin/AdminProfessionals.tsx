@@ -334,6 +334,16 @@ export default function AdminProfessionals() {
     fetchAll();
   };
 
+  const removeProfessional = async (prof: ProfessionalProfile) => {
+    await (supabase as any)
+      .from("user_roles")
+      .delete()
+      .eq("user_id", prof.user_id)
+      .eq("role", "admin");
+    toast({ title: `${prof.full_name} removido da equipe.` });
+    fetchAll();
+  };
+
   if (!perms.canViewBranches) return <AccessDenied />;
 
   return (
@@ -380,6 +390,7 @@ export default function AdminProfessionals() {
               canManage={canManage}
               onEditWeek={() => openWeekDialog(prof)}
               onDeleteAll={() => deleteAllSchedules(prof)}
+              onRemove={() => removeProfessional(prof)}
             />
           ))}
         </div>
@@ -592,9 +603,10 @@ interface ProfCardProps {
   canManage: boolean;
   onEditWeek: () => void;
   onDeleteAll: () => void;
+  onRemove: () => void;
 }
 
-function ProfessionalCard({ prof, canManage, onEditWeek, onDeleteAll }: ProfCardProps) {
+function ProfessionalCard({ prof, canManage, onEditWeek, onDeleteAll, onRemove }: ProfCardProps) {
   const levelLabel = prof.admin_level ? ADMIN_LEVEL_LABELS[prof.admin_level] : null;
   const levelColor = prof.admin_level ? ADMIN_LEVEL_COLORS[prof.admin_level] : "";
   const initials = prof.full_name.split(" ").map((w) => w[0]).slice(0, 2).join("").toUpperCase();
@@ -617,7 +629,35 @@ function ProfessionalCard({ prof, canManage, onEditWeek, onDeleteAll }: ProfCard
           }
         </div>
         <div className="flex-1 min-w-0">
-          <p className="font-semibold text-sm leading-tight truncate">{prof.full_name}</p>
+          <div className="flex items-center justify-between gap-2">
+            <p className="font-semibold text-sm leading-tight truncate">{prof.full_name}</p>
+            {canManage && (
+              <AlertDialog>
+                <AlertDialogTrigger asChild>
+                  <Button size="icon" variant="ghost" className="h-6 w-6 shrink-0 text-muted-foreground hover:text-destructive">
+                    <Trash2 className="h-3.5 w-3.5" />
+                  </Button>
+                </AlertDialogTrigger>
+                <AlertDialogContent>
+                  <AlertDialogHeader>
+                    <AlertDialogTitle>Remover da equipe?</AlertDialogTitle>
+                    <AlertDialogDescription>
+                      <strong>{prof.full_name}</strong> perderá o cargo profissional mas continuará sendo um cliente no sistema.
+                    </AlertDialogDescription>
+                  </AlertDialogHeader>
+                  <AlertDialogFooter>
+                    <AlertDialogCancel>Cancelar</AlertDialogCancel>
+                    <AlertDialogAction
+                      className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                      onClick={onRemove}
+                    >
+                      Remover
+                    </AlertDialogAction>
+                  </AlertDialogFooter>
+                </AlertDialogContent>
+              </AlertDialog>
+            )}
+          </div>
           <div className="flex items-center gap-1.5 mt-1 flex-wrap">
             {levelLabel && (
               <Badge variant="outline" className={`text-xs ${levelColor}`}>{levelLabel}</Badge>
