@@ -21,6 +21,7 @@ export default function AdminServices() {
   const [editing, setEditing] = useState<any>(null);
   const [form, setForm] = useState({ name: "", description: "", price: "", duration_minutes: "60" });
   const [previewImage, setPreviewImage] = useState<string | null>(null);
+  const [pendingImageFile, setPendingImageFile] = useState<File | null>(null);
   const [uploadingImage, setUploadingImage] = useState(false);
   const [generatingAI, setGeneratingAI] = useState(false);
   const [autoGenerating, setAutoGenerating] = useState(false);
