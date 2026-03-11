@@ -315,8 +315,17 @@ export default function ClientHistory() {
                   <div className="flex items-center justify-between">
                     <div className="flex items-center gap-2">
                       <BanknoteIcon className="h-3.5 w-3.5 text-primary shrink-0" />
-                      <span className="font-serif font-semibold text-foreground text-sm">{price}</span>
+                      {isFree ? (
+                        <span className="font-serif font-semibold text-primary text-sm">Grátis</span>
+                      ) : (
+                        <span className="font-serif font-semibold text-foreground text-sm">{price}</span>
+                      )}
                     </div>
+                    {isFree && (
+                      <span className="text-xs text-muted-foreground line-through">
+                        {Number(appt.services?.price ?? 0).toLocaleString("pt-BR", { style: "currency", currency: "BRL" })}
+                      </span>
+                    )}
                   </div>
 
                   {/* Notes */}
