@@ -592,6 +592,7 @@ interface ProfCardProps {
   canManage: boolean;
   onEditWeek: () => void;
   onDeleteAll: () => void;
+  onRemove: () => void;
 }
 
 function ProfessionalCard({ prof, canManage, onEditWeek, onDeleteAll }: ProfCardProps) {
