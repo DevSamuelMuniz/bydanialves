@@ -9,7 +9,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Label } from "@/components/ui/label";
 import { useToast } from "@/hooks/use-toast";
-import { Search, Ban, CheckCircle, Calendar, DollarSign, Edit2, Save, X, MessageCircle, MapPin, Download } from "lucide-react";
+import { Search, Ban, CheckCircle, Calendar, DollarSign, Edit2, Save, X, MessageCircle, MapPin, Download, Mail } from "lucide-react";
 import { downloadCSV } from "@/lib/csv";
 import { useAdminPermissions } from "@/hooks/use-admin-permissions";
 import { cn } from "@/lib/utils";
