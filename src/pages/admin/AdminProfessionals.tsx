@@ -593,9 +593,6 @@ export default function AdminProfessionals() {
                     <span className={`text-sm font-medium leading-tight ${row.enabled ? "text-foreground" : "text-muted-foreground"}`}>
                       {d.label}
                     </span>
-                    {weekDate && (
-                      <span className="text-[10px] text-muted-foreground leading-tight">{fmtDate(weekDate)}</span>
-                    )}
                   </div>
                   <Select
                     value={row.start_time}
