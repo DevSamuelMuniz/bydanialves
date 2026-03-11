@@ -66,7 +66,7 @@ const App = () => (
             <Route path="/client" element={<ProtectedRoute requiredRole="client"><ClientLayout /></ProtectedRoute>}>
               <Route index element={<ClientDashboard />} />
               <Route path="booking" element={<NewBooking />} />
-              <Route path="pending" element={<ClientPendingAppointments />} />
+              
               <Route path="history" element={<ClientHistory />} />
               <Route path="plans" element={<ClientPlans />} />
               <Route path="profile" element={<ClientProfile />} />
