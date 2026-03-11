@@ -73,7 +73,13 @@ export default function AdminClients() {
       query = query.eq("branch_id", adminBranchId);
     }
     const { data } = await query;
-    setClients((data as any[]) || []);
+    const resolved = ((data as any[]) || []).map((p) => {
+      if (p.avatar_url && !p.avatar_url.startsWith("http")) {
+        p = { ...p, avatar_url: supabase.storage.from("avatars").getPublicUrl(p.avatar_url).data.publicUrl };
+      }
+      return p;
+    });
+    setClients(resolved);
     setLoading(false);
   };
 
