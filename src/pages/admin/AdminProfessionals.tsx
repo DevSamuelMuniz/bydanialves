@@ -660,6 +660,54 @@ export default function AdminProfessionals() {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      {/* ── Dialog: Editar Profissional ── */}
+      <Dialog open={editDialog} onOpenChange={setEditDialog}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle className="font-serif text-lg">Editar Profissional</DialogTitle>
+            <p className="text-sm text-muted-foreground">Altere os dados do profissional</p>
+          </DialogHeader>
+
+          <div className="space-y-4 py-1">
+            <div className="space-y-1.5">
+              <Label>Nome completo</Label>
+              <Input value={editName} onChange={(e) => setEditName(e.target.value)} placeholder="Nome do profissional" />
+            </div>
+            <div className="space-y-1.5">
+              <Label>Bio / Especialidade</Label>
+              <Input value={editBio} onChange={(e) => setEditBio(e.target.value)} placeholder="Ex: Especialista em coloração…" />
+            </div>
+            <div className="grid grid-cols-2 gap-3">
+              <div className="space-y-1.5">
+                <Label>Nível</Label>
+                <Select value={editLevel} onValueChange={(v) => setEditLevel(v as NonNullable<AdminLevel>)}>
+                  <SelectTrigger><SelectValue /></SelectTrigger>
+                  <SelectContent>
+                    {LEVEL_OPTIONS.map((l) => <SelectItem key={l.value} value={l.value}>{l.label}</SelectItem>)}
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="space-y-1.5">
+                <Label>Filial</Label>
+                <Select value={editBranchId} onValueChange={setEditBranchId}>
+                  <SelectTrigger><SelectValue placeholder="Selecione" /></SelectTrigger>
+                  <SelectContent>
+                    {branches.map((b) => <SelectItem key={b.id} value={b.id}>{b.name}</SelectItem>)}
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
+          </div>
+
+          <DialogFooter className="gap-2">
+            <Button variant="ghost" onClick={() => setEditDialog(false)}>Cancelar</Button>
+            <Button onClick={saveEdit} disabled={editSaving || !editName.trim()}>
+              {editSaving ? "Salvando…" : "Salvar alterações"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
