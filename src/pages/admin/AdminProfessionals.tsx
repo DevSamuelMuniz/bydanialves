@@ -149,12 +149,11 @@ export default function AdminProfessionals() {
       .eq("role", "admin")
       .in("admin_level", ["professional", "attendant"]);
 
-    if (adminBranchId) {
-      // Filtra apenas profissionais da filial do admin logado
+    // CEO e Gerentes sem filial veem todos; demais filtram pela própria filial
+    const isCeo = adminLevel === "ceo";
+    if (!isCeo && adminBranchId) {
       rolesQuery = rolesQuery.eq("branch_id", adminBranchId);
     }
-    // Se adminBranchId é null, o admin é da filial principal (CEO/Gerente sem filial)
-    // e deve ver TODOS os profissionais — sem filtro adicional
 
     const { data: roles } = await rolesQuery;
 
