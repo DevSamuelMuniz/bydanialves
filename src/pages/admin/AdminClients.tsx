@@ -563,10 +563,7 @@ function ClientProfileCard({ client, email, freqBranch, isProfessional, onClick,
         {client.avatar_url ? (
           <div className="h-20 w-20 rounded-full overflow-hidden ring-2 ring-primary/20">
             <img
-              src={client.avatar_url.startsWith("http")
-                ? client.avatar_url
-                : supabase.storage.from("avatars").getPublicUrl(client.avatar_url).data.publicUrl
-              }
+              src={client.avatar_url}
               alt={client.full_name}
               className="h-full w-full object-cover"
             />
