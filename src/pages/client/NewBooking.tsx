@@ -700,7 +700,13 @@ export default function NewBooking() {
                   disabled={(date) => {
                     const today = new Date();
                     today.setHours(0, 0, 0, 0);
-                    return date < today || date.getDay() === 0;
+                    if (date < today) return true;
+                    const str = format(date, "yyyy-MM-dd");
+                    // Check work calendar: if date is explicitly stored, use that value
+                    if (str in workCalendarMap) return !workCalendarMap[str];
+                    // Otherwise use default: Tue–Sat (2–6) are work days
+                    const dow = date.getDay();
+                    return dow === 0 || dow === 1;
                   }}
                   locale={ptBR}
                   className="pointer-events-auto w-full"
