@@ -14,11 +14,6 @@ import { CalendarDays, ChevronLeft, ChevronRight, Info, RotateCcw, Save } from "
 // By default Tue–Sat (2,3,4,5,6) are work days; 0=Sun, 1=Mon are off
 const DEFAULT_WORK_DAYS = new Set([2, 3, 4, 5, 6]);
 
-interface WorkDay {
-  date: string; // "YYYY-MM-DD"
-  enabled: boolean;
-}
-
 function dateToStr(d: Date): string {
   return format(d, "yyyy-MM-dd");
 }
@@ -46,11 +41,6 @@ export default function AdminWorkCalendar() {
   const [saving, setSaving] = useState(false);
   const [pendingChanges, setPendingChanges] = useState<Record<string, boolean>>({});
 
-  // Only CEO can manage
-  if (!perms.canManageSystemSettings) {
-    return <AccessDenied />;
-  }
-
   const year = currentMonth.getFullYear();
   const month = currentMonth.getMonth();
   const monthDates = getDatesInMonth(year, month);
@@ -59,14 +49,14 @@ export default function AdminWorkCalendar() {
     setLoading(true);
     const start = format(startOfMonth(new Date(y, m)), "yyyy-MM-dd");
     const end = format(endOfMonth(new Date(y, m)), "yyyy-MM-dd");
-    const { data } = await supabase
-      .from("work_calendar" as any)
+    const { data } = await (supabase as any)
+      .from("work_calendar")
       .select("date, enabled")
       .gte("date", start)
       .lte("date", end);
 
     const map: Record<string, boolean> = {};
-    (data as WorkDay[] || []).forEach((row) => {
+    ((data as { date: string; enabled: boolean }[]) || []).forEach((row) => {
       map[row.date] = row.enabled;
     });
     setWorkDaysMap(map);
@@ -83,14 +73,13 @@ export default function AdminWorkCalendar() {
     const str = dateToStr(date);
     if (str in pendingChanges) return pendingChanges[str];
     if (str in workDaysMap) return workDaysMap[str];
-    // Default: Tue–Sat are work days
     return DEFAULT_WORK_DAYS.has(getDay(date));
   };
 
   const toggleDay = (date: Date) => {
     const today = new Date();
     today.setHours(0, 0, 0, 0);
-    if (date < today) return; // can't edit past days
+    if (date < today) return;
     const str = dateToStr(date);
     const current = isEnabled(date);
     setPendingChanges((prev) => ({ ...prev, [str]: !current }));
@@ -106,9 +95,9 @@ export default function AdminWorkCalendar() {
       created_by: user.id,
     }));
 
-    const { error } = await supabase
-      .from("work_calendar" as any)
-      .upsert(upserts as any, { onConflict: "date" });
+    const { error } = await (supabase as any)
+      .from("work_calendar")
+      .upsert(upserts, { onConflict: "date" });
 
     if (error) {
       toast({ title: "Erro ao salvar", description: error.message, variant: "destructive" });
@@ -123,7 +112,6 @@ export default function AdminWorkCalendar() {
   const resetMonth = async () => {
     if (!user) return;
     setSaving(true);
-    // Re-apply defaults for all future dates in the month
     const today = new Date();
     today.setHours(0, 0, 0, 0);
     const futureDates = monthDates.filter((d) => d >= today);
@@ -134,7 +122,7 @@ export default function AdminWorkCalendar() {
     }));
 
     if (upserts.length > 0) {
-      await supabase.from("work_calendar" as any).upsert(upserts as any, { onConflict: "date" });
+      await (supabase as any).from("work_calendar").upsert(upserts, { onConflict: "date" });
     }
 
     toast({ title: "Mês redefinido", description: "Dias padrão (Terça–Sábado) restaurados." });
@@ -142,8 +130,11 @@ export default function AdminWorkCalendar() {
     setSaving(false);
   };
 
-  const hasPending = Object.keys(pendingChanges).length > 0;
+  if (!perms.canManageSystemSettings) {
+    return <AccessDenied />;
+  }
 
+  const hasPending = Object.keys(pendingChanges).length > 0;
   const enabledCount = monthDates.filter((d) => isEnabled(d)).length;
   const disabledCount = monthDates.length - enabledCount;
 
@@ -157,7 +148,7 @@ export default function AdminWorkCalendar() {
             <h1 className="text-2xl font-serif font-bold tracking-tight">Calendário de Trabalho</h1>
           </div>
           <p className="text-muted-foreground text-sm">
-            Defina os dias disponíveis para agendamento no mês. Por padrão: Terça a Sábado.
+            Defina os dias disponíveis para agendamento. Por padrão: Terça a Sábado.
           </p>
         </div>
         <div className="flex items-center gap-2">
@@ -209,8 +200,8 @@ export default function AdminWorkCalendar() {
       <Card className="border-border/60 shadow-elevated">
         <CardHeader className="pb-3">
           <div className="flex items-center justify-between">
-            <CardTitle className="font-serif text-lg">
-              <span className="capitalize">{format(currentMonth, "MMMM yyyy", { locale: ptBR })}</span>
+            <CardTitle className="font-serif text-lg capitalize">
+              {format(currentMonth, "MMMM yyyy", { locale: ptBR })}
             </CardTitle>
             <div className="flex items-center gap-1">
               <Button
@@ -260,7 +251,7 @@ export default function AdminWorkCalendar() {
         <Info className="h-4 w-4 text-primary mt-0.5 shrink-0" />
         <div className="space-y-1">
           <p className="font-medium text-foreground">Como funciona</p>
-          <p>Os dias marcados como disponíveis aqui determinarão quais datas os clientes poderão escolher no fluxo de agendamento. Dias desativados ficarão bloqueados no calendário do cliente.</p>
+          <p>Os dias marcados como disponíveis aqui determinam quais datas os clientes poderão escolher no fluxo de agendamento. Dias desativados ficam bloqueados no calendário do cliente.</p>
           <p>Dias no passado não podem ser alterados. O padrão é Terça a Sábado habilitados.</p>
         </div>
       </div>
@@ -283,7 +274,6 @@ function WorkCalendarGrid({ year, month, monthDates, isEnabled, pendingChanges, 
   today.setHours(0, 0, 0, 0);
 
   const firstDay = new Date(year, month, 1);
-  // Sunday = 0, but we want Monday first; offset so week starts on Sunday (matches ptBR calendar)
   const startOffset = firstDay.getDay(); // 0=Sun ... 6=Sat
 
   const DAY_NAMES = ["Dom", "Seg", "Ter", "Qua", "Qui", "Sex", "Sáb"];
@@ -300,7 +290,6 @@ function WorkCalendarGrid({ year, month, monthDates, isEnabled, pendingChanges, 
       </div>
       {/* Day cells */}
       <div className="grid grid-cols-7 gap-1">
-        {/* Empty cells for offset */}
         {Array.from({ length: startOffset }).map((_, i) => (
           <div key={`empty-${i}`} />
         ))}
@@ -309,25 +298,26 @@ function WorkCalendarGrid({ year, month, monthDates, isEnabled, pendingChanges, 
           const enabled = isEnabled(date);
           const isPast = date < today;
           const isToday = isSameDay(date, today);
-          const hasPending = str in pendingChanges;
+          const hasPendingFlag = str in pendingChanges;
+
+          let cellClass = "border-border/30 bg-muted/20 opacity-30 cursor-not-allowed";
+          if (!isPast) {
+            cellClass = enabled
+              ? "border-primary/40 bg-primary/10 text-primary hover:bg-primary/20 cursor-pointer"
+              : "border-destructive/30 bg-destructive/5 text-destructive/70 hover:bg-destructive/10 cursor-pointer";
+          }
 
           return (
             <button
               key={str}
               onClick={() => onToggle(date)}
               disabled={isPast}
-              className={`
-                relative h-12 rounded-xl flex flex-col items-center justify-center gap-0.5 text-sm font-medium
-                transition-all duration-200 border
-                ${isPast
-                  ? "opacity-30 cursor-not-allowed border-border/30 bg-muted/20"
-                  : enabled
-                    ? "border-primary/40 bg-primary/10 text-primary hover:bg-primary/20 cursor-pointer"
-                    : "border-destructive/30 bg-destructive/5 text-destructive/70 hover:bg-destructive/10 cursor-pointer"
-                }
-                ${isToday ? "ring-2 ring-primary ring-offset-1" : ""}
-                ${hasPending ? "ring-1 ring-amber-400 ring-offset-1" : ""}
-              `}
+              className={[
+                "relative h-12 rounded-xl flex flex-col items-center justify-center gap-0.5 text-sm font-medium transition-all duration-200 border",
+                cellClass,
+                isToday ? "ring-2 ring-primary ring-offset-1" : "",
+                hasPendingFlag ? "ring-1 ring-warning ring-offset-1" : "",
+              ].join(" ")}
             >
               <span className="text-sm leading-none">{date.getDate()}</span>
               {!isPast && (
@@ -335,8 +325,8 @@ function WorkCalendarGrid({ year, month, monthDates, isEnabled, pendingChanges, 
                   {enabled ? "●" : "○"}
                 </span>
               )}
-              {hasPending && (
-                <span className="absolute top-0.5 right-0.5 h-1.5 w-1.5 rounded-full bg-amber-400" />
+              {hasPendingFlag && (
+                <span className="absolute top-0.5 right-0.5 h-1.5 w-1.5 rounded-full bg-warning" />
               )}
             </button>
           );
@@ -344,7 +334,7 @@ function WorkCalendarGrid({ year, month, monthDates, isEnabled, pendingChanges, 
       </div>
 
       {/* Legend */}
-      <div className="flex items-center gap-4 pt-2 justify-end">
+      <div className="flex flex-wrap items-center gap-4 pt-3 justify-end">
         <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
           <div className="h-3 w-3 rounded-sm bg-primary/10 border border-primary/40" />
           <span>Disponível</span>
@@ -354,8 +344,11 @@ function WorkCalendarGrid({ year, month, monthDates, isEnabled, pendingChanges, 
           <span>Bloqueado</span>
         </div>
         <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
-          <div className="h-3 w-3 rounded-sm bg-transparent border border-amber-400" />
-          <span>Alterado (não salvo)</span>
+          <div className="h-3 w-3 rounded-sm bg-transparent border border-border" />
+          <span className="flex items-center gap-1">
+            <span className="h-1.5 w-1.5 rounded-full bg-warning inline-block" />
+            Alterado (não salvo)
+          </span>
         </div>
       </div>
     </div>
