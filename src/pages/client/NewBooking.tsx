@@ -111,7 +111,7 @@ export default function NewBooking() {
   const [selectedServices, setSelectedServices] = useState<ServiceItem[]>([]);
   const [selectedDate, setSelectedDate] = useState<Date | undefined>();
   const [selectedTime, setSelectedTime] = useState<string | null>(null);
-  const [bookedRanges, setBookedRanges] = useState<{ start: number; end: number }[]>([]);
+  const [bookedRanges, setBookedRanges] = useState<{ start: number; end: number; professionalId: string | null }[]>([]);
   const [professionals, setProfessionals] = useState<Professional[]>([]);
   const [selectedProfessional, setSelectedProfessional] = useState<Professional | "none" | null>(null);
   const [loadingProfessionals, setLoadingProfessionals] = useState(false);
