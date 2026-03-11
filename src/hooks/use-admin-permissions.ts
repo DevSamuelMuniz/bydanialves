@@ -36,6 +36,7 @@ export function useAdminPermissions() {
     // ── Serviços ───────────────────────────────────────
     canViewServices: r >= 1,
     canManageServices: r >= 3,
+    canManageSystemServices: r >= 4, // só CEO pode editar serviços padrão (is_system)
 
     // ── Planos ─────────────────────────────────────────
     canViewPlans: r >= 3,
