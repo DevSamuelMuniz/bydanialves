@@ -170,6 +170,13 @@ export default function AdminServices() {
     fetchServices();
   };
 
+  const handleDelete = async (id: string) => {
+    const { error } = await supabase.from("services").delete().eq("id", id);
+    if (error) { toast({ title: "Erro ao excluir", description: error.message, variant: "destructive" }); return; }
+    toast({ title: "Serviço excluído!" });
+    fetchServices();
+  };
+
   if (loading) return (
     <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
       {[...Array(4)].map((_, i) => <Skeleton key={i} className="h-64 w-full rounded-xl" />)}
