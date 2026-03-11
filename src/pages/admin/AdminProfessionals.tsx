@@ -390,6 +390,7 @@ export default function AdminProfessionals() {
               canManage={canManage}
               onEditWeek={() => openWeekDialog(prof)}
               onDeleteAll={() => deleteAllSchedules(prof)}
+              onRemove={() => removeProfessional(prof)}
             />
           ))}
         </div>
