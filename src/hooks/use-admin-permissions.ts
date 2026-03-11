@@ -73,6 +73,9 @@ export function useAdminPermissions() {
     // ── Profissionais ──────────────────────────────────
     canViewProfessionals: r >= 3,
     canManageProfessionals: r >= 3,
+
+    // ── Agenda/Histórico do Profissional ───────────────
+    canViewProfessionalSchedule: r >= 2,  // professional, manager, ceo
   };
 }
 
