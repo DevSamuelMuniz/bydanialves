@@ -28,6 +28,29 @@ const DAYS = [
   { value: 0, label: "Domingo",  short: "Dom" },
 ];
 
+/** Returns a map of day_of_week (0=Sun..6=Sat) → Date for the current week (Mon–Sun) */
+function getCurrentWeekDates(): Record<number, Date> {
+  const today = new Date();
+  const dow = today.getDay(); // 0=Sun
+  // Monday of this week
+  const monday = new Date(today);
+  monday.setDate(today.getDate() - (dow === 0 ? 6 : dow - 1));
+  monday.setHours(0, 0, 0, 0);
+
+  const map: Record<number, Date> = {};
+  for (let i = 0; i < 7; i++) {
+    const d = new Date(monday);
+    d.setDate(monday.getDate() + i);
+    const dayVal = d.getDay(); // 0=Sun, 1=Mon …
+    map[dayVal] = d;
+  }
+  return map;
+}
+
+function fmtDate(d: Date): string {
+  return `${String(d.getDate()).padStart(2, "0")}/${String(d.getMonth() + 1).padStart(2, "0")}`;
+}
+
 const HOURS = Array.from({ length: 10 }, (_, i) => {
   const h = i + 8;
   return `${String(h).padStart(2, "0")}:00`;
