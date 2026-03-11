@@ -193,9 +193,16 @@ export default function AdminBranches() {
                           {b.address}
                         </p>
                       )}
-                      <p className="text-xs text-muted-foreground mt-0.5">
-                        👤 {b.staffCount ?? 0} funcionário{(b.staffCount ?? 0) !== 1 ? "s" : ""}
-                      </p>
+                      <div className="flex items-center gap-3 mt-1">
+                        <p className="text-xs text-muted-foreground flex items-center gap-1">
+                          <span>👤</span>
+                          {b.staffCount ?? 0} funcionário{(b.staffCount ?? 0) !== 1 ? "s" : ""}
+                        </p>
+                        <p className="text-xs text-muted-foreground flex items-center gap-1">
+                          <Users className="h-3 w-3 shrink-0" />
+                          {b.clientCount ?? 0} cliente{(b.clientCount ?? 0) !== 1 ? "s" : ""}
+                        </p>
+                      </div>
                     </div>
                   </div>
                   <Badge variant="outline" className={b.active
