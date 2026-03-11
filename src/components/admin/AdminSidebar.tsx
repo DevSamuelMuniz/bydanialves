@@ -166,6 +166,7 @@ export function AdminSidebar() {
     "/admin/coupons":         perms.canManageCoupons,
     "/admin/reviews":         perms.canViewServices,
     "/admin/queue-tv":        perms.canViewQueueTV,
+    "/admin/work-calendar":   perms.canManageSystemSettings,
     "/admin/logs":            perms.canViewLogs,
   };
 
