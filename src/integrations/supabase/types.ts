@@ -604,6 +604,21 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      get_professionals_for_booking: {
+        Args: { p_branch_id: string }
+        Returns: {
+          admin_level: string
+          avatar_url: string
+          bio: string
+          day_of_week: number
+          end_time: string
+          full_name: string
+          schedule_active: boolean
+          schedule_branch_id: string
+          start_time: string
+          user_id: string
+        }[]
+      }
       has_role: {
         Args: {
           _role: Database["public"]["Enums"]["app_role"]
