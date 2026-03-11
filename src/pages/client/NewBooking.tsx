@@ -10,7 +10,7 @@ import { Badge } from "@/components/ui/badge";
 import {
   Check, ChevronLeft, ShieldX, MessageCircle, Building2, MapPin,
   Scissors, Clock, CalendarDays, Timer, DollarSign, Star, Sparkles,
-  ChevronRight, RotateCcw
+  ChevronRight, RotateCcw, User, UserCheck
 } from "lucide-react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from "@/components/ui/dialog";
 import { ptBR } from "date-fns/locale";
@@ -29,37 +29,40 @@ interface ServiceItem {
   is_system: boolean;
 }
 
+interface Professional {
+  user_id: string;
+  full_name: string;
+  avatar_url: string | null;
+  bio: string | null;
+}
+
 function parseEscovasFromIncludes(includes: string): number {
   const match = includes.match(/(\d+)\s*escova/i);
   return match ? parseInt(match[1], 10) : 0;
 }
 
 const WHATSAPP_NUMBER = "5500000000000";
-
 const DEFAULT_BRANCH_IMAGE = "https://images.unsplash.com/photo-1582095133179-bfd08e2d6b27?w=800&q=70&auto=format&fit=crop";
 
 function getBranchImage(branch: Branch) {
   return branch.image_url || DEFAULT_BRANCH_IMAGE;
 }
 
-// Generate available time slots based on services total duration
 function generateTimeSlots(totalMinutes: number): string[] {
   const slots: string[] = [];
-  const start = 8 * 60;  // 08:00
-  const end = 17 * 60;   // 17:00
+  const start = 8 * 60;
+  const end = 17 * 60;
   let t = start;
   while (t + totalMinutes <= end) {
-    const h = Math.floor(t / 60);
     const m = t % 60;
-    if (m === 0) { // apenas horas em ponto
-      slots.push(`${String(h).padStart(2, "0")}:00`);
+    if (m === 0) {
+      slots.push(`${String(Math.floor(t / 60)).padStart(2, "0")}:00`);
     }
-    t += 60; // incremento de 1 hora
+    t += 60;
   }
   return slots;
 }
 
-// Check if a time slot is free given booked appointments and total duration
 function isSlotAvailable(
   slot: string,
   totalMinutes: number,
@@ -69,11 +72,9 @@ function isSlotAvailable(
   const [h, m] = slot.split(":").map(Number);
   const slotStart = h * 60 + m;
   const slotEnd = slotStart + totalMinutes;
-
   const conflicts = bookedRanges.filter(
     (r) => slotStart < r.end && slotEnd > r.start
   ).length;
-
   return conflicts < professionals;
 }
 
@@ -91,14 +92,16 @@ export default function NewBooking() {
   const [selectedDate, setSelectedDate] = useState<Date | undefined>();
   const [selectedTime, setSelectedTime] = useState<string | null>(null);
   const [bookedRanges, setBookedRanges] = useState<{ start: number; end: number }[]>([]);
+  const [professionals, setProfessionals] = useState<Professional[]>([]);
+  const [selectedProfessional, setSelectedProfessional] = useState<Professional | null>(null);
+  const [loadingProfessionals, setLoadingProfessionals] = useState(false);
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
   const [escovasDisponiveis, setEscovasDisponiveis] = useState(0);
   const [blocked, setBlocked] = useState(false);
   const [blockedModalOpen, setBlockedModalOpen] = useState(false);
-  const [professionals] = useState(3); // Number of simultaneous professionals
+  const [simultaneousProfessionals] = useState(3);
 
-  // Total duration of selected services
   const totalDuration = selectedServices.reduce((acc, s) => acc + s.duration_minutes, 0);
   const totalPrice = selectedServices.reduce((acc, s) => {
     const free = s.is_system && escovasDisponiveis > 0;
@@ -107,7 +110,7 @@ export default function NewBooking() {
 
   const availableSlots = selectedDate
     ? generateTimeSlots(totalDuration).filter((slot) =>
-        isSlotAvailable(slot, totalDuration, bookedRanges, professionals)
+        isSlotAvailable(slot, totalDuration, bookedRanges, simultaneousProfessionals)
       )
     : [];
 
@@ -166,7 +169,7 @@ export default function NewBooking() {
     loadData();
   }, [user]);
 
-  // Pre-select service from URL param and jump to step 2 (after services load)
+  // Pre-select service from URL param
   useEffect(() => {
     if (!preselectedServiceId || services.length === 0) return;
     const found = services.find((s) => s.id === preselectedServiceId);
@@ -196,6 +199,46 @@ export default function NewBooking() {
       });
   }, [selectedDate, selectedBranch]);
 
+  // Load professionals when reaching step 5
+  useEffect(() => {
+    if (step !== 5 || !selectedBranch) return;
+    setLoadingProfessionals(true);
+
+    // Fetch admin users with professional or attendant level linked to the selected branch (or global)
+    supabase
+      .from("user_roles" as any)
+      .select("user_id, admin_level, branch_id")
+      .eq("role", "admin")
+      .in("admin_level", ["professional", "attendant"])
+      .then(async ({ data: roles }) => {
+        if (!roles || roles.length === 0) {
+          setProfessionals([]);
+          setLoadingProfessionals(false);
+          return;
+        }
+
+        // Filter by branch: include those assigned to this branch OR without a branch assigned
+        const filtered = (roles as any[]).filter(
+          (r) => !r.branch_id || r.branch_id === selectedBranch.id
+        );
+
+        if (filtered.length === 0) {
+          setProfessionals([]);
+          setLoadingProfessionals(false);
+          return;
+        }
+
+        const userIds = filtered.map((r: any) => r.user_id);
+        const { data: profiles } = await supabase
+          .from("profiles")
+          .select("user_id, full_name, avatar_url, bio")
+          .in("user_id", userIds);
+
+        setProfessionals((profiles as unknown as Professional[]) || []);
+        setLoadingProfessionals(false);
+      });
+  }, [step, selectedBranch]);
+
   const toggleService = (s: ServiceItem) => {
     setSelectedServices((prev) => {
       const exists = prev.find((x) => x.id === s.id);
@@ -219,6 +262,7 @@ export default function NewBooking() {
         appointment_time: selectedTime + ":00",
         status: "pending",
         branch_id: selectedBranch?.id || null,
+        professional_id: selectedProfessional?.user_id || null,
       } as any);
       if (error) errors.push(error.message);
     }
@@ -232,6 +276,7 @@ export default function NewBooking() {
       setSelectedDate(undefined);
       setSelectedTime(null);
       setSelectedBranch(null);
+      setSelectedProfessional(null);
     }
     setSubmitting(false);
   };
@@ -295,8 +340,8 @@ export default function NewBooking() {
     );
   }
 
-  // Step labels
-  const STEP_LABELS = ["Filial", "Serviços", "Data", "Horário", "Confirmação"];
+  // Step labels — now 6 steps
+  const STEP_LABELS = ["Filial", "Serviços", "Data", "Horário", "Profissional", "Confirmação"];
   const isRescheduling = !!preselectedServiceId;
 
   return (
@@ -323,9 +368,9 @@ export default function NewBooking() {
         </div>
       </div>
 
-      {/* Steps indicator */}
+      {/* Steps indicator — 6 steps */}
       <div className="flex gap-1.5">
-        {[1, 2, 3, 4, 5].map((s) => (
+        {[1, 2, 3, 4, 5, 6].map((s) => (
           <div key={s} className="flex-1 flex flex-col items-center gap-1">
             <div className={`h-1.5 w-full rounded-full transition-colors duration-300 ${s <= step ? "bg-primary" : "bg-muted"}`} />
           </div>
@@ -350,7 +395,6 @@ export default function NewBooking() {
                   className={`group relative rounded-xl overflow-hidden cursor-pointer transition-all duration-300 border-2 flex flex-col
                     ${selectedBranch?.id === b.id ? "border-primary shadow-elevated" : "border-border/50 hover:border-primary/50 hover:shadow-elegant"}`}
                 >
-                  {/* Branch image 16:9 */}
                   <div className="relative w-full" style={{ paddingBottom: "56.25%" }}>
                     <img
                       src={getBranchImage(b)}
@@ -364,7 +408,6 @@ export default function NewBooking() {
                       </div>
                     )}
                   </div>
-                  {/* Branch info */}
                   <div className="p-2.5 flex flex-col gap-1 bg-card flex-1">
                     <p className="font-semibold text-sm leading-tight">{b.name}</p>
                     {b.address ? (
@@ -383,7 +426,7 @@ export default function NewBooking() {
         </div>
       )}
 
-      {/* ── STEP 2: Serviços (múltipla seleção) ── */}
+      {/* ── STEP 2: Serviços ── */}
       {step === 2 && (
         <div className="space-y-4">
           <div className="flex items-center justify-between">
@@ -408,7 +451,6 @@ export default function NewBooking() {
                   className={`relative overflow-hidden rounded-lg cursor-pointer transition-all duration-300 border-2
                     ${isSelected ? "border-primary shadow-elevated" : "border-transparent hover:border-primary/40"}`}
                 >
-                  {/* 16:9 image */}
                   <div className="relative w-full" style={{ paddingBottom: "56.25%" }}>
                     <img src={imgUrl} alt={s.name} className="absolute inset-0 w-full h-full object-cover" />
                     <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/20 to-transparent" />
@@ -425,7 +467,6 @@ export default function NewBooking() {
                       </div>
                     )}
                   </div>
-                  {/* Info below image */}
                   <div className="p-2 bg-card">
                     <p className="font-semibold text-sm leading-tight">{s.name}</p>
                     <div className="flex items-center justify-between mt-0.5">
@@ -521,7 +562,7 @@ export default function NewBooking() {
             <Sparkles className="h-4 w-4 text-primary mt-0.5 shrink-0" />
             <span>
               Os horários disponíveis serão calculados com base na duração total dos seus serviços ({totalDuration} min)
-              e na disponibilidade de {professionals} profissionais simultâneos.
+              e na disponibilidade de {simultaneousProfessionals} profissionais simultâneos.
             </span>
           </div>
         </div>
@@ -590,8 +631,100 @@ export default function NewBooking() {
         </div>
       )}
 
-      {/* ── STEP 5: Confirmação ── */}
+      {/* ── STEP 5: Escolha do Profissional ── */}
       {step === 5 && (
+        <div className="space-y-4">
+          <p className="text-muted-foreground text-sm">Escolha o profissional que irá te atender</p>
+
+          {loadingProfessionals ? (
+            <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
+              {[1, 2, 3].map((i) => <Skeleton key={i} className="h-28 rounded-xl" />)}
+            </div>
+          ) : professionals.length === 0 ? (
+            <div className="space-y-3">
+              <div className="text-center py-10 space-y-2">
+                <div className="h-14 w-14 rounded-2xl bg-muted flex items-center justify-center mx-auto">
+                  <User className="h-7 w-7 text-muted-foreground" />
+                </div>
+                <p className="font-medium text-sm">Nenhum profissional disponível</p>
+                <p className="text-xs text-muted-foreground">Pule esta etapa e um profissional será atribuído no momento do atendimento.</p>
+              </div>
+              <Button className="w-full rounded-xl" onClick={() => setStep(6)}>
+                Continuar sem escolher <ChevronRight className="ml-1 h-4 w-4" />
+              </Button>
+            </div>
+          ) : (
+            <>
+              {/* "Sem preferência" option */}
+              <div
+                onClick={() => { setSelectedProfessional(null); setStep(6); }}
+                className={`flex items-center gap-3 p-4 rounded-xl border-2 cursor-pointer transition-all duration-200
+                  ${selectedProfessional === null
+                    ? "border-primary bg-primary/5"
+                    : "border-border/50 bg-card hover:border-primary/40 hover:bg-accent/30"
+                  }`}
+              >
+                <div className="h-11 w-11 rounded-full bg-muted flex items-center justify-center shrink-0">
+                  <Sparkles className="h-5 w-5 text-muted-foreground" />
+                </div>
+                <div className="flex-1">
+                  <p className="font-semibold text-sm">Sem preferência</p>
+                  <p className="text-xs text-muted-foreground">Um profissional será atribuído automaticamente</p>
+                </div>
+                <ChevronRight className="h-4 w-4 text-muted-foreground" />
+              </div>
+
+              {/* Professionals grid */}
+              <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
+                {professionals.map((p) => {
+                  const isSelected = selectedProfessional?.user_id === p.user_id;
+                  const initials = p.full_name.split(" ").map((n) => n[0]).slice(0, 2).join("").toUpperCase();
+                  return (
+                    <div
+                      key={p.user_id}
+                      onClick={() => { setSelectedProfessional(p); setStep(6); }}
+                      className={`relative flex flex-col items-center gap-2.5 p-4 rounded-xl border-2 cursor-pointer transition-all duration-200 text-center
+                        ${isSelected
+                          ? "border-primary bg-primary/5 shadow-elevated"
+                          : "border-border/50 bg-card hover:border-primary/40 hover:bg-accent/30 hover:shadow-elegant"
+                        }`}
+                    >
+                      {/* Avatar */}
+                      <div className="relative">
+                        {p.avatar_url ? (
+                          <img
+                            src={p.avatar_url}
+                            alt={p.full_name}
+                            className="h-14 w-14 rounded-full object-cover border-2 border-border/60"
+                          />
+                        ) : (
+                          <div className="h-14 w-14 rounded-full bg-primary/10 border-2 border-primary/20 flex items-center justify-center">
+                            <span className="font-serif font-bold text-primary text-lg">{initials}</span>
+                          </div>
+                        )}
+                        {isSelected && (
+                          <div className="absolute -bottom-1 -right-1 h-5 w-5 rounded-full bg-primary flex items-center justify-center shadow">
+                            <Check className="h-3 w-3 text-primary-foreground" />
+                          </div>
+                        )}
+                      </div>
+                      <div>
+                        <p className="font-semibold text-sm leading-tight">{p.full_name}</p>
+                        {p.bio && (
+                          <p className="text-xs text-muted-foreground mt-0.5 line-clamp-2">{p.bio}</p>
+                        )}
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            </>
+          )}
+        </div>
+      )}
+
+      {/* ── STEP 6: Confirmação ── */}
+      {step === 6 && (
         <div className="space-y-4 max-w-lg mx-auto">
           <p className="text-muted-foreground text-sm text-center">Revise e confirme seu agendamento</p>
 
@@ -641,6 +774,34 @@ export default function NewBooking() {
                   <p className="font-semibold text-sm">{selectedTime}</p>
                   <p className="text-xs text-muted-foreground">{totalDuration} min</p>
                 </div>
+              </div>
+
+              <div className="border-t border-border/60" />
+
+              {/* Professional row */}
+              <div className="p-4 flex items-center gap-3">
+                <div className="h-9 w-9 rounded-xl bg-primary/10 flex items-center justify-center shrink-0">
+                  <UserCheck className="h-4.5 w-4.5 text-primary" />
+                </div>
+                <div className="flex-1">
+                  <p className="text-xs text-muted-foreground">Profissional</p>
+                  <p className="font-semibold text-sm">
+                    {selectedProfessional ? selectedProfessional.full_name : "Sem preferência"}
+                  </p>
+                </div>
+                {selectedProfessional?.avatar_url ? (
+                  <img src={selectedProfessional.avatar_url} alt="" className="h-9 w-9 rounded-full object-cover border border-border/60" />
+                ) : selectedProfessional ? (
+                  <div className="h-9 w-9 rounded-full bg-primary/10 flex items-center justify-center">
+                    <span className="text-xs font-bold text-primary">
+                      {selectedProfessional.full_name.split(" ").map((n) => n[0]).slice(0, 2).join("").toUpperCase()}
+                    </span>
+                  </div>
+                ) : (
+                  <div className="h-9 w-9 rounded-full bg-muted flex items-center justify-center">
+                    <Sparkles className="h-4 w-4 text-muted-foreground" />
+                  </div>
+                )}
               </div>
 
               <div className="border-t border-border/60" />
