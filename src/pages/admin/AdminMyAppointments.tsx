@@ -42,10 +42,10 @@ export default function AdminMyAppointments() {
     const name = prof?.full_name || "";
     setProfName(name);
 
-    let apptQuery = supabase
+    let apptQuery = (supabase as any)
       .from("appointments")
       .select("*, services(name, price, duration_minutes), profiles!appointments_client_profile_fkey(full_name, phone)")
-      .eq("professional_id" as any, user.id)
+      .eq("professional_id", user.id)
       .order("appointment_date", { ascending: true })
       .order("appointment_time", { ascending: true });
 
