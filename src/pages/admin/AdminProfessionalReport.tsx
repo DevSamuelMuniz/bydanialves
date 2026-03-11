@@ -42,10 +42,10 @@ const LEVEL_LABELS: Record<string, string> = {
 };
 
 const STATUS_COLORS: Record<string, string> = {
-  completed: "hsl(var(--chart-2))",
+  completed: "hsl(142 71% 45%)",
   cancelled: "hsl(var(--destructive))",
   pending: "hsl(var(--chart-4))",
-  confirmed: "hsl(var(--chart-1))",
+  confirmed: "hsl(217 91% 60%)",
 };
 
 const MONTH_NAMES = ["Jan","Fev","Mar","Abr","Mai","Jun","Jul","Ago","Set","Out","Nov","Dez"];
