@@ -14,7 +14,7 @@ import { Textarea } from "@/components/ui/textarea";
 
 export default function AdminServices() {
   const { toast } = useToast();
-  const { canManageServices } = useAdminPermissions();
+  const { canManageServices, canManageSystemServices } = useAdminPermissions();
   const [services, setServices] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [dialogOpen, setDialogOpen] = useState(false);
@@ -176,7 +176,7 @@ export default function AdminServices() {
                 </div>
               )}
               {/* Active toggle + edit overlaid */}
-              {!s.is_system && canManageServices && (
+              {canManageServices && (!s.is_system || canManageSystemServices) && (
                 <div className="absolute top-2 right-2 flex items-center gap-1 bg-background/80 backdrop-blur-sm rounded-full px-2 py-1">
                   <Switch checked={s.active} onCheckedChange={(v) => toggleActive(s.id, v)} className="scale-75" />
                   <Button variant="ghost" size="icon" className="h-6 w-6" onClick={() => openEdit(s)}>
