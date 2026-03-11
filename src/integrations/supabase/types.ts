@@ -56,6 +56,7 @@ export type Database = {
           created_at: string
           id: string
           notes: string | null
+          professional_id: string | null
           service_id: string
           status: Database["public"]["Enums"]["appointment_status"]
           stripe_payment_id: string | null
@@ -69,6 +70,7 @@ export type Database = {
           created_at?: string
           id?: string
           notes?: string | null
+          professional_id?: string | null
           service_id: string
           status?: Database["public"]["Enums"]["appointment_status"]
           stripe_payment_id?: string | null
@@ -82,6 +84,7 @@ export type Database = {
           created_at?: string
           id?: string
           notes?: string | null
+          professional_id?: string | null
           service_id?: string
           status?: Database["public"]["Enums"]["appointment_status"]
           stripe_payment_id?: string | null
