@@ -812,6 +812,12 @@ export default function NewBooking() {
                         </div>
                         <div>
                           <p className="font-semibold text-sm leading-tight">{p.full_name}</p>
+                          {/* Bio snippet */}
+                          {p.bio && (
+                            <p className="text-xs text-muted-foreground mt-0.5 line-clamp-2 text-center leading-relaxed">
+                              {p.bio}
+                            </p>
+                          )}
                           {/* Show working hours for that day */}
                           {daySchedule && (
                             <div className="flex items-center justify-center gap-1 mt-1">
