@@ -14,7 +14,7 @@ import {
   DialogFooter,
   DialogDescription,
 } from "@/components/ui/dialog";
-import { Clock, Filter, MapPin, Scissors, CalendarDays, BanknoteIcon, StickyNote, Timer, Star, RotateCcw } from "lucide-react";
+import { Clock, Filter, MapPin, Scissors, CalendarDays, BanknoteIcon, StickyNote, Timer, Star, RotateCcw, UserCircle2 } from "lucide-react";
 import { toast } from "sonner";
 import { useNavigate } from "react-router-dom";
 
