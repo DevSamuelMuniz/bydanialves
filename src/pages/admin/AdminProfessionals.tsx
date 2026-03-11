@@ -149,7 +149,12 @@ export default function AdminProfessionals() {
       .eq("role", "admin")
       .in("admin_level", ["professional", "attendant"]);
 
-    if (adminBranchId) rolesQuery = rolesQuery.eq("branch_id", adminBranchId);
+    if (adminBranchId) {
+      // Filtra apenas profissionais da filial do admin logado
+      rolesQuery = rolesQuery.eq("branch_id", adminBranchId);
+    }
+    // Se adminBranchId é null, o admin é da filial principal (CEO/Gerente sem filial)
+    // e deve ver TODOS os profissionais — sem filtro adicional
 
     const { data: roles } = await rolesQuery;
 
@@ -193,7 +198,7 @@ export default function AdminProfessionals() {
         bio: profile?.bio || null,
         admin_level: role.admin_level as AdminLevel,
         branch_id: role.branch_id,
-        branch_name: role.branch_id ? (branchMap[role.branch_id] || null) : null,
+        branch_name: role.branch_id ? (branchMap[role.branch_id] || "Filial Principal") : "Filial Principal",
         schedules: mySchedules.map((s: any) => ({
           id: s.id,
           day_of_week: s.day_of_week,
