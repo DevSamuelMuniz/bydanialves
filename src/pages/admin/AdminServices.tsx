@@ -269,11 +269,12 @@ export default function AdminServices() {
               />
             </div>
 
-            {/* Image section — only for existing services */}
-            {editing && (
-              <div className="space-y-2">
-                <Label className="flex items-center gap-1.5"><ImageIcon className="h-3.5 w-3.5" />Imagem de capa</Label>
-                {previewImage ? (
+            {/* Image section */}
+            <div className="space-y-2">
+              <Label className="flex items-center gap-1.5"><ImageIcon className="h-3.5 w-3.5" />Imagem de capa</Label>
+              {editing ? (
+                // Existing service: upload + AI generate
+                previewImage ? (
                   <div className="relative rounded-lg overflow-hidden h-36 bg-muted">
                     <img src={previewImage} alt="preview" className="w-full h-full object-cover" />
                     <div className="absolute inset-0 bg-black/0 hover:bg-black/30 transition-all flex items-center justify-center opacity-0 hover:opacity-100 gap-2">
@@ -296,10 +297,57 @@ export default function AdminServices() {
                       Gerar com IA
                     </Button>
                   </div>
-                )}
-                <input ref={fileInputRef} type="file" accept="image/*" className="hidden" onChange={handleFileUpload} />
-              </div>
-            )}
+                )
+              ) : (
+                // New service: local preview only, uploaded on save
+                previewImage ? (
+                  <div className="relative rounded-lg overflow-hidden h-36 bg-muted">
+                    <img src={previewImage} alt="preview" className="w-full h-full object-cover" />
+                    <button
+                      type="button"
+                      onClick={() => { setPreviewImage(null); setPendingImageFile(null); if (fileInputRef.current) fileInputRef.current.value = ""; }}
+                      className="absolute top-2 right-2 h-6 w-6 rounded-full bg-black/60 hover:bg-black/80 flex items-center justify-center transition-colors"
+                    >
+                      <span className="text-white text-xs leading-none">✕</span>
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => fileInputRef.current?.click()}
+                      className="absolute bottom-2 right-2 h-6 px-2.5 rounded-full bg-black/60 hover:bg-black/80 flex items-center gap-1 text-white text-xs transition-colors"
+                    >
+                      <Upload className="h-3 w-3" /> Trocar
+                    </button>
+                  </div>
+                ) : (
+                  <button
+                    type="button"
+                    onClick={() => fileInputRef.current?.click()}
+                    onDragOver={(e) => e.preventDefault()}
+                    onDrop={(e) => {
+                      e.preventDefault();
+                      const file = e.dataTransfer.files?.[0];
+                      if (file) { setPendingImageFile(file); const r = new FileReader(); r.onload = (ev) => setPreviewImage(ev.target?.result as string); r.readAsDataURL(file); }
+                    }}
+                    className="w-full h-28 rounded-xl border-2 border-dashed border-border/60 hover:border-primary/50 bg-muted/30 hover:bg-muted/50 transition-all flex flex-col items-center justify-center gap-2 cursor-pointer"
+                  >
+                    <div className="h-9 w-9 rounded-xl bg-primary/10 flex items-center justify-center">
+                      <ImageIcon className="h-4 w-4 text-primary" />
+                    </div>
+                    <div className="text-center">
+                      <p className="text-sm font-medium">Clique ou arraste uma foto</p>
+                      <p className="text-xs text-muted-foreground">JPG, PNG ou WebP · máx. 5MB</p>
+                    </div>
+                  </button>
+                )
+              )}
+              <input
+                ref={fileInputRef}
+                type="file"
+                accept="image/*"
+                className="hidden"
+                onChange={editing ? handleFileUpload : handleNewServiceImage}
+              />
+            </div>
 
             <div className="grid grid-cols-2 gap-4">
               <div className="space-y-2"><Label>Preço (R$)</Label><Input type="number" step="0.01" value={form.price} onChange={(e) => setForm({ ...form, price: e.target.value })} required /></div>
