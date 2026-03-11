@@ -91,7 +91,7 @@ export default function ClientHistory() {
     setLoading(true);
     let query = supabase
       .from("appointments")
-      .select("*, services(name, price, description, duration_minutes), branches(name, address), professional:profiles!appointments_professional_id_fkey(full_name, avatar_url)")
+      .select("*, services(name, price, description, duration_minutes, is_system), branches(name, address), professional:profiles!appointments_professional_id_fkey(full_name, avatar_url)")
       .eq("client_id", user.id)
       .order("appointment_date", { ascending: false })
       .order("appointment_time", { ascending: false });
@@ -115,10 +115,41 @@ export default function ClientHistory() {
     setReviewedIds(new Set((data || []).map((r: any) => r.appointment_id)));
   }, [user]);
 
+  // Fetch active subscription to know available escovas
+  const fetchSubscription = useCallback(async () => {
+    if (!user) return;
+    const { data: sub } = await supabase
+      .from("subscriptions")
+      .select("*, plans(*)")
+      .eq("client_id", user.id)
+      .eq("status", "active")
+      .maybeSingle();
+
+    if (sub && (sub as any).plans) {
+      const totalEscovas = parseEscovasFromIncludes((sub as any).plans.includes);
+      const now = new Date();
+      const startOfMonth = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}-01`;
+      const endOfMonth = new Date(now.getFullYear(), now.getMonth() + 1, 0);
+      const endStr = `${endOfMonth.getFullYear()}-${String(endOfMonth.getMonth() + 1).padStart(2, "0")}-${String(endOfMonth.getDate()).padStart(2, "0")}`;
+      const { data: appts } = await supabase
+        .from("appointments")
+        .select("*, services(is_system)")
+        .eq("client_id", user.id)
+        .gte("appointment_date", startOfMonth)
+        .lte("appointment_date", endStr)
+        .neq("status", "cancelled");
+      const escovasUsadas = (appts || []).filter((a: any) => a.services?.is_system === true).length;
+      setEscovasDisponiveis(Math.max(0, totalEscovas - escovasUsadas));
+    } else {
+      setEscovasDisponiveis(0);
+    }
+  }, [user]);
+
   useEffect(() => {
     fetchAppointments();
     fetchReviewed();
-  }, [fetchAppointments, fetchReviewed]);
+    fetchSubscription();
+  }, [fetchAppointments, fetchReviewed, fetchSubscription]);
 
   const openReview = (appt: any) => {
     setReviewAppt(appt);
