@@ -58,6 +58,7 @@ export default function AdminServices() {
   const openNew = () => {
     setEditing(null);
     setPreviewImage(null);
+    setPendingImageFile(null);
     setForm({ name: "", description: "", price: "", duration_minutes: "60" });
     setDialogOpen(true);
   };
