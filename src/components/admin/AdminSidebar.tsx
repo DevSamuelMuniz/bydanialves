@@ -6,7 +6,7 @@ import { Badge } from "@/components/ui/badge";
 import { supabase } from "@/integrations/supabase/client";
 import {
   LayoutDashboard, Users, Calendar, Scissors, DollarSign,
-  ShieldCheck, Crown, Activity, ClipboardList, Building2, Tag, Star, Tv2,
+  ShieldCheck, Crown, Activity, ClipboardList, Building2, Tag, Star, Tv2, UserCheck,
 } from "lucide-react";
 
 function usePendingQueueCount() {

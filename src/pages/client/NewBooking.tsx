@@ -34,6 +34,7 @@ interface Professional {
   full_name: string;
   avatar_url: string | null;
   bio: string | null;
+  schedules?: { day_of_week: number; start_time: string; end_time: string; active: boolean }[];
 }
 
 function parseEscovasFromIncludes(includes: string): number {

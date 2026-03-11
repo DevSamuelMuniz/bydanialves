@@ -85,6 +85,7 @@ const App = () => (
               <Route path="profile" element={<AdminProfile />} />
               <Route path="logs" element={<AdminLogs />} />
               <Route path="queue-tv" element={<QueueTV />} />
+              <Route path="professionals" element={<AdminProfessionals />} />
             </Route>
 
             <Route path="*" element={<NotFound />} />
