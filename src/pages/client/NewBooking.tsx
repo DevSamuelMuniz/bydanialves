@@ -121,6 +121,7 @@ export default function NewBooking() {
   const [escovasDisponiveis, setEscovasDisponiveis] = useState(0);
   const [blocked, setBlocked] = useState(false);
   const [blockedModalOpen, setBlockedModalOpen] = useState(false);
+  const [workCalendarMap, setWorkCalendarMap] = useState<Record<string, boolean>>({});
 
   const totalDuration = selectedServices.reduce((acc, s) => acc + s.duration_minutes, 0);
   const totalPrice = selectedServices.reduce((acc, s) => {
