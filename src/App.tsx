@@ -29,6 +29,7 @@ import AdminProfile from "./pages/admin/AdminProfile";
 import AdminLogs from "./pages/admin/AdminLogs";
 import AdminBranches from "./pages/admin/AdminBranches";
 import AdminCoupons from "./pages/admin/AdminCoupons";
+import AdminProfessionals from "./pages/admin/AdminProfessionals";
 import AdminReviews from "./pages/admin/AdminReviews";
 import QueueTV from "./pages/admin/QueueTV";
 import TermosDeServico from "./pages/TermosDeServico";
