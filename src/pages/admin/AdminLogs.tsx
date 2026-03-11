@@ -42,13 +42,27 @@ const entityIcons: Record<string, string> = {
   subscriptions: "👑",
 };
 
+const statusLabels: Record<string, string> = {
+  pending: "Pendente",
+  confirmed: "Confirmado",
+  completed: "Concluído",
+  cancelled: "Cancelado",
+  active: "Ativo",
+  inactive: "Inativo",
+  canceled: "Cancelado",
+};
+
+function translateStatus(s: string): string {
+  return statusLabels[s] ?? s;
+}
+
 function formatDetails(action: string, details: any): string {
   if (!details) return "";
   if (action === "appointment_created") {
-    return `Data: ${details.appointment_date} às ${details.appointment_time?.slice(0, 5)} — Status: ${details.status}`;
+    return `Data: ${details.appointment_date} às ${details.appointment_time?.slice(0, 5)} — Status: ${translateStatus(details.status)}`;
   }
   if (action === "appointment_status_changed") {
-    return `${details.old_status} → ${details.new_status} | ${details.appointment_date} às ${details.appointment_time?.slice(0, 5)}`;
+    return `${translateStatus(details.old_status)} → ${translateStatus(details.new_status)} | ${details.appointment_date} às ${details.appointment_time?.slice(0, 5)}`;
   }
   if (action === "profile_blocked" || action === "profile_unblocked") {
     return details.blocked ? "Conta bloqueada pelo administrador" : "Conta desbloqueada";
@@ -57,10 +71,10 @@ function formatDetails(action: string, details: any): string {
     return `Nome: ${details.full_name}${details.phone ? ` | Tel: ${details.phone}` : ""}`;
   }
   if (action === "subscription_created") {
-    return `Status: ${details.status}`;
+    return `Status: ${translateStatus(details.status)}`;
   }
   if (action === "subscription_status_changed") {
-    return `${details.old_status} → ${details.new_status}`;
+    return `${translateStatus(details.old_status)} → ${translateStatus(details.new_status)}`;
   }
   return JSON.stringify(details);
 }
