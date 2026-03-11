@@ -700,12 +700,12 @@ export default function AdminProfessionals() {
             </div>
           </div>
 
-          <DialogFooter className="gap-2">
+          <div className="flex justify-end gap-2 pt-2">
             <Button variant="ghost" onClick={() => setEditDialog(false)}>Cancelar</Button>
             <Button onClick={saveEdit} disabled={editSaving || !editName.trim()}>
               {editSaving ? "Salvando…" : "Salvar alterações"}
             </Button>
-          </DialogFooter>
+          </div>
         </DialogContent>
       </Dialog>
     </div>
