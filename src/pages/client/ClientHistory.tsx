@@ -217,10 +217,14 @@ export default function ClientHistory() {
               year: "numeric",
             });
             const timeFormatted = appt.appointment_time?.slice(0, 5);
-            const price = Number(appt.services?.price ?? 0).toLocaleString("pt-BR", {
-              style: "currency",
-              currency: "BRL",
-            });
+            const isSystemService = appt.services?.is_system === true;
+            const isFree = isSystemService && escovasDisponiveis > 0;
+            const price = isFree
+              ? "Grátis"
+              : Number(appt.services?.price ?? 0).toLocaleString("pt-BR", {
+                  style: "currency",
+                  currency: "BRL",
+                });
             const duration = appt.services?.duration_minutes;
             const branchName = appt.branches?.name;
             const branchAddress = appt.branches?.address;
