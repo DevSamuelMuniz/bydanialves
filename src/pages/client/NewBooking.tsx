@@ -221,13 +221,29 @@ export default function NewBooking() {
     setLoadingProfessionals(true);
 
     const fetchProfessionals = async () => {
-      const { data: roles } = await supabase
+      // Fetch ALL admin roles (CEO can also be a professional, but mainly we want professional/attendant)
+      // We fetch all admin roles and filter by admin_level client-side to avoid enum casting issues
+      const { data: roles, error: rolesError } = await supabase
         .from("user_roles" as any)
-        .select("user_id, admin_level, branch_id")
-        .eq("role", "admin")
-        .in("admin_level", ["professional", "attendant"]);
+        .select("user_id, admin_level, branch_id, role")
+        .eq("role", "admin");
 
-      if (!roles || (roles as any[]).length === 0) {
+      if (rolesError) {
+        console.error("[NewBooking] Error fetching roles:", rolesError);
+        setAllBranchProfessionals([]);
+        setProfessionals([]);
+        setLoadingProfessionals(false);
+        return;
+      }
+
+      // Filter client-side: only professional and attendant levels
+      const profRoles = ((roles as any[]) || []).filter(
+        (r) => r.admin_level === "professional" || r.admin_level === "attendant"
+      );
+
+      console.log("[NewBooking] All admin roles:", roles?.length, "| Professional/Attendant:", profRoles.length);
+
+      if (profRoles.length === 0) {
         setAllBranchProfessionals([]);
         setProfessionals([]);
         setLoadingProfessionals(false);
@@ -235,9 +251,11 @@ export default function NewBooking() {
       }
 
       // Filter to this branch (null branch_id = works at all branches)
-      const filtered = (roles as any[]).filter(
-        (r) => !r.branch_id || r.branch_id === selectedBranch.id
+      const filtered = profRoles.filter(
+        (r: any) => !r.branch_id || r.branch_id === selectedBranch.id
       );
+
+      console.log("[NewBooking] Branch filter (branch:", selectedBranch.id, ") → filtered:", filtered.length);
 
       if (filtered.length === 0) {
         setAllBranchProfessionals([]);
