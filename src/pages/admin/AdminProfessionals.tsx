@@ -537,9 +537,9 @@ export default function AdminProfessionals() {
               <span className="w-6" />
             </div>
 
-            {(() => { const weekDates = getCurrentWeekDates(); return DAYS.map((d) => {
+            {DAYS.map((d) => {
               const row = weekState[d.value] ?? defaultDayRow();
-              const weekDate = weekDates[d.value];
+              const weekDate = getCurrentWeekDates()[d.value];
               return (
                 <div
                   key={d.value}
@@ -583,7 +583,6 @@ export default function AdminProfessionals() {
                 </div>
               );
             })}
-          </div>
 
           {/* Atalhos */}
           <div className="flex flex-wrap gap-1.5 pt-1 border-t border-border">
