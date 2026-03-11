@@ -9,8 +9,9 @@ import { Switch } from "@/components/ui/switch";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { useToast } from "@/hooks/use-toast";
 import { Skeleton } from "@/components/ui/skeleton";
-import { Plus, Pencil, Clock, DollarSign, FileText, Upload, Sparkles, ImageIcon, Loader2 } from "lucide-react";
+import { Plus, Pencil, Clock, DollarSign, FileText, Upload, Sparkles, ImageIcon, Loader2, Trash2 } from "lucide-react";
 import { Textarea } from "@/components/ui/textarea";
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
 
 export default function AdminServices() {
   const { toast } = useToast();
