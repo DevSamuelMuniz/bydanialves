@@ -176,9 +176,16 @@ export default function AdminServices() {
                 </div>
               )}
               {/* Active toggle + edit overlaid */}
-              {canManageServices && (!s.is_system || canManageSystemServices) && (
+              {canManageServices && !s.is_system && (
                 <div className="absolute top-2 right-2 flex items-center gap-1 bg-background/80 backdrop-blur-sm rounded-full px-2 py-1">
                   <Switch checked={s.active} onCheckedChange={(v) => toggleActive(s.id, v)} className="scale-75" />
+                  <Button variant="ghost" size="icon" className="h-6 w-6" onClick={() => openEdit(s)}>
+                    <Pencil className="h-3 w-3" />
+                  </Button>
+                </div>
+              )}
+              {s.is_system && canManageSystemServices && (
+                <div className="absolute top-2 right-2 flex items-center gap-1 bg-background/80 backdrop-blur-sm rounded-full px-2 py-1">
                   <Button variant="ghost" size="icon" className="h-6 w-6" onClick={() => openEdit(s)}>
                     <Pencil className="h-3 w-3" />
                   </Button>
