@@ -9,8 +9,9 @@ import { Switch } from "@/components/ui/switch";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { useToast } from "@/hooks/use-toast";
 import { Skeleton } from "@/components/ui/skeleton";
-import { Plus, Pencil, Clock, DollarSign, FileText, Upload, Sparkles, ImageIcon, Loader2 } from "lucide-react";
+import { Plus, Pencil, Clock, DollarSign, FileText, Upload, Sparkles, ImageIcon, Loader2, Trash2 } from "lucide-react";
 import { Textarea } from "@/components/ui/textarea";
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
 
 export default function AdminServices() {
   const { toast } = useToast();
@@ -169,6 +170,13 @@ export default function AdminServices() {
     fetchServices();
   };
 
+  const handleDelete = async (id: string) => {
+    const { error } = await supabase.from("services").delete().eq("id", id);
+    if (error) { toast({ title: "Erro ao excluir", description: error.message, variant: "destructive" }); return; }
+    toast({ title: "Serviço excluído!" });
+    fetchServices();
+  };
+
   if (loading) return (
     <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
       {[...Array(4)].map((_, i) => <Skeleton key={i} className="h-64 w-full rounded-xl" />)}
@@ -211,6 +219,27 @@ export default function AdminServices() {
                   <Button variant="ghost" size="icon" className="h-6 w-6" onClick={() => openEdit(s)}>
                     <Pencil className="h-3 w-3" />
                   </Button>
+                  <AlertDialog>
+                    <AlertDialogTrigger asChild>
+                      <Button variant="ghost" size="icon" className="h-6 w-6 text-destructive hover:text-destructive">
+                        <Trash2 className="h-3 w-3" />
+                      </Button>
+                    </AlertDialogTrigger>
+                    <AlertDialogContent>
+                      <AlertDialogHeader>
+                        <AlertDialogTitle>Excluir serviço?</AlertDialogTitle>
+                        <AlertDialogDescription>
+                          O serviço <strong>{s.name}</strong> será removido permanentemente. Esta ação não pode ser desfeita.
+                        </AlertDialogDescription>
+                      </AlertDialogHeader>
+                      <AlertDialogFooter>
+                        <AlertDialogCancel>Cancelar</AlertDialogCancel>
+                        <AlertDialogAction onClick={() => handleDelete(s.id)} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">
+                          Excluir
+                        </AlertDialogAction>
+                      </AlertDialogFooter>
+                    </AlertDialogContent>
+                  </AlertDialog>
                 </div>
               )}
               {s.is_system && canManageSystemServices && (
