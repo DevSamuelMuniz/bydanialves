@@ -119,6 +119,15 @@ export default function AdminProfessionals() {
   const [weekState, setWeekState] = useState<Record<number, DayRow>>({});
   const [saving, setSaving] = useState(false);
 
+  // Edit professional dialog
+  const [editDialog, setEditDialog] = useState(false);
+  const [editProf, setEditProf] = useState<ProfessionalProfile | null>(null);
+  const [editName, setEditName] = useState("");
+  const [editBio, setEditBio] = useState("");
+  const [editLevel, setEditLevel] = useState<NonNullable<AdminLevel>>("professional");
+  const [editBranchId, setEditBranchId] = useState("");
+  const [editSaving, setEditSaving] = useState(false);
+
   // New professional dialog — multi-select
   const [newProfDialog, setNewProfDialog] = useState(false);
   const [clientSearch, setClientSearch] = useState("");
@@ -367,6 +376,34 @@ export default function AdminProfessionals() {
     fetchAll();
   };
 
+  const openEditDialog = (prof: ProfessionalProfile) => {
+    setEditProf(prof);
+    setEditName(prof.full_name);
+    setEditBio(prof.bio || "");
+    setEditLevel((prof.admin_level as NonNullable<AdminLevel>) || "professional");
+    setEditBranchId(prof.branch_id || "");
+    setEditDialog(true);
+  };
+
+  const saveEdit = async () => {
+    if (!editProf) return;
+    setEditSaving(true);
+
+    const [{ error: profileError }, { error: roleError }] = await Promise.all([
+      supabase.from("profiles").update({ full_name: editName, bio: editBio }).eq("user_id", editProf.user_id),
+      (supabase as any).from("user_roles").update({ admin_level: editLevel, branch_id: editBranchId || null }).eq("user_id", editProf.user_id).eq("role", "admin"),
+    ]);
+
+    if (profileError || roleError) {
+      toast({ title: "Erro ao salvar", description: (profileError || roleError)?.message, variant: "destructive" });
+    } else {
+      toast({ title: "Dados atualizados com sucesso! ✅" });
+      setEditDialog(false);
+      fetchAll();
+    }
+    setEditSaving(false);
+  };
+
   if (!perms.canViewBranches) return <AccessDenied />;
 
   return (
@@ -411,6 +448,7 @@ export default function AdminProfessionals() {
               key={prof.user_id}
               prof={prof}
               canManage={canManage}
+              onEdit={() => openEditDialog(prof)}
               onEditWeek={() => openWeekDialog(prof)}
               onDeleteAll={() => deleteAllSchedules(prof)}
               onRemove={() => removeProfessional(prof)}
@@ -622,6 +660,54 @@ export default function AdminProfessionals() {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      {/* ── Dialog: Editar Profissional ── */}
+      <Dialog open={editDialog} onOpenChange={setEditDialog}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle className="font-serif text-lg">Editar Profissional</DialogTitle>
+            <p className="text-sm text-muted-foreground">Altere os dados do profissional</p>
+          </DialogHeader>
+
+          <div className="space-y-4 py-1">
+            <div className="space-y-1.5">
+              <Label>Nome completo</Label>
+              <Input value={editName} onChange={(e) => setEditName(e.target.value)} placeholder="Nome do profissional" />
+            </div>
+            <div className="space-y-1.5">
+              <Label>Bio / Especialidade</Label>
+              <Input value={editBio} onChange={(e) => setEditBio(e.target.value)} placeholder="Ex: Especialista em coloração…" />
+            </div>
+            <div className="grid grid-cols-2 gap-3">
+              <div className="space-y-1.5">
+                <Label>Nível</Label>
+                <Select value={editLevel} onValueChange={(v) => setEditLevel(v as NonNullable<AdminLevel>)}>
+                  <SelectTrigger><SelectValue /></SelectTrigger>
+                  <SelectContent>
+                    {LEVEL_OPTIONS.map((l) => <SelectItem key={l.value} value={l.value}>{l.label}</SelectItem>)}
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="space-y-1.5">
+                <Label>Filial</Label>
+                <Select value={editBranchId} onValueChange={setEditBranchId}>
+                  <SelectTrigger><SelectValue placeholder="Selecione" /></SelectTrigger>
+                  <SelectContent>
+                    {branches.map((b) => <SelectItem key={b.id} value={b.id}>{b.name}</SelectItem>)}
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
+          </div>
+
+          <DialogFooter className="gap-2">
+            <Button variant="ghost" onClick={() => setEditDialog(false)}>Cancelar</Button>
+            <Button onClick={saveEdit} disabled={editSaving || !editName.trim()}>
+              {editSaving ? "Salvando…" : "Salvar alterações"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
@@ -630,12 +716,13 @@ export default function AdminProfessionals() {
 interface ProfCardProps {
   prof: ProfessionalProfile;
   canManage: boolean;
+  onEdit: () => void;
   onEditWeek: () => void;
   onDeleteAll: () => void;
   onRemove: () => void;
 }
 
-function ProfessionalCard({ prof, canManage, onEditWeek, onDeleteAll, onRemove }: ProfCardProps) {
+function ProfessionalCard({ prof, canManage, onEdit, onEditWeek, onDeleteAll, onRemove }: ProfCardProps) {
   const levelLabel = prof.admin_level ? ADMIN_LEVEL_LABELS[prof.admin_level] : null;
   const levelColor = prof.admin_level ? ADMIN_LEVEL_COLORS[prof.admin_level] : "";
   const initials = prof.full_name.split(" ").map((w) => w[0]).slice(0, 2).join("").toUpperCase();
@@ -661,30 +748,35 @@ function ProfessionalCard({ prof, canManage, onEditWeek, onDeleteAll, onRemove }
           <div className="flex items-center justify-between gap-2">
             <p className="font-semibold text-sm leading-tight truncate">{prof.full_name}</p>
             {canManage && (
-              <AlertDialog>
-                <AlertDialogTrigger asChild>
-                  <Button size="icon" variant="ghost" className="h-6 w-6 shrink-0 text-muted-foreground hover:text-destructive">
-                    <Trash2 className="h-3.5 w-3.5" />
-                  </Button>
-                </AlertDialogTrigger>
-                <AlertDialogContent>
-                  <AlertDialogHeader>
-                    <AlertDialogTitle>Remover da equipe?</AlertDialogTitle>
-                    <AlertDialogDescription>
-                      <strong>{prof.full_name}</strong> perderá o cargo profissional mas continuará sendo um cliente no sistema.
-                    </AlertDialogDescription>
-                  </AlertDialogHeader>
-                  <AlertDialogFooter>
-                    <AlertDialogCancel>Cancelar</AlertDialogCancel>
-                    <AlertDialogAction
-                      className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
-                      onClick={onRemove}
-                    >
-                      Remover
-                    </AlertDialogAction>
-                  </AlertDialogFooter>
-                </AlertDialogContent>
-              </AlertDialog>
+              <div className="flex items-center gap-0.5 shrink-0">
+                <Button size="icon" variant="ghost" className="h-6 w-6 text-muted-foreground hover:text-primary" onClick={onEdit}>
+                  <Pencil className="h-3.5 w-3.5" />
+                </Button>
+                <AlertDialog>
+                  <AlertDialogTrigger asChild>
+                    <Button size="icon" variant="ghost" className="h-6 w-6 shrink-0 text-muted-foreground hover:text-destructive">
+                      <Trash2 className="h-3.5 w-3.5" />
+                    </Button>
+                  </AlertDialogTrigger>
+                  <AlertDialogContent>
+                    <AlertDialogHeader>
+                      <AlertDialogTitle>Remover da equipe?</AlertDialogTitle>
+                      <AlertDialogDescription>
+                        <strong>{prof.full_name}</strong> perderá o cargo profissional mas continuará sendo um cliente no sistema.
+                      </AlertDialogDescription>
+                    </AlertDialogHeader>
+                    <AlertDialogFooter>
+                      <AlertDialogCancel>Cancelar</AlertDialogCancel>
+                      <AlertDialogAction
+                        className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                        onClick={onRemove}
+                      >
+                        Remover
+                      </AlertDialogAction>
+                    </AlertDialogFooter>
+                  </AlertDialogContent>
+                </AlertDialog>
+              </div>
             )}
           </div>
           <div className="flex items-center gap-1.5 mt-1 flex-wrap">
