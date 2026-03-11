@@ -85,7 +85,7 @@ export default function ClientHistory() {
     setLoading(true);
     let query = supabase
       .from("appointments")
-      .select("*, services(name, price, description, duration_minutes), branches(name, address)")
+      .select("*, services(name, price, description, duration_minutes), branches(name, address), profiles!appointments_professional_id_fkey(full_name, avatar_url)")
       .eq("client_id", user.id)
       .order("appointment_date", { ascending: false })
       .order("appointment_time", { ascending: false });
