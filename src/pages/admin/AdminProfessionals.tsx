@@ -96,12 +96,12 @@ export default function AdminProfessionals() {
   const [weekState, setWeekState] = useState<Record<number, DayRow>>({});
   const [saving, setSaving] = useState(false);
 
-  // New professional dialog
+  // New professional dialog — multi-select
   const [newProfDialog, setNewProfDialog] = useState(false);
   const [clientSearch, setClientSearch] = useState("");
   const [clientResults, setClientResults] = useState<ClientUser[]>([]);
   const [searchingClients, setSearchingClients] = useState(false);
-  const [selectedClient, setSelectedClient] = useState<ClientUser | null>(null);
+  const [selectedClients, setSelectedClients] = useState<ClientUser[]>([]);
   const [newLevel, setNewLevel] = useState<NonNullable<AdminLevel>>("professional");
   const [newBranchId, setNewBranchId] = useState<string>("");
   const [creatingProf, setCreatingProf] = useState(false);
