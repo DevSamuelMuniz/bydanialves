@@ -121,6 +121,101 @@ export type Database = {
           },
         ]
       }
+      bonification_payments: {
+        Row: {
+          bonus_amount: number
+          created_at: string
+          hours_worked: number
+          id: string
+          notes: string | null
+          paid_at: string | null
+          plan_id: string | null
+          professional_id: string
+          reference_period: string
+          rule_id: string | null
+          status: string
+        }
+        Insert: {
+          bonus_amount: number
+          created_at?: string
+          hours_worked?: number
+          id?: string
+          notes?: string | null
+          paid_at?: string | null
+          plan_id?: string | null
+          professional_id: string
+          reference_period: string
+          rule_id?: string | null
+          status?: string
+        }
+        Update: {
+          bonus_amount?: number
+          created_at?: string
+          hours_worked?: number
+          id?: string
+          notes?: string | null
+          paid_at?: string | null
+          plan_id?: string | null
+          professional_id?: string
+          reference_period?: string
+          rule_id?: string | null
+          status?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "bonification_payments_plan_id_fkey"
+            columns: ["plan_id"]
+            isOneToOne: false
+            referencedRelation: "plans"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "bonification_payments_rule_id_fkey"
+            columns: ["rule_id"]
+            isOneToOne: false
+            referencedRelation: "bonification_rules"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      bonification_rules: {
+        Row: {
+          active: boolean
+          created_at: string
+          description: string | null
+          id: string
+          percentage: number
+          plan_id: string | null
+          updated_at: string
+        }
+        Insert: {
+          active?: boolean
+          created_at?: string
+          description?: string | null
+          id?: string
+          percentage?: number
+          plan_id?: string | null
+          updated_at?: string
+        }
+        Update: {
+          active?: boolean
+          created_at?: string
+          description?: string | null
+          id?: string
+          percentage?: number
+          plan_id?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "bonification_rules_plan_id_fkey"
+            columns: ["plan_id"]
+            isOneToOne: false
+            referencedRelation: "plans"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       branches: {
         Row: {
           active: boolean
