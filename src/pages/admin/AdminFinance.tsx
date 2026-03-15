@@ -853,6 +853,143 @@ export default function AdminFinance() {
             </CardContent>
           </Card>
         </TabsContent>
+
+        {/* ── Bonification ── */}
+        <TabsContent value="bonification" className="mt-4 space-y-4">
+          {/* Total disponível header */}
+          {(() => {
+            const totalBonusPool = planProfessionals.reduce((acc, prof) => {
+              const profBonus = prof.plans.reduce((s: number, p: any) => s + p.plan_price * 0.1, 0);
+              return acc + profBonus;
+            }, 0);
+            return (
+              <Card className="border-primary/30 bg-primary/5">
+                <CardContent className="pt-4 pb-4">
+                  <div className="flex items-center justify-between flex-wrap gap-3">
+                    <div className="flex items-center gap-3">
+                      <div className="h-10 w-10 rounded-full bg-primary/15 flex items-center justify-center">
+                        <Award className="h-5 w-5 text-primary" />
+                      </div>
+                      <div>
+                        <p className="text-xs text-muted-foreground">Fundo Total de Bonificação</p>
+                        <p className="text-xl font-serif font-bold text-primary">{fmt(totalBonusPool)}</p>
+                        <p className="text-xs text-muted-foreground">10% do valor de cada plano por profissional vinculado</p>
+                      </div>
+                    </div>
+                    <div className="text-right">
+                      <p className="text-xs text-muted-foreground">{planProfessionals.length} profissional(is)</p>
+                      <p className="text-xs text-muted-foreground">{planProfessionals.reduce((a, p) => a + p.plans.length, 0)} vínculo(s) plano</p>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+            );
+          })()}
+
+          {planProfessionals.length === 0 ? (
+            <Card className="border-border">
+              <CardContent className="py-12 text-center">
+                <Award className="h-10 w-10 text-muted-foreground mx-auto mb-3" />
+                <p className="text-muted-foreground text-sm">Nenhum profissional vinculado a planos.</p>
+                <p className="text-xs text-muted-foreground mt-1">Vincule profissionais aos planos para calcular bonificações.</p>
+              </CardContent>
+            </Card>
+          ) : (
+            <div className="space-y-3">
+              {planProfessionals.map((prof) => {
+                const bonusPerPlan = prof.plans.map((p: any) => ({
+                  ...p,
+                  bonus: p.plan_price * 0.1,
+                }));
+                const totalBonus = bonusPerPlan.reduce((s: number, p: any) => s + p.bonus, 0);
+                const hours = Number(bonusHours[prof.professional_id] || 0);
+                const expanded = bonusExpanded[prof.professional_id] ?? false;
+
+                return (
+                  <Card key={prof.professional_id} className="border-border">
+                    <CardContent className="pt-4 pb-4 space-y-3">
+                      {/* Prof header */}
+                      <div className="flex items-center justify-between gap-3 flex-wrap">
+                        <div className="flex items-center gap-3">
+                          <div className="h-9 w-9 rounded-full bg-muted flex items-center justify-center text-sm font-bold text-muted-foreground overflow-hidden shrink-0">
+                            {prof.avatar_url
+                              ? <img src={prof.avatar_url} alt={prof.full_name} className="h-full w-full object-cover" />
+                              : prof.full_name.charAt(0).toUpperCase()
+                            }
+                          </div>
+                          <div>
+                            <p className="font-medium text-sm">{prof.full_name}</p>
+                            <p className="text-xs text-muted-foreground">{prof.plans.length} plano(s) vinculado(s)</p>
+                          </div>
+                        </div>
+                        <div className="flex items-center gap-3">
+                          <div className="text-right">
+                            <p className="text-xs text-muted-foreground">Bonificação disponível</p>
+                            <p className="text-base font-serif font-bold text-primary">{fmt(totalBonus)}</p>
+                          </div>
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            className="h-7 w-7"
+                            onClick={() => setBonusExpanded((prev) => ({ ...prev, [prof.professional_id]: !prev[prof.professional_id] }))}
+                          >
+                            {expanded ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
+                          </Button>
+                        </div>
+                      </div>
+
+                      {/* Plans breakdown */}
+                      {expanded && (
+                        <div className="space-y-2 pl-12">
+                          <p className="text-xs font-medium text-muted-foreground uppercase tracking-wide">Planos vinculados</p>
+                          {bonusPerPlan.map((p: any) => (
+                            <div key={p.plan_id} className="flex items-center justify-between rounded-md bg-muted/40 px-3 py-2">
+                              <div>
+                                <p className="text-sm font-medium">{p.plan_name}</p>
+                                <p className="text-xs text-muted-foreground">Valor do plano: {fmt(p.plan_price)}</p>
+                              </div>
+                              <Badge variant="outline" className="text-primary border-primary/30">
+                                10% = {fmt(p.bonus)}
+                              </Badge>
+                            </div>
+                          ))}
+                        </div>
+                      )}
+
+                      {/* Hours input & calc */}
+                      <div className="flex items-end gap-3 pt-1 border-t border-border">
+                        <div className="flex-1 space-y-1">
+                          <Label className="text-xs flex items-center gap-1">
+                            <Clock className="h-3 w-3" />
+                            Horas trabalhadas (manual)
+                          </Label>
+                          <Input
+                            type="number"
+                            min="0"
+                            step="0.5"
+                            placeholder="Ex: 40"
+                            value={bonusHours[prof.professional_id] || ""}
+                            onChange={(e) => setBonusHours((prev) => ({ ...prev, [prof.professional_id]: e.target.value }))}
+                            className="h-8 text-sm"
+                          />
+                        </div>
+                        <div className="shrink-0 rounded-lg border border-border bg-muted/30 px-3 py-2 min-w-[130px]">
+                          <p className="text-xs text-muted-foreground">Bonificação calculada</p>
+                          <p className={`text-sm font-bold ${hours > 0 ? "text-primary" : "text-muted-foreground"}`}>
+                            {hours > 0 ? fmt(totalBonus) : "—"}
+                          </p>
+                          {hours > 0 && (
+                            <p className="text-xs text-muted-foreground">{hours}h registrada(s)</p>
+                          )}
+                        </div>
+                      </div>
+                    </CardContent>
+                  </Card>
+                );
+              })}
+            </div>
+          )}
+        </TabsContent>
       </Tabs>
 
       {/* Add/Edit Dialog */}
