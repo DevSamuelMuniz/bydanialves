@@ -52,7 +52,7 @@ export default function AdminAuth() {
       redirectTo: `${window.location.origin}/reset-password`,
     });
     if (error) {
-      toast({ title: "Erro", description: error.message, variant: "destructive" });
+      toast({ title: "Erro", description: translateError(error.message), variant: "destructive" });
     } else {
       toast({ title: "E-mail enviado!", description: "Verifique sua caixa de entrada." });
     }
