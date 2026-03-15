@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { useNavigate } from "react-router-dom";
 import { AppSidebar, NavItem } from "@/components/AppSidebar";
 import { NavLink } from "@/components/NavLink";
 import { useAuth } from "@/contexts/AuthContext";
@@ -15,6 +16,7 @@ const items: NavItem[] = [
 
 export function ClientSidebar() {
   const { user } = useAuth();
+  const navigate = useNavigate();
   const [subscription, setSubscription] = useState<any | null>(null);
 
   useEffect(() => {
@@ -36,7 +38,10 @@ export function ClientSidebar() {
   const isExpired = daysUntilExpiry !== null && daysUntilExpiry <= 0;
 
   const planSlot = subscription ? (
-    <div className="rounded-xl gradient-gold-subtle border border-primary/15 p-3 space-y-2">
+    <div
+      className="rounded-xl gradient-gold-subtle border border-primary/15 p-3 space-y-2 cursor-pointer hover:border-primary/40 transition-colors"
+      onClick={() => navigate("/client/plans")}
+    >
       <div className="flex items-center gap-2">
         <Crown className="h-4 w-4 text-primary" />
         <span className="text-xs font-semibold uppercase tracking-wide text-primary">
