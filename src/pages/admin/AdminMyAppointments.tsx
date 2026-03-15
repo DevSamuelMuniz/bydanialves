@@ -106,10 +106,38 @@ export default function AdminMyAppointments() {
     return () => { supabase.removeChannel(channel); };
   }, [user, selectedDate]);
 
-  const markComplete = async (id: string) => {
-    const { error } = await supabase.from("appointments").update({ status: "completed" }).eq("id", id);
-    if (error) toast({ title: "Erro", description: error.message, variant: "destructive" });
-    else { toast({ title: "Serviço concluído!" }); fetchData(); }
+  const openCompleteModal = (appt: any) => {
+    setCompleteTarget(appt);
+    setPaymentMethod("cash");
+  };
+
+  const confirmComplete = async () => {
+    if (!completeTarget) return;
+    setCompleting(true);
+    // 1. Marca como concluído (trigger cria o registro financeiro)
+    const { error } = await supabase
+      .from("appointments")
+      .update({ status: "completed", updated_at: new Date().toISOString() })
+      .eq("id", completeTarget.id);
+    if (error) {
+      toast({ title: "Erro ao concluir", description: error.message, variant: "destructive" });
+      setCompleting(false);
+      return;
+    }
+    // 2. Aguarda trigger e atualiza forma de pagamento
+    await new Promise((r) => setTimeout(r, 600));
+    await supabase
+      .from("financial_records")
+      .update({ payment_method: paymentMethod })
+      .eq("appointment_id", completeTarget.id);
+    const label = PAYMENT_OPTIONS.find((p) => p.value === paymentMethod)?.label ?? paymentMethod;
+    toast({ title: "✅ Atendimento concluído!", description: `Pagamento: ${label}` });
+    setCompleteTarget(null);
+    setCompleting(false);
+    fetchData();
+  };
+
+  const markComplete = async (id: string) => { /* kept for compat */ };
   };
 
   const markCancel = async (id: string) => {
