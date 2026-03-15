@@ -336,11 +336,11 @@ function WorkCalendarGrid({ year, month, monthDates, isEnabled, pendingChanges, 
       {/* Legend */}
       <div className="flex flex-wrap items-center gap-4 pt-3 justify-end">
         <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
-          <div className="h-3 w-3 rounded-sm bg-primary/10 border border-primary/40" />
+          <div className="h-3 w-3 rounded-sm bg-green-500/15 border border-green-500/50" />
           <span>Disponível</span>
         </div>
         <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
-          <div className="h-3 w-3 rounded-sm bg-destructive/5 border border-destructive/30" />
+          <div className="h-3 w-3 rounded-sm bg-red-500/10 border border-red-500/40" />
           <span>Bloqueado</span>
         </div>
         <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
