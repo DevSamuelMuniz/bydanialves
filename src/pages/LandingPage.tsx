@@ -503,39 +503,41 @@ export default function LandingPage() {
                 <div className="absolute inset-0 bg-gradient-to-t from-background/30 to-transparent" />
               </div>
             </div>
+          </div>
+        </section>
 
-            {/* Gallery marquee */}
-            <div className="mt-14 overflow-hidden" style={{ height: "calc(270px + 1rem)", contain: "strict" }}>
-              <div
-                className="flex gap-5 animate-[gallery-marquee_60s_linear_infinite]"
-                style={{ width: "max-content", willChange: "transform" }}
-              >
-                {[...galleryImages, ...galleryImages].map((src, i) => {
-                  const uniqueIdx = i % galleryUniqueImages.length;
-                  return (
-                    <button
-                      key={i}
-                      type="button"
-                      onClick={() => openLightbox(uniqueIdx)}
-                      className="flex-shrink-0 rounded-2xl overflow-hidden shadow-lg group cursor-zoom-in relative"
-                      style={{ width: 360, height: 270, flexShrink: 0 }}
-                      aria-label={`Abrir foto ${uniqueIdx + 1}`}
-                    >
-                      <img
-                        src={src}
-                        alt={`Serviço ${uniqueIdx + 1}`}
-                        className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700"
-                        loading="lazy"
-                        width={360}
-                        height={270}
-                      />
-                      <div className="absolute inset-0 bg-black/0 group-hover:bg-black/20 transition-colors duration-300 flex items-center justify-center">
-                        <span className="opacity-0 group-hover:opacity-100 transition-opacity duration-300 bg-background/80 backdrop-blur-sm rounded-full px-3 py-1.5 text-xs font-medium text-foreground">Ver foto</span>
-                      </div>
-                    </button>
-                  );
-                })}
-              </div>
+        {/* ═══ GALERIA MARQUEE ═══ */}
+        <section className="py-10 overflow-hidden bg-background">
+          <div className="overflow-hidden" style={{ height: "calc(270px + 1rem)", contain: "strict" }}>
+            <div
+              className="flex gap-5 animate-[gallery-marquee_60s_linear_infinite]"
+              style={{ width: "max-content", willChange: "transform" }}
+            >
+              {[...galleryImages, ...galleryImages].map((src, i) => {
+                const uniqueIdx = i % galleryUniqueImages.length;
+                return (
+                  <button
+                    key={i}
+                    type="button"
+                    onClick={() => openLightbox(uniqueIdx)}
+                    className="flex-shrink-0 rounded-2xl overflow-hidden shadow-lg group cursor-zoom-in relative"
+                    style={{ width: 360, height: 270, flexShrink: 0 }}
+                    aria-label={`Abrir foto ${uniqueIdx + 1}`}
+                  >
+                    <img
+                      src={src}
+                      alt={`Serviço ${uniqueIdx + 1}`}
+                      className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700"
+                      loading="lazy"
+                      width={360}
+                      height={270}
+                    />
+                    <div className="absolute inset-0 bg-black/0 group-hover:bg-black/20 transition-colors duration-300 flex items-center justify-center">
+                      <span className="opacity-0 group-hover:opacity-100 transition-opacity duration-300 bg-background/80 backdrop-blur-sm rounded-full px-3 py-1.5 text-xs font-medium text-foreground">Ver foto</span>
+                    </div>
+                  </button>
+                );
+              })}
             </div>
           </div>
         </section>
