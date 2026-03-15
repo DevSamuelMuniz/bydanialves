@@ -483,7 +483,9 @@ export default function LandingPage() {
                 <Badge className="self-start gradient-gold text-primary-foreground border-0 shadow-gold px-4 py-1.5 text-xs font-medium tracking-widest uppercase">✨ Beleza & Cuidado Exclusivo</Badge>
                 <h1 className="font-serif text-4xl md:text-6xl font-bold leading-tight max-w-full overflow-hidden">
                   Cabelos perfeitos,{" "}
-                  <HeroTypewriter />
+                  <span className="block min-h-[1.2em]">
+                    <HeroTypewriter />
+                  </span>
                 </h1>
                 <p className="text-lg text-muted-foreground max-w-md text-balance">
                   Agende online, escolha sua unidade e sinta a diferença de um salão premium com planos exclusivos para você.
