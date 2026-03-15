@@ -77,6 +77,7 @@ export default function AdminFinance() {
 
   const [records, setRecords]           = useState<any[]>([]);
   const [completedAppointments, setCompletedAppointments] = useState<any[]>([]);
+  const [subscriptions, setSubscriptions] = useState<any[]>([]);
   const [branches, setBranches]         = useState<any[]>([]);
   const [loading, setLoading]           = useState(true);
   const [dialogOpen, setDialogOpen]     = useState(false);
@@ -140,6 +141,17 @@ export default function AdminFinance() {
     if (isManager && branchFilter !== "all") apptQuery = apptQuery.eq("branch_id", branchFilter);
     const { data: apptData } = await apptQuery;
     setCompletedAppointments(apptData || []);
+
+    // Fetch subscriptions with plan info and client profile
+    let subsQuery = supabase
+      .from("subscriptions")
+      .select("id, status, started_at, expires_at, created_at, client_id, plans(name, price), profiles(full_name)")
+      .order("created_at", { ascending: false })
+      .limit(500);
+    if (dateFrom) subsQuery = subsQuery.gte("created_at", format(dateFrom, "yyyy-MM-dd"));
+    if (dateTo)   subsQuery = subsQuery.lte("created_at", format(dateTo, "yyyy-MM-dd") + "T23:59:59");
+    const { data: subsData } = await subsQuery;
+    setSubscriptions(subsData || []);
 
     setLoading(false);
   }, [dateFrom, dateTo, typeFilter, branchFilter, isManager, branches]);
@@ -214,6 +226,15 @@ export default function AdminFinance() {
   const avgTicket          = completedAppointments.length > 0
     ? appointmentServiceRevenue / completedAppointments.length
     : 0;
+
+  // Receita de assinaturas
+  const totalSubscriptionRevenue = useMemo(() =>
+    subscriptions.reduce((s, sub) => s + Number((sub.plans as any)?.price || 0), 0),
+  [subscriptions]);
+  const activeSubscriptions = subscriptions.filter((s) => s.status === "active");
+  const activeSubscriptionRevenue = useMemo(() =>
+    activeSubscriptions.reduce((s, sub) => s + Number((sub.plans as any)?.price || 0), 0),
+  [activeSubscriptions]);
 
   // Faturamento por filial
   const byBranch = useMemo(() => {
@@ -458,6 +479,12 @@ export default function AdminFinance() {
         <KpiCard label="CMV + Fixos"  value={fmt(totalCMV + totalFixedCosts)} icon={<TrendingDown className="h-5 w-5 text-orange-600" />} sub="Custos operacionais" accent="orange" />
       </div>
 
+      <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
+        <KpiCard label="Receita de Planos (total)" value={fmt(totalSubscriptionRevenue)} icon={<CreditCard className="h-5 w-5 text-primary" />} sub={`${subscriptions.length} assinaturas`} accent="primary" />
+        <KpiCard label="Assinaturas Ativas" value={fmt(activeSubscriptionRevenue)} icon={<ArrowUpCircle className="h-5 w-5 text-green-600" />} sub={`${activeSubscriptions.length} ativas agora`} accent="green" />
+        <KpiCard label="Ticket Médio Planos" value={activeSubscriptions.length > 0 ? fmt(activeSubscriptionRevenue / activeSubscriptions.length) : "—"} icon={<Target className="h-5 w-5 text-amber-600" />} sub="Valor médio por assinante" accent="amber" />
+      </div>
+
       {/* ── Tabs ── */}
       <Tabs value={tab} onValueChange={setTab}>
         <TabsList className="flex-wrap h-auto">
@@ -467,6 +494,7 @@ export default function AdminFinance() {
           <TabsTrigger value="branches">Por Filial</TabsTrigger>
           <TabsTrigger value="records">Registros</TabsTrigger>
           <TabsTrigger value="appointments">Atendimentos</TabsTrigger>
+          <TabsTrigger value="subscriptions">Assinaturas</TabsTrigger>
         </TabsList>
 
         {/* ── Overview ── */}
@@ -725,6 +753,56 @@ export default function AdminFinance() {
                         <span className="text-sm font-bold text-green-700">
                           + {fmt(Number(svc?.price || 0))}
                         </span>
+                      </div>
+                    );
+                  })}
+                </div>
+              )}
+            </CardContent>
+          </Card>
+        </TabsContent>
+
+        {/* ── Subscriptions ── */}
+        <TabsContent value="subscriptions" className="mt-4 space-y-3">
+          <Card>
+            <CardHeader className="pb-2">
+              <CardTitle className="text-sm font-medium text-muted-foreground flex items-center gap-2">
+                <CreditCard className="h-4 w-4" />
+                Assinaturas de Planos · Receita Recorrente
+                <span className="ml-auto font-bold text-foreground">{fmt(totalSubscriptionRevenue)}</span>
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              {subscriptions.length === 0 ? (
+                <p className="text-center text-muted-foreground py-8 text-sm">
+                  Nenhuma assinatura encontrada no período.
+                </p>
+              ) : (
+                <div className="space-y-2">
+                  {subscriptions.map((sub) => {
+                    const plan = sub.plans as any;
+                    const profile = sub.profiles as any;
+                    const isActive = sub.status === "active";
+                    return (
+                      <div key={sub.id} className="flex items-center justify-between rounded-lg border border-border px-4 py-3">
+                        <div className="flex items-center gap-3">
+                          <CreditCard className={`h-4 w-4 shrink-0 ${isActive ? "text-green-600" : "text-muted-foreground"}`} />
+                          <div>
+                            <p className="text-sm font-medium">{plan?.name ?? "Plano"}</p>
+                            <p className="text-xs text-muted-foreground">
+                              {profile?.full_name ?? "—"} · Desde {new Date(sub.started_at).toLocaleDateString("pt-BR")}
+                              {sub.expires_at && <> · Expira {new Date(sub.expires_at).toLocaleDateString("pt-BR")}</>}
+                            </p>
+                          </div>
+                        </div>
+                        <div className="flex items-center gap-3">
+                          <span className={`text-xs px-2 py-0.5 rounded-full border font-medium ${isActive ? "text-green-700 bg-green-50 border-green-200 dark:bg-green-950/30 dark:border-green-800" : "text-muted-foreground bg-muted border-border"}`}>
+                            {isActive ? "Ativa" : sub.status === "cancelled" ? "Cancelada" : sub.status}
+                          </span>
+                          <span className={`text-sm font-bold ${isActive ? "text-green-700" : "text-muted-foreground"}`}>
+                            + {fmt(Number(plan?.price || 0))}
+                          </span>
+                        </div>
                       </div>
                     );
                   })}
