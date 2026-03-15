@@ -437,32 +437,55 @@ export default function AdminPlans() {
               </ScrollArea>
             </div>
 
-            {/* Professionals selection */}
+            {/* Professionals selection - dropdown */}
             <div className="space-y-2">
               <Label>Profissionais que executam <span className="text-muted-foreground text-xs">({selectedProfessionals.length} selecionado{selectedProfessionals.length !== 1 ? "s" : ""})</span></Label>
               {professionals.length === 0 ? (
                 <p className="text-sm text-muted-foreground py-2">Nenhum profissional cadastrado.</p>
               ) : (
-                <ScrollArea className="h-32 rounded-lg border border-border/60 bg-muted/20 p-3">
-                  <div className="space-y-2">
-                    {professionals.map((p) => (
-                      <div key={p.user_id} className="flex items-center gap-3 rounded-md px-2 py-1.5 hover:bg-muted/60 transition-colors">
-                        <Checkbox
-                          id={`prof-${p.user_id}`}
-                          checked={selectedProfessionals.includes(p.user_id)}
-                          onCheckedChange={(checked) =>
-                            setSelectedProfessionals((prev) =>
-                              checked ? [...prev, p.user_id] : prev.filter((id) => id !== p.user_id)
-                            )
-                          }
-                        />
-                        <label htmlFor={`prof-${p.user_id}`} className="flex-1 cursor-pointer text-sm leading-snug">
-                          {p.full_name}
-                        </label>
+                <div className="relative">
+                  <Popover>
+                    <PopoverTrigger asChild>
+                      <button
+                        type="button"
+                        className="w-full flex items-center justify-between rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background hover:bg-muted/40 transition-colors focus:outline-none focus:ring-2 focus:ring-ring"
+                      >
+                        <span className="truncate text-left">
+                          {selectedProfessionals.length === 0
+                            ? "Selecionar profissionais..."
+                            : professionals.filter((p) => selectedProfessionals.includes(p.user_id)).map((p) => p.full_name).join(", ")}
+                        </span>
+                        <ChevronDown className="h-4 w-4 shrink-0 text-muted-foreground ml-2" />
+                      </button>
+                    </PopoverTrigger>
+                    <PopoverContent className="w-full p-2" align="start">
+                      <div className="space-y-1">
+                        {professionals.map((p) => (
+                          <div
+                            key={p.user_id}
+                            className="flex items-center gap-3 rounded-md px-2 py-2 hover:bg-muted/60 transition-colors cursor-pointer"
+                            onClick={() =>
+                              setSelectedProfessionals((prev) =>
+                                prev.includes(p.user_id) ? prev.filter((id) => id !== p.user_id) : [...prev, p.user_id]
+                              )
+                            }
+                          >
+                            <Checkbox
+                              checked={selectedProfessionals.includes(p.user_id)}
+                              onCheckedChange={(checked) =>
+                                setSelectedProfessionals((prev) =>
+                                  checked ? [...prev, p.user_id] : prev.filter((id) => id !== p.user_id)
+                                )
+                              }
+                              onClick={(e) => e.stopPropagation()}
+                            />
+                            <span className="text-sm">{p.full_name}</span>
+                          </div>
+                        ))}
                       </div>
-                    ))}
-                  </div>
-                </ScrollArea>
+                    </PopoverContent>
+                  </Popover>
+                </div>
               )}
             </div>
 
