@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, useCallback } from "react";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { supabase } from "@/integrations/supabase/client";
@@ -10,8 +10,19 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { Separator } from "@/components/ui/separator";
 import { Calendar } from "@/components/ui/calendar";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { useToast } from "@/hooks/use-toast";
 import { cn } from "@/lib/utils";
+
+const PAYMENT_OPTIONS = [
+  { value: "cash",        label: "💵 Dinheiro" },
+  { value: "pix",         label: "📱 PIX" },
+  { value: "credit_card", label: "💳 Cartão de Crédito" },
+  { value: "debit_card",  label: "💳 Cartão de Débito" },
+  { value: "other",       label: "Outro" },
+];
 import {
   Clock, DollarSign, User, Scissors, CheckCircle2, XCircle,
   PlayCircle, ListChecks, ChevronDown, ChevronUp, CalendarIcon, RotateCcw,
@@ -43,6 +54,11 @@ export default function AdminMyAppointments() {
   const [history, setHistory] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [historyOpen, setHistoryOpen] = useState(true);
+
+  // Modal de conclusão
+  const [completeTarget, setCompleteTarget] = useState<any | null>(null);
+  const [paymentMethod, setPaymentMethod] = useState("cash");
+  const [completing, setCompleting] = useState(false);
 
   const fetchData = async () => {
     if (!user) return;
@@ -90,11 +106,38 @@ export default function AdminMyAppointments() {
     return () => { supabase.removeChannel(channel); };
   }, [user, selectedDate]);
 
-  const markComplete = async (id: string) => {
-    const { error } = await supabase.from("appointments").update({ status: "completed" }).eq("id", id);
-    if (error) toast({ title: "Erro", description: error.message, variant: "destructive" });
-    else { toast({ title: "Serviço concluído!" }); fetchData(); }
+  const openCompleteModal = (appt: any) => {
+    setCompleteTarget(appt);
+    setPaymentMethod("cash");
   };
+
+  const confirmComplete = async () => {
+    if (!completeTarget) return;
+    setCompleting(true);
+    // 1. Marca como concluído (trigger cria o registro financeiro)
+    const { error } = await supabase
+      .from("appointments")
+      .update({ status: "completed", updated_at: new Date().toISOString() })
+      .eq("id", completeTarget.id);
+    if (error) {
+      toast({ title: "Erro ao concluir", description: error.message, variant: "destructive" });
+      setCompleting(false);
+      return;
+    }
+    // 2. Aguarda trigger e atualiza forma de pagamento
+    await new Promise((r) => setTimeout(r, 600));
+    await supabase
+      .from("financial_records")
+      .update({ payment_method: paymentMethod })
+      .eq("appointment_id", completeTarget.id);
+    const label = PAYMENT_OPTIONS.find((p) => p.value === paymentMethod)?.label ?? paymentMethod;
+    toast({ title: "✅ Atendimento concluído!", description: `Pagamento: ${label}` });
+    setCompleteTarget(null);
+    setCompleting(false);
+    fetchData();
+  };
+
+  const markComplete = async (id: string) => { /* kept for compat */ };
 
   const markCancel = async (id: string) => {
     const { error } = await supabase.from("appointments").update({ status: "cancelled" }).eq("id", id);
@@ -160,7 +203,7 @@ export default function AdminMyAppointments() {
                 <Button
                   size="sm"
                   className="flex-1 h-7 text-xs gap-1 bg-green-600 hover:bg-green-700 text-white"
-                  onClick={() => markComplete(a.id)}
+                  onClick={() => openCompleteModal(a)}
                 >
                   <CheckCircle2 className="h-3 w-3" />
                   Concluir
@@ -337,6 +380,88 @@ export default function AdminMyAppointments() {
 
         </div>
       )}
+
+
+    {/* Modal de conclusão com forma de pagamento */}
+    <Dialog open={!!completeTarget} onOpenChange={(o) => !o && setCompleteTarget(null)}>
+      <DialogContent className="max-w-sm">
+        <DialogHeader>
+          <DialogTitle className="flex items-center gap-2">
+            <CheckCircle2 className="w-5 h-5 text-green-600" />
+            Concluir Atendimento
+          </DialogTitle>
+        </DialogHeader>
+
+        {completeTarget && (
+          <div className="space-y-4">
+            {/* Resumo */}
+            <div className="rounded-xl border bg-muted/40 p-4 space-y-3">
+              <div className="flex items-center gap-2">
+                <Avatar className="w-9 h-9">
+                  <AvatarImage src={completeTarget.profiles?.avatar_url ?? undefined} />
+                  <AvatarFallback className="text-xs font-bold bg-primary/10 text-primary">
+                    {completeTarget.profiles?.full_name?.charAt(0) ?? "?"}
+                  </AvatarFallback>
+                </Avatar>
+                <div>
+                  <p className="text-sm font-semibold">{completeTarget.profiles?.full_name ?? "Cliente"}</p>
+                  {completeTarget.profiles?.phone && (
+                    <p className="text-xs text-muted-foreground">📱 {completeTarget.profiles.phone}</p>
+                  )}
+                </div>
+              </div>
+              <Separator />
+              <div className="grid grid-cols-2 gap-2 text-xs">
+                <div>
+                  <p className="text-muted-foreground">Serviço</p>
+                  <p className="font-medium">{completeTarget.services?.name ?? "—"}</p>
+                </div>
+                <div>
+                  <p className="text-muted-foreground">Horário</p>
+                  <p className="font-medium">{completeTarget.appointment_time?.slice(0, 5)}</p>
+                </div>
+                <div>
+                  <p className="text-muted-foreground">Duração</p>
+                  <p className="font-medium">{completeTarget.services?.duration_minutes ?? "—"} min</p>
+                </div>
+                <div>
+                  <p className="text-muted-foreground">Valor</p>
+                  <p className="font-semibold text-green-700">
+                    R$ {completeTarget.services?.price?.toFixed(2) ?? "—"}
+                  </p>
+                </div>
+              </div>
+            </div>
+
+            {/* Forma de pagamento */}
+            <div className="space-y-2">
+              <label className="text-sm font-medium flex items-center gap-1.5">
+                <DollarSign className="w-4 h-4 text-muted-foreground" />
+                Forma de pagamento
+              </label>
+              <Select value={paymentMethod} onValueChange={setPaymentMethod}>
+                <SelectTrigger>
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  {PAYMENT_OPTIONS.map((opt) => (
+                    <SelectItem key={opt.value} value={opt.value}>{opt.label}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+          </div>
+        )}
+
+        <DialogFooter className="gap-2">
+          <Button variant="outline" onClick={() => setCompleteTarget(null)}>Cancelar</Button>
+          <Button onClick={confirmComplete} disabled={completing} className="gap-1.5">
+            <CheckCircle2 className="w-4 h-4" />
+            {completing ? "Salvando..." : "Confirmar conclusão"}
+          </Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
     </div>
   );
 }
