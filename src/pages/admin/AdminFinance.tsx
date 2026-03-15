@@ -533,10 +533,12 @@ export default function AdminFinance() {
           <TabsTrigger value="records">Registros</TabsTrigger>
           <TabsTrigger value="appointments">Atendimentos</TabsTrigger>
           <TabsTrigger value="subscriptions">Assinaturas</TabsTrigger>
-          <TabsTrigger value="bonification" className="flex items-center gap-1">
-            <Award className="h-3.5 w-3.5" />
-            Bonificação
-          </TabsTrigger>
+          {perms.canViewBonification && (
+            <TabsTrigger value="bonification" className="flex items-center gap-1">
+              <Award className="h-3.5 w-3.5" />
+              Bonificação
+            </TabsTrigger>
+          )}
         </TabsList>
 
         {/* ── Overview ── */}
@@ -855,7 +857,7 @@ export default function AdminFinance() {
         </TabsContent>
 
         {/* ── Bonification ── */}
-        <TabsContent value="bonification" className="mt-4 space-y-4">
+        {perms.canViewBonification && <TabsContent value="bonification" className="mt-4 space-y-4">
           {/* Total disponível header */}
           {(() => {
             const totalBonusPool = planProfessionals.reduce((acc, prof) => {
@@ -989,7 +991,7 @@ export default function AdminFinance() {
               })}
             </div>
           )}
-        </TabsContent>
+        </TabsContent>}
       </Tabs>
 
       {/* Add/Edit Dialog */}
