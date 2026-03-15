@@ -47,6 +47,7 @@ export function useAdminPermissions() {
     canViewFinance: r >= 4,
     canViewFullFinance: r >= 4,
     canDeleteFinancialRecords: r >= 4,
+    canViewBonification: r >= 4, // apenas CEO
 
     // ── Relatórios ─────────────────────────────────────
     canViewReports: r >= 4,
