@@ -142,6 +142,17 @@ export default function AdminFinance() {
     const { data: apptData } = await apptQuery;
     setCompletedAppointments(apptData || []);
 
+    // Fetch subscriptions with plan info and client profile
+    let subsQuery = supabase
+      .from("subscriptions")
+      .select("id, status, started_at, expires_at, created_at, client_id, plans(name, price), profiles(full_name)")
+      .order("created_at", { ascending: false })
+      .limit(500);
+    if (dateFrom) subsQuery = subsQuery.gte("created_at", format(dateFrom, "yyyy-MM-dd"));
+    if (dateTo)   subsQuery = subsQuery.lte("created_at", format(dateTo, "yyyy-MM-dd") + "T23:59:59");
+    const { data: subsData } = await subsQuery;
+    setSubscriptions(subsData || []);
+
     setLoading(false);
   }, [dateFrom, dateTo, typeFilter, branchFilter, isManager, branches]);
 
