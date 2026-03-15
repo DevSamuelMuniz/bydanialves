@@ -76,7 +76,7 @@ export default function Auth() {
       }
     });
     if (error) {
-      toast({ title: "Erro ao cadastrar", description: error.message, variant: "destructive" });
+      toast({ title: "Erro ao cadastrar", description: translateError(error.message), variant: "destructive" });
     } else {
       // Update profile with extra fields
       if (signUpData.user) {
