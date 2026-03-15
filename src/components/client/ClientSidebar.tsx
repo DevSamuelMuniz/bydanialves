@@ -38,7 +38,10 @@ export function ClientSidebar() {
   const isExpired = daysUntilExpiry !== null && daysUntilExpiry <= 0;
 
   const planSlot = subscription ? (
-    <div className="rounded-xl gradient-gold-subtle border border-primary/15 p-3 space-y-2">
+    <div
+      className="rounded-xl gradient-gold-subtle border border-primary/15 p-3 space-y-2 cursor-pointer hover:border-primary/40 transition-colors"
+      onClick={() => navigate("/client/plans")}
+    >
       <div className="flex items-center gap-2">
         <Crown className="h-4 w-4 text-primary" />
         <span className="text-xs font-semibold uppercase tracking-wide text-primary">
