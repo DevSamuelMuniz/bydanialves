@@ -857,7 +857,7 @@ export default function AdminFinance() {
         </TabsContent>
 
         {/* ── Bonification ── */}
-        <TabsContent value="bonification" className="mt-4 space-y-4">
+        {perms.canViewBonification && <TabsContent value="bonification" className="mt-4 space-y-4">
           {/* Total disponível header */}
           {(() => {
             const totalBonusPool = planProfessionals.reduce((acc, prof) => {
