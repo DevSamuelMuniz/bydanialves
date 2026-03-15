@@ -210,6 +210,7 @@ export function AdminSidebar() {
 
   const financeiroItems: NavItemDef[] = [
     perms.canViewFinance && { title: "Financeiro", url: "/admin/finance", icon: DollarSign, tourId: "sidebar-admin-finance" },
+    perms.canViewBonification && { title: "Bonificação", url: "/admin/bonification", icon: Award },
     perms.canManageCoupons && { title: "Cupons", url: "/admin/coupons", icon: Tag, tourId: "sidebar-admin-coupons" },
   ].filter(Boolean) as NavItemDef[];
 
