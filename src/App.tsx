@@ -23,6 +23,7 @@ import AdminAgenda from "./pages/admin/AdminAgenda";
 import AdminMyAppointments from "./pages/admin/AdminMyAppointments";
 import AdminServices from "./pages/admin/AdminServices";
 import AdminFinance from "./pages/admin/AdminFinance";
+import AdminBonification from "./pages/admin/AdminBonification";
 import AdminUsers from "./pages/admin/AdminUsers";
 import AdminPlans from "./pages/admin/AdminPlans";
 import AdminProfile from "./pages/admin/AdminProfile";
