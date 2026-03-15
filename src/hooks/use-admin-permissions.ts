@@ -44,7 +44,7 @@ export function useAdminPermissions() {
 
     // ── Financeiro ─────────────────────────────────────
     canViewOwnCommission: r >= 2,
-    canViewFinance: r >= 3,
+    canViewFinance: r >= 4,
     canViewFullFinance: r >= 4,
     canDeleteFinancialRecords: r >= 4,
 
