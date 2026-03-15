@@ -436,7 +436,6 @@ export default function AdminMyAppointments() {
                   R$ {Number(completeTarget.services?.price ?? 0).toFixed(2)}
                 </p>
               </div>
-              </div>
             </div>
 
             {/* Forma de pagamento */}
