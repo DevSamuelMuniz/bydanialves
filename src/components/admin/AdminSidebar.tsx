@@ -158,6 +158,7 @@ export function AdminSidebar() {
   const permMap: Record<string, boolean> = {
     "/admin":                 perms.canViewDashboard,
     "/admin/my-appointments": adminLevel === "attendant" || adminLevel === "professional",
+    "/admin/my-schedule":     adminLevel === "attendant" || adminLevel === "professional",
     "/admin/clients":         perms.canViewClients && adminLevel !== "professional",
     "/admin/services":        perms.canViewServices,
     "/admin/plans":           perms.canViewPlans,
