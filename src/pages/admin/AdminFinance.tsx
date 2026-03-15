@@ -14,13 +14,15 @@ import { Calendar } from "@/components/ui/calendar";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useToast } from "@/hooks/use-toast";
 import { Skeleton } from "@/components/ui/skeleton";
+import { Badge } from "@/components/ui/badge";
 import {
   Plus, ArrowUpCircle, ArrowDownCircle, Filter, CalendarDays, Edit2, Trash2,
   TrendingUp, TrendingDown, Wallet, Scissors, ShoppingBag, Users, Building2,
-  CreditCard, Banknote, QrCode, BarChart3, Target, DollarSign, FileText, Upload, Download
+  CreditCard, Banknote, QrCode, BarChart3, Target, DollarSign, FileText, Upload, Download,
+  Award, Clock, ChevronDown, ChevronUp
 } from "lucide-react";
 import { downloadCSV } from "@/lib/csv";
-import { format, startOfMonth, endOfMonth, subMonths } from "date-fns";
+import { format, subMonths } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import {
   AreaChart, Area, BarChart, Bar, PieChart, Pie, Cell,
