@@ -12,7 +12,8 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useToast } from "@/hooks/use-toast";
-import { Plus, Edit2, Trash2, Users, UserPlus, CheckCircle2, AlertCircle, Zap, Crown, Star } from "lucide-react";
+import { Plus, Edit2, Trash2, Users, UserPlus, CheckCircle2, AlertCircle, Zap, Crown, Star, ChevronDown } from "lucide-react";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 
 const PLAN_TIERS = [
   {
