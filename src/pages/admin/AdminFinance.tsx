@@ -991,7 +991,7 @@ export default function AdminFinance() {
               })}
             </div>
           )}
-        </TabsContent>
+        </TabsContent>}
       </Tabs>
 
       {/* Add/Edit Dialog */}
