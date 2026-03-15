@@ -7,7 +7,7 @@ import { Button } from "@/components/ui/button";
 import { supabase } from "@/integrations/supabase/client";
 import { useSidebar } from "@/components/ui/sidebar";
 import {
-  Sidebar, SidebarContent, SidebarGroup, SidebarGroupContent, SidebarGroupLabel,
+  Sidebar, SidebarContent, SidebarGroup, SidebarGroupContent,
   SidebarHeader, SidebarMenu, SidebarMenuButton, SidebarMenuItem, SidebarFooter,
   SidebarSeparator,
 } from "@/components/ui/sidebar";
@@ -17,8 +17,7 @@ import {
 import {
   LayoutDashboard, Users, Calendar, Scissors, DollarSign,
   Crown, Activity, ClipboardList, Building2, Tag, Star, Tv2, UserCheck,
-  ChevronDown, BarChart2, LogOut, History, CalendarDays, TableProperties,
-  Settings2,
+  ChevronDown, BarChart2, LogOut, CalendarDays, TableProperties,
 } from "lucide-react";
 import { useLocation } from "react-router-dom";
 import logoVertical from "@/assets/logo_vertical.png";
@@ -46,19 +45,16 @@ function usePendingQueueCount() {
   return count;
 }
 
-// Sub-items visible to manager/ceo only
 const PROF_MANAGE_ITEMS = [
   { title: "Profissionais",             url: "/admin/professionals",         icon: UserCheck },
   { title: "Relatório do Profissional", url: "/admin/professionals/report",  icon: BarChart2 },
 ];
-
-// Sub-items visible to professional + manager/ceo
 const PROF_PERSONAL_ITEMS = [
   { title: "Agenda do Profissional",    url: "/admin/professionals/agenda",   icon: Calendar },
   { title: "Histórico do Profissional", url: "/admin/professionals/history",  icon: ClipboardList },
 ];
 
-function ProfessionaisGroup({ canManage }: { canManage: boolean }) {
+function ProfissionaisDropdownItem({ canManage }: { canManage: boolean }) {
   const { state } = useSidebar();
   const collapsed = state === "collapsed";
   const { pathname } = useLocation();
@@ -92,9 +88,7 @@ function ProfessionaisGroup({ canManage }: { canManage: boolean }) {
     <SidebarMenuItem>
       <Collapsible open={open} onOpenChange={setOpen}>
         <CollapsibleTrigger asChild>
-          <button
-            className={`w-full flex items-center gap-3 mx-2 px-3 py-2.5 rounded-lg text-sm transition-all duration-200 hover:bg-sidebar-accent ${isActive ? "text-primary font-medium" : "text-sidebar-foreground"}`}
-          >
+          <button className={`w-full flex items-center gap-3 mx-2 px-3 py-2.5 rounded-lg text-sm transition-all duration-200 hover:bg-sidebar-accent ${isActive ? "text-primary font-medium" : "text-sidebar-foreground"}`}>
             <UserCheck className="h-4 w-4 shrink-0" />
             <span className="flex-1 text-left">Profissionais</span>
             <ChevronDown className={`h-3.5 w-3.5 transition-transform duration-200 ${open ? "rotate-180" : ""}`} />
@@ -129,11 +123,55 @@ interface NavItemDef {
   badge?: number;
 }
 
-interface NavGroup {
+interface NavGroupDef {
   label: string;
-  emoji: string;
+  urls: string[];
   items: NavItemDef[];
-  extraSlot?: React.ReactNode;
+  showProfDropdown?: boolean;
+}
+
+function NavGroupCollapsible({
+  group,
+  collapsed,
+  renderItem,
+  perms,
+}: {
+  group: NavGroupDef;
+  collapsed: boolean;
+  renderItem: (item: NavItemDef) => React.ReactNode;
+  perms: ReturnType<typeof useAdminPermissions>;
+}) {
+  const { pathname } = useLocation();
+  const isActive = group.urls.some((u) => pathname === u || pathname.startsWith(u + "/"));
+  const [open, setOpen] = useState(isActive);
+
+  if (collapsed) {
+    return (
+      <>
+        {group.items.map(renderItem)}
+        {group.showProfDropdown && <ProfissionaisDropdownItem canManage={perms.canViewProfessionals} />}
+      </>
+    );
+  }
+
+  return (
+    <Collapsible open={open} onOpenChange={setOpen}>
+      <CollapsibleTrigger asChild>
+        <button className={`w-full flex items-center gap-2 px-4 py-1.5 text-[11px] uppercase tracking-wider font-semibold transition-all duration-200 hover:text-foreground ${open ? "text-foreground" : "text-muted-foreground"}`}>
+          <span className="flex-1 text-left">{group.label}</span>
+          <ChevronDown className={`h-3 w-3 transition-transform duration-200 ${open ? "rotate-180" : ""}`} />
+        </button>
+      </CollapsibleTrigger>
+      <CollapsibleContent>
+        <SidebarGroupContent>
+          <SidebarMenu>
+            {group.items.map(renderItem)}
+            {group.showProfDropdown && <ProfissionaisDropdownItem canManage={perms.canViewProfessionals} />}
+          </SidebarMenu>
+        </SidebarGroupContent>
+      </CollapsibleContent>
+    </Collapsible>
+  );
 }
 
 export function AdminSidebar() {
@@ -146,11 +184,11 @@ export function AdminSidebar() {
   const isProfessional = adminLevel === "professional";
   const isAttendant = adminLevel === "attendant";
   const showProfDropdown = isProfessional || perms.canViewProfessionals;
+  const showProfDropdownFinal = !isProfessional && showProfDropdown;
 
   const levelLabel = adminLevel ? ADMIN_LEVEL_LABELS[adminLevel] : null;
   const levelColor = adminLevel ? ADMIN_LEVEL_COLORS[adminLevel] : "";
 
-  // ---------- Visibilidade por grupo ----------
   const gestaoItems: NavItemDef[] = [
     perms.canViewDashboard && { title: "Dashboard", url: "/admin", icon: LayoutDashboard, tourId: "sidebar-admin-dashboard" },
     (isAttendant || isProfessional) && { title: isAttendant ? "Atendimentos" : "Meus Atendimentos", url: "/admin/my-appointments", icon: ClipboardList, tourId: "sidebar-admin-my-appointments" },
@@ -183,16 +221,38 @@ export function AdminSidebar() {
     perms.canViewLogs && { title: "Logs", url: "/admin/logs", icon: Activity, tourId: "sidebar-admin-logs" },
   ].filter(Boolean) as NavItemDef[];
 
-  // Profissionais dropdown slot vai no grupo Gestão, após Clientes
-  const showProfDropdownFinal = !isProfessional && showProfDropdown;
-
-  const groups: Array<{ label: string; emoji: string; items: NavItemDef[]; showProfDropdown?: boolean }> = [
-    { label: "Gestão", emoji: "👥", items: gestaoItems, showProfDropdown: showProfDropdownFinal },
-    { label: "Serviços", emoji: "💈", items: servicosItems },
-    { label: "Agenda", emoji: "📅", items: agendaItems },
-    { label: "Financeiro", emoji: "💰", items: financeiroItems },
-    { label: "Relatórios", emoji: "📊", items: relatoriosItems },
-    { label: "Sistema", emoji: "⚙️", items: sistemaItems },
+  const groups: NavGroupDef[] = [
+    {
+      label: "Gestão",
+      urls: ["/admin", "/admin/my-appointments", "/admin/my-schedule", "/admin/clients", "/admin/branches", "/admin/users", "/admin/professionals"],
+      items: gestaoItems,
+      showProfDropdown: showProfDropdownFinal,
+    },
+    {
+      label: "Serviços",
+      urls: ["/admin/services", "/admin/plans"],
+      items: servicosItems,
+    },
+    {
+      label: "Agenda",
+      urls: ["/admin/work-calendar", "/admin/queue-tv"],
+      items: agendaItems,
+    },
+    {
+      label: "Financeiro",
+      urls: ["/admin/finance", "/admin/coupons"],
+      items: financeiroItems,
+    },
+    {
+      label: "Relatórios",
+      urls: ["/admin/reviews"],
+      items: relatoriosItems,
+    },
+    {
+      label: "Sistema",
+      urls: ["/admin/logs"],
+      items: sistemaItems,
+    },
   ].filter((g) => g.items.length > 0 || g.showProfDropdown);
 
   const renderItem = (item: NavItemDef) => (
@@ -226,7 +286,6 @@ export function AdminSidebar() {
 
   return (
     <Sidebar collapsible="icon" className="border-r border-sidebar-border/60">
-      {/* Logo */}
       <SidebarHeader className={`border-b border-sidebar-border/40 transition-all duration-200 ${collapsed ? "items-center p-3" : "items-center p-4 pb-3"}`}>
         {collapsed
           ? <img src={logoIcon} alt="DA" className="w-8 h-8 object-contain" />
@@ -243,24 +302,16 @@ export function AdminSidebar() {
 
       <SidebarContent className="flex-1 overflow-y-auto">
         {groups.map((group, idx) => (
-          <SidebarGroup key={group.label} className={idx > 0 ? "pt-0" : ""}>
-            {!collapsed && (
-              <SidebarGroupLabel className="flex items-center gap-1.5 text-[11px] uppercase tracking-wider text-muted-foreground font-medium px-4 py-2">
-                <span>{group.emoji}</span>
-                <span>{group.label}</span>
-              </SidebarGroupLabel>
+          <SidebarGroup key={group.label} className="py-1">
+            {idx > 0 && !collapsed && (
+              <SidebarSeparator className="mx-3 mb-1 opacity-30" />
             )}
-            {collapsed && idx > 0 && (
-              <SidebarSeparator className="mx-2 my-1 opacity-40" />
-            )}
-            <SidebarGroupContent>
-              <SidebarMenu>
-                {group.items.map(renderItem)}
-                {group.showProfDropdown && (
-                  <ProfessionaisGroup canManage={perms.canViewProfessionals} />
-                )}
-              </SidebarMenu>
-            </SidebarGroupContent>
+            <NavGroupCollapsible
+              group={group}
+              collapsed={collapsed}
+              renderItem={renderItem}
+              perms={perms}
+            />
           </SidebarGroup>
         ))}
       </SidebarContent>
