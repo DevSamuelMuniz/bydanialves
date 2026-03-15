@@ -86,16 +86,20 @@ export default function AdminPlans() {
     setEditing(null);
     setForm({ name: "", description: "", restriction: "", price: "", active: true });
     setSelectedServices([]);
+    setSelectedProfessionals([]);
     setDialogOpen(true);
   };
 
-  const openEdit = (p: any) => {
+  const openEdit = async (p: any) => {
     setEditing(p);
     setForm({ name: p.name, description: p.description || "", restriction: p.restriction || "", price: String(p.price), active: p.active });
     // Pre-select services whose names appear in includes
     const existingLines = (p.includes || "").split("\n").map((s: string) => s.trim()).filter(Boolean);
     const matched = services.filter((s) => existingLines.includes(s.name)).map((s) => s.id);
     setSelectedServices(matched);
+    // Pre-select professionals already linked to this plan
+    const { data: linked } = await (supabase as any).from("plan_professionals").select("professional_id").eq("plan_id", p.id);
+    setSelectedProfessionals((linked || []).map((r: any) => r.professional_id));
     setDialogOpen(true);
   };
 
