@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { translateError } from "@/lib/utils";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
@@ -35,7 +36,7 @@ export default function Auth() {
     setLoading(true);
     const { data, error } = await supabase.auth.signInWithPassword({ email, password });
     if (error) {
-      toast({ title: "Erro ao entrar", description: error.message, variant: "destructive" });
+      toast({ title: "Erro ao entrar", description: translateError(error.message), variant: "destructive" });
       setLoading(false);
       return;
     }
@@ -75,7 +76,7 @@ export default function Auth() {
       }
     });
     if (error) {
-      toast({ title: "Erro ao cadastrar", description: error.message, variant: "destructive" });
+      toast({ title: "Erro ao cadastrar", description: translateError(error.message), variant: "destructive" });
     } else {
       // Update profile with extra fields
       if (signUpData.user) {
@@ -93,7 +94,7 @@ export default function Auth() {
       redirectTo: `${window.location.origin}/reset-password`
     });
     if (error) {
-      toast({ title: "Erro", description: error.message, variant: "destructive" });
+      toast({ title: "Erro", description: translateError(error.message), variant: "destructive" });
     } else {
       toast({ title: "E-mail enviado!", description: "Verifique sua caixa de entrada." });
     }
