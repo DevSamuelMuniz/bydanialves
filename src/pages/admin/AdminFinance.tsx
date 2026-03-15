@@ -494,6 +494,7 @@ export default function AdminFinance() {
           <TabsTrigger value="branches">Por Filial</TabsTrigger>
           <TabsTrigger value="records">Registros</TabsTrigger>
           <TabsTrigger value="appointments">Atendimentos</TabsTrigger>
+          <TabsTrigger value="subscriptions">Assinaturas</TabsTrigger>
         </TabsList>
 
         {/* ── Overview ── */}
