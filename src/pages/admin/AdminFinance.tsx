@@ -479,6 +479,12 @@ export default function AdminFinance() {
         <KpiCard label="CMV + Fixos"  value={fmt(totalCMV + totalFixedCosts)} icon={<TrendingDown className="h-5 w-5 text-orange-600" />} sub="Custos operacionais" accent="orange" />
       </div>
 
+      <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
+        <KpiCard label="Receita de Planos (total)" value={fmt(totalSubscriptionRevenue)} icon={<CreditCard className="h-5 w-5 text-primary" />} sub={`${subscriptions.length} assinaturas`} accent="primary" />
+        <KpiCard label="Assinaturas Ativas" value={fmt(activeSubscriptionRevenue)} icon={<ArrowUpCircle className="h-5 w-5 text-green-600" />} sub={`${activeSubscriptions.length} ativas agora`} accent="green" />
+        <KpiCard label="Ticket Médio Planos" value={activeSubscriptions.length > 0 ? fmt(activeSubscriptionRevenue / activeSubscriptions.length) : "—"} icon={<Target className="h-5 w-5 text-amber-600" />} sub="Valor médio por assinante" accent="amber" />
+      </div>
+
       {/* ── Tabs ── */}
       <Tabs value={tab} onValueChange={setTab}>
         <TabsList className="flex-wrap h-auto">
