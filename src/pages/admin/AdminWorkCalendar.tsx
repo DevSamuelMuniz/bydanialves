@@ -77,9 +77,6 @@ export default function AdminWorkCalendar() {
   };
 
   const toggleDay = (date: Date) => {
-    const today = new Date();
-    today.setHours(0, 0, 0, 0);
-  const toggleDay = (date: Date) => {
     const now = new Date();
     now.setHours(0, 0, 0, 0);
     if (date < now) return;
