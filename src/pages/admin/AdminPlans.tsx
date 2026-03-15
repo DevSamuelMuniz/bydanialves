@@ -500,7 +500,7 @@ export default function AdminPlans() {
               <Switch checked={form.active} onCheckedChange={(v) => setForm({ ...form, active: v })} />
               <Label>Ativo</Label>
             </div>
-            <Button type="submit" className="w-full" disabled={selectedServices.length === 0}>{editing ? "Salvar alterações" : "Criar Plano"}</Button>
+            <Button type="submit" className="w-full">{editing ? "Salvar alterações" : "Criar Plano"}</Button>
           </form>
         </DialogContent>
       </Dialog>
