@@ -241,7 +241,7 @@ export function AdminSidebar() {
     },
     {
       label: "Financeiro",
-      urls: ["/admin/finance", "/admin/coupons"],
+      urls: ["/admin/finance", "/admin/bonification", "/admin/coupons"],
       items: financeiroItems,
     },
     {
