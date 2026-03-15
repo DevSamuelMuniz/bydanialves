@@ -452,7 +452,7 @@ export default function AdminPlans() {
                 <p className="text-sm text-muted-foreground py-2">Nenhum profissional cadastrado.</p>
               ) : (
                 <div className="relative">
-                  <Popover>
+                  <Popover modal={true}>
                     <PopoverTrigger asChild>
                       <button
                         type="button"
@@ -466,26 +466,23 @@ export default function AdminPlans() {
                         <ChevronDown className="h-4 w-4 shrink-0 text-muted-foreground ml-2" />
                       </button>
                     </PopoverTrigger>
-                    <PopoverContent className="w-full p-2" align="start">
+                    <PopoverContent className="p-2" style={{ width: "var(--radix-popover-trigger-width)" }} align="start">
                       <div className="space-y-1">
                         {professionals.map((p) => (
                           <div
                             key={p.user_id}
                             className="flex items-center gap-3 rounded-md px-2 py-2 hover:bg-muted/60 transition-colors cursor-pointer"
-                            onClick={() =>
+                            onMouseDown={(e) => {
+                              e.preventDefault();
+                              e.stopPropagation();
                               setSelectedProfessionals((prev) =>
                                 prev.includes(p.user_id) ? prev.filter((id) => id !== p.user_id) : [...prev, p.user_id]
-                              )
-                            }
+                              );
+                            }}
                           >
                             <Checkbox
                               checked={selectedProfessionals.includes(p.user_id)}
-                              onCheckedChange={(checked) =>
-                                setSelectedProfessionals((prev) =>
-                                  checked ? [...prev, p.user_id] : prev.filter((id) => id !== p.user_id)
-                                )
-                              }
-                              onClick={(e) => e.stopPropagation()}
+                              onCheckedChange={() => {}}
                             />
                             <span className="text-sm">{p.full_name}</span>
                           </div>
