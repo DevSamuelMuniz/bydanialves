@@ -96,6 +96,11 @@ export default function AdminFinance() {
     receipt_url: "" as string,
   });
 
+  // Bonificação state
+  const [planProfessionals, setPlanProfessionals] = useState<any[]>([]);
+  const [bonusHours, setBonusHours] = useState<Record<string, string>>({}); // profId -> hours string
+  const [bonusExpanded, setBonusExpanded] = useState<Record<string, boolean>>({});
+
   // Filters
   const [dateFrom, setDateFrom]         = useState<Date | undefined>(undefined);
   const [dateTo, setDateTo]             = useState<Date | undefined>(undefined);
