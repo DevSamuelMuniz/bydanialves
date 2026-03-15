@@ -135,6 +135,7 @@ export function AdminSidebar() {
   const collapsed = state === "collapsed";
 
   const isProfessional = adminLevel === "professional";
+  const isAttendant = adminLevel === "attendant";
   const isManager = adminLevel === "manager" || adminLevel === "ceo";
   // Professional sees only the professionals dropdown (no other items except what perms allow)
   const showProfDropdown = isProfessional || perms.canViewProfessionals;
