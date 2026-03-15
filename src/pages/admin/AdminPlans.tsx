@@ -228,9 +228,6 @@ export default function AdminPlans() {
           <p className="text-sm text-muted-foreground mt-0.5">{plans.length} plano{plans.length !== 1 ? "s" : ""} cadastrado{plans.length !== 1 ? "s" : ""}</p>
         </div>
         <div className="flex gap-2">
-          <Button variant="outline" onClick={openLinkDialog}>
-            <UserPlus className="mr-2 h-4 w-4" />Vincular Cliente
-          </Button>
           <Button onClick={openAdd}>
             <Plus className="mr-2 h-4 w-4" />Novo Plano
           </Button>
