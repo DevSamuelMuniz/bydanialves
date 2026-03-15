@@ -303,8 +303,8 @@ function WorkCalendarGrid({ year, month, monthDates, isEnabled, pendingChanges, 
           let cellClass = "border-border/30 bg-muted/20 opacity-30 cursor-not-allowed";
           if (!isPast) {
             cellClass = enabled
-              ? "border-primary/40 bg-primary/10 text-primary hover:bg-primary/20 cursor-pointer"
-              : "border-destructive/30 bg-destructive/5 text-destructive/70 hover:bg-destructive/10 cursor-pointer";
+              ? "border-green-500/50 bg-green-500/15 text-green-700 hover:bg-green-500/25 cursor-pointer"
+              : "border-red-500/40 bg-red-500/10 text-red-600 hover:bg-red-500/20 cursor-pointer";
           }
 
           return (
@@ -321,7 +321,7 @@ function WorkCalendarGrid({ year, month, monthDates, isEnabled, pendingChanges, 
             >
               <span className="text-sm leading-none">{date.getDate()}</span>
               {!isPast && (
-                <span className={`text-[9px] leading-none font-normal ${enabled ? "text-primary/60" : "text-destructive/50"}`}>
+                <span className={`text-[9px] leading-none font-normal ${enabled ? "text-green-600/70" : "text-red-500/60"}`}>
                   {enabled ? "●" : "○"}
                 </span>
               )}
@@ -336,11 +336,11 @@ function WorkCalendarGrid({ year, month, monthDates, isEnabled, pendingChanges, 
       {/* Legend */}
       <div className="flex flex-wrap items-center gap-4 pt-3 justify-end">
         <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
-          <div className="h-3 w-3 rounded-sm bg-primary/10 border border-primary/40" />
+          <div className="h-3 w-3 rounded-sm bg-green-500/15 border border-green-500/50" />
           <span>Disponível</span>
         </div>
         <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
-          <div className="h-3 w-3 rounded-sm bg-destructive/5 border border-destructive/30" />
+          <div className="h-3 w-3 rounded-sm bg-red-500/10 border border-red-500/40" />
           <span>Bloqueado</span>
         </div>
         <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
