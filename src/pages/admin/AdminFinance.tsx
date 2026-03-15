@@ -533,10 +533,12 @@ export default function AdminFinance() {
           <TabsTrigger value="records">Registros</TabsTrigger>
           <TabsTrigger value="appointments">Atendimentos</TabsTrigger>
           <TabsTrigger value="subscriptions">Assinaturas</TabsTrigger>
-          <TabsTrigger value="bonification" className="flex items-center gap-1">
-            <Award className="h-3.5 w-3.5" />
-            Bonificação
-          </TabsTrigger>
+          {perms.canViewBonification && (
+            <TabsTrigger value="bonification" className="flex items-center gap-1">
+              <Award className="h-3.5 w-3.5" />
+              Bonificação
+            </TabsTrigger>
+          )}
         </TabsList>
 
         {/* ── Overview ── */}
