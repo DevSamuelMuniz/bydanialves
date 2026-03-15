@@ -156,9 +156,10 @@ export default function NewBooking() {
       const relevantRanges = bookedRanges.filter(
         (r) => r.professionalId === selectedProfessional.user_id
       );
-      return generateTimeSlots(totalDuration, workStart, workEnd).filter((slot) =>
-        isSlotAvailable(slot, totalDuration, relevantRanges, 1)
-      );
+      return generateTimeSlots(totalDuration, workStart, workEnd).filter((slot) => {
+        if (isToday && toMin(slot) <= currentMinutes) return false;
+        return isSlotAvailable(slot, totalDuration, relevantRanges, 1);
+      });
     }
 
     // "Sem preferência": union of all available slots across all branch professionals
@@ -170,9 +171,10 @@ export default function NewBooking() {
 
     if (profsForDay.length === 0) {
       // Fallback: use default window
-      return generateTimeSlots(totalDuration, 8 * 60, 17 * 60).filter((slot) =>
-        isSlotAvailable(slot, totalDuration, bookedRanges, 3)
-      );
+      return generateTimeSlots(totalDuration, 8 * 60, 17 * 60).filter((slot) => {
+        if (isToday && toMin(slot) <= currentMinutes) return false;
+        return isSlotAvailable(slot, totalDuration, bookedRanges, 3);
+      });
     }
 
     // Collect every possible slot from every professional's window
@@ -192,6 +194,7 @@ export default function NewBooking() {
 
     // A slot is available if at least one prof is free at that time
     return Array.from(slotSet).sort().filter((slot) => {
+      if (isToday && toMin(slot) <= currentMinutes) return false;
       const [h, m] = slot.split(":").map(Number);
       const slotStart = h * 60 + m;
       const slotEnd = slotStart + totalDuration;
