@@ -275,6 +275,35 @@ export type Database = {
         }
         Relationships: []
       }
+      plan_professionals: {
+        Row: {
+          created_at: string
+          id: string
+          plan_id: string
+          professional_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          plan_id: string
+          professional_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          plan_id?: string
+          professional_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "plan_professionals_plan_id_fkey"
+            columns: ["plan_id"]
+            isOneToOne: false
+            referencedRelation: "plans"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       plans: {
         Row: {
           active: boolean
