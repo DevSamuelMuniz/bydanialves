@@ -16,6 +16,7 @@ const items: NavItem[] = [
 
 export function ClientSidebar() {
   const { user } = useAuth();
+  const navigate = useNavigate();
   const [subscription, setSubscription] = useState<any | null>(null);
 
   useEffect(() => {
