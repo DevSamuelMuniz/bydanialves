@@ -203,7 +203,7 @@ export default function AdminMyAppointments() {
                 <Button
                   size="sm"
                   className="flex-1 h-7 text-xs gap-1 bg-green-600 hover:bg-green-700 text-white"
-                  onClick={() => markComplete(a.id)}
+                  onClick={() => openCompleteModal(a)}
                 >
                   <CheckCircle2 className="h-3 w-3" />
                   Concluir
