@@ -462,5 +462,6 @@ export default function AdminMyAppointments() {
         </DialogFooter>
       </DialogContent>
     </Dialog>
+    </div>
   );
 }
