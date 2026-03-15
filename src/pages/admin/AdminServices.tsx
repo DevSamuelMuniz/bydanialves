@@ -29,7 +29,7 @@ export default function AdminServices() {
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const fetchServices = async () => {
-    const { data } = await supabase.from("services").select("*").order("name");
+    const { data } = await supabase.from("services").select("*").order("is_system", { ascending: false }).order("name");
     const list = data || [];
     setServices(list);
     setLoading(false);
