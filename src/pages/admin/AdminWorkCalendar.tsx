@@ -77,12 +77,28 @@ export default function AdminWorkCalendar() {
   };
 
   const toggleDay = (date: Date) => {
-    const today = new Date();
-    today.setHours(0, 0, 0, 0);
-    if (date < today) return;
+    const now = new Date();
+    now.setHours(0, 0, 0, 0);
+    if (date < now) return;
     const str = dateToStr(date);
     const current = isEnabled(date);
-    setPendingChanges((prev) => ({ ...prev, [str]: !current }));
+    const newValue = !current;
+
+    // Valor original salvo no banco (ou padrão se nunca foi salvo)
+    const savedValue = str in workDaysMap
+      ? workDaysMap[str]
+      : DEFAULT_WORK_DAYS.has(date.getDay());
+
+    // Se o novo valor é igual ao salvo, remove do pendingChanges (sem alteração real)
+    if (newValue === savedValue) {
+      setPendingChanges((prev) => {
+        const next = { ...prev };
+        delete next[str];
+        return next;
+      });
+    } else {
+      setPendingChanges((prev) => ({ ...prev, [str]: newValue }));
+    }
   };
 
   const saveChanges = async () => {
