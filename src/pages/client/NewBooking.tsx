@@ -122,6 +122,7 @@ export default function NewBooking() {
   const [blocked, setBlocked] = useState(false);
   const [blockedModalOpen, setBlockedModalOpen] = useState(false);
   const [workCalendarMap, setWorkCalendarMap] = useState<Record<string, boolean>>({});
+  const [planProfessionalIds, setPlanProfessionalIds] = useState<string[]>([]);
 
   const totalDuration = selectedServices.reduce((acc, s) => acc + s.duration_minutes, 0);
   const totalPrice = selectedServices.reduce((acc, s) => {
@@ -302,19 +303,28 @@ export default function NewBooking() {
     fetchProfessionals();
   }, [selectedBranch]);
 
-  // When date changes, filter professionals to those with an ACTIVE schedule on that day of week.
-  // Professionals with NO schedules configured at all are excluded (not yet set up).
+  // When date or selected services change, filter professionals:
+  // 1. Must have an ACTIVE schedule on that day of week
+  // 2. If any selected service is a plan service (is_system), restrict to plan-authorized professionals
+  const hasSystemService = selectedServices.some((s) => s.is_system);
+
   useEffect(() => {
     if (!selectedDate || allBranchProfessionals.length === 0) return;
     const dayOfWeek = selectedDate.getDay();
-    const availableProfs = allBranchProfessionals.filter((p) => {
+    let availableProfs = allBranchProfessionals.filter((p) => {
       // No schedules configured → exclude (not yet set up by admin)
       if (p.schedules.length === 0) return false;
       // Has at least one active entry matching this day of week
       return p.schedules.some((s) => s.day_of_week === dayOfWeek && s.active);
     });
+
+    // If a plan (is_system) service is selected and we have authorized professionals, restrict the list
+    if (hasSystemService && planProfessionalIds.length > 0) {
+      availableProfs = availableProfs.filter((p) => planProfessionalIds.includes(p.user_id));
+    }
+
     setProfessionals(availableProfs);
-  }, [selectedDate, allBranchProfessionals]);
+  }, [selectedDate, allBranchProfessionals, hasSystemService, planProfessionalIds]);
 
   useEffect(() => {
     if (!user) return;
@@ -348,7 +358,8 @@ export default function NewBooking() {
         .maybeSingle();
 
       if (sub && (sub as any).plans) {
-        const totalEscovas = parseEscovasFromIncludes((sub as any).plans.includes);
+        const plan = (sub as any).plans;
+        const totalEscovas = parseEscovasFromIncludes(plan.includes);
         const now = new Date();
         const startOfMonth = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}-01`;
         const endOfMonth = new Date(now.getFullYear(), now.getMonth() + 1, 0);
@@ -362,6 +373,13 @@ export default function NewBooking() {
           .neq("status", "cancelled");
         const escovasUsadas = (appointments || []).filter((a: any) => a.services?.is_system === true).length;
         setEscovasDisponiveis(Math.max(0, totalEscovas - escovasUsadas));
+
+        // Fetch professionals authorized for this plan
+        const { data: planProfs } = await supabase
+          .from("plan_professionals")
+          .select("professional_id")
+          .eq("plan_id", plan.id);
+        setPlanProfessionalIds((planProfs || []).map((p: any) => p.professional_id));
       }
       setLoading(false);
     };
