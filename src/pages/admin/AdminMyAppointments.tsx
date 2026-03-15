@@ -380,7 +380,7 @@ export default function AdminMyAppointments() {
 
         </div>
       )}
-    </div>
+
 
     {/* Modal de conclusão com forma de pagamento */}
     <Dialog open={!!completeTarget} onOpenChange={(o) => !o && setCompleteTarget(null)}>
