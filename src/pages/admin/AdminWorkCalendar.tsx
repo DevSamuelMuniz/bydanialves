@@ -321,7 +321,7 @@ function WorkCalendarGrid({ year, month, monthDates, isEnabled, pendingChanges, 
             >
               <span className="text-sm leading-none">{date.getDate()}</span>
               {!isPast && (
-                <span className={`text-[9px] leading-none font-normal ${enabled ? "text-primary/60" : "text-destructive/50"}`}>
+                <span className={`text-[9px] leading-none font-normal ${enabled ? "text-green-600/70" : "text-red-500/60"}`}>
                   {enabled ? "●" : "○"}
                 </span>
               )}
