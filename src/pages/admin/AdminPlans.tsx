@@ -130,6 +130,14 @@ export default function AdminPlans() {
       planId = data.id;
     }
 
+    // Sync professionals: delete existing then re-insert
+    await (supabase as any).from("plan_professionals").delete().eq("plan_id", planId);
+    if (selectedProfessionals.length > 0) {
+      await (supabase as any).from("plan_professionals").insert(
+        selectedProfessionals.map((pid) => ({ plan_id: planId, professional_id: pid }))
+      );
+    }
+
     toast({ title: "Sincronizando com Stripe..." });
     const { data: syncData, error: syncError } = await supabase.functions.invoke("sync-plan-stripe", {
       body: { planId, name: form.name, price: Number(form.price) },
