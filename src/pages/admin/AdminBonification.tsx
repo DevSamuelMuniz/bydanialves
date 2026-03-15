@@ -134,7 +134,7 @@ export default function AdminBonification() {
 
   async function fetchAll() {
     setLoading(true);
-    const [plansRes, rulesRes, ppRes, paymentsRes] = await Promise.all([
+    const [plansRes, rulesRes, ppRes, paymentsRes, profilesRes] = await Promise.all([
       supabase.from("plans").select("id,name,price,active").order("name"),
       supabase
         .from("bonification_rules" as any)
@@ -142,30 +142,31 @@ export default function AdminBonification() {
         .order("created_at", { ascending: false }),
       supabase
         .from("plan_professionals")
-        .select(
-          "professional_id, plan_id, plans(id,name,price,active), profiles!plan_professionals_professional_id_fkey(user_id,full_name,avatar_url)"
-        ),
+        .select("professional_id, plan_id, plans(id,name,price,active)"),
       supabase
         .from("bonification_payments" as any)
-        .select(
-          "*, profiles!bonification_payments_professional_id_fkey(full_name,avatar_url), plans(name)"
-        )
+        .select("*, plans(name)")
         .order("created_at", { ascending: false }),
+      supabase.from("profiles").select("user_id,full_name,avatar_url"),
     ]);
 
     if (plansRes.data) setPlans(plansRes.data as Plan[]);
     if (rulesRes.data) setRules(rulesRes.data as unknown as BonificationRule[]);
 
-    // Group professionals
-    if (ppRes.data) {
+    // Group professionals — join profiles manually (no FK defined on plan_professionals)
+    if (ppRes.data && profilesRes.data) {
+      const profileMap = new Map(
+        (profilesRes.data as any[]).map((p) => [p.user_id, p])
+      );
       const map = new Map<string, Professional>();
       for (const row of ppRes.data as any[]) {
         const uid = row.professional_id;
+        const prof = profileMap.get(uid);
         if (!map.has(uid)) {
           map.set(uid, {
             user_id: uid,
-            full_name: row.profiles?.full_name ?? "—",
-            avatar_url: row.profiles?.avatar_url ?? null,
+            full_name: prof?.full_name ?? "—",
+            avatar_url: prof?.avatar_url ?? null,
             plans: [],
           });
         }
@@ -180,8 +181,17 @@ export default function AdminBonification() {
       setProfessionals(Array.from(map.values()));
     }
 
-    if (paymentsRes.data)
-      setPayments(paymentsRes.data as unknown as BonificationPayment[]);
+    // Enrich payments with profile data manually
+    if (paymentsRes.data && profilesRes.data) {
+      const profileMap = new Map(
+        (profilesRes.data as any[]).map((p) => [p.user_id, p])
+      );
+      const enriched = (paymentsRes.data as any[]).map((pay) => ({
+        ...pay,
+        profiles: profileMap.get(pay.professional_id) ?? null,
+      }));
+      setPayments(enriched as unknown as BonificationPayment[]);
+    }
     setLoading(false);
   }
 
