@@ -80,9 +80,9 @@ export default function AdminWorkCalendar() {
     const today = new Date();
     today.setHours(0, 0, 0, 0);
   const toggleDay = (date: Date) => {
-    const today = new Date();
-    today.setHours(0, 0, 0, 0);
-    if (date < today) return;
+    const now = new Date();
+    now.setHours(0, 0, 0, 0);
+    if (date < now) return;
     const str = dateToStr(date);
     const current = isEnabled(date);
     const newValue = !current;
