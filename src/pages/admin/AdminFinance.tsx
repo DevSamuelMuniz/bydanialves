@@ -761,6 +761,56 @@ export default function AdminFinance() {
             </CardContent>
           </Card>
         </TabsContent>
+
+        {/* ── Subscriptions ── */}
+        <TabsContent value="subscriptions" className="mt-4 space-y-3">
+          <Card>
+            <CardHeader className="pb-2">
+              <CardTitle className="text-sm font-medium text-muted-foreground flex items-center gap-2">
+                <CreditCard className="h-4 w-4" />
+                Assinaturas de Planos · Receita Recorrente
+                <span className="ml-auto font-bold text-foreground">{fmt(totalSubscriptionRevenue)}</span>
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              {subscriptions.length === 0 ? (
+                <p className="text-center text-muted-foreground py-8 text-sm">
+                  Nenhuma assinatura encontrada no período.
+                </p>
+              ) : (
+                <div className="space-y-2">
+                  {subscriptions.map((sub) => {
+                    const plan = sub.plans as any;
+                    const profile = sub.profiles as any;
+                    const isActive = sub.status === "active";
+                    return (
+                      <div key={sub.id} className="flex items-center justify-between rounded-lg border border-border px-4 py-3">
+                        <div className="flex items-center gap-3">
+                          <CreditCard className={`h-4 w-4 shrink-0 ${isActive ? "text-green-600" : "text-muted-foreground"}`} />
+                          <div>
+                            <p className="text-sm font-medium">{plan?.name ?? "Plano"}</p>
+                            <p className="text-xs text-muted-foreground">
+                              {profile?.full_name ?? "—"} · Desde {new Date(sub.started_at).toLocaleDateString("pt-BR")}
+                              {sub.expires_at && <> · Expira {new Date(sub.expires_at).toLocaleDateString("pt-BR")}</>}
+                            </p>
+                          </div>
+                        </div>
+                        <div className="flex items-center gap-3">
+                          <span className={`text-xs px-2 py-0.5 rounded-full border font-medium ${isActive ? "text-green-700 bg-green-50 border-green-200 dark:bg-green-950/30 dark:border-green-800" : "text-muted-foreground bg-muted border-border"}`}>
+                            {isActive ? "Ativa" : sub.status === "cancelled" ? "Cancelada" : sub.status}
+                          </span>
+                          <span className={`text-sm font-bold ${isActive ? "text-green-700" : "text-muted-foreground"}`}>
+                            + {fmt(Number(plan?.price || 0))}
+                          </span>
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              )}
+            </CardContent>
+          </Card>
+        </TabsContent>
       </Tabs>
 
       {/* Add/Edit Dialog */}
