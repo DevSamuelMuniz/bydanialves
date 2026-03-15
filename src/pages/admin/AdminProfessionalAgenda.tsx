@@ -593,7 +593,18 @@ export default function AdminProfessionalAgenda() {
             <div className="space-y-2">
               <Label>Horário <span className="text-destructive">*</span></Label>
               <div className="grid grid-cols-4 sm:grid-cols-6 gap-1.5 max-h-36 overflow-y-auto pr-1">
-                {generateSlots().map((slot) => (
+                {generateSlots().filter((slot) => {
+                  if (!bookingForm.date) return true;
+                  const now = new Date();
+                  const d = bookingForm.date;
+                  const isToday =
+                    d.getFullYear() === now.getFullYear() &&
+                    d.getMonth() === now.getMonth() &&
+                    d.getDate() === now.getDate();
+                  if (!isToday) return true;
+                  const [h, m] = slot.split(":").map(Number);
+                  return h * 60 + m > now.getHours() * 60 + now.getMinutes();
+                }).map((slot) => (
                   <button
                     key={slot}
                     onClick={() => setBookingForm((f) => ({ ...f, time: slot }))}
