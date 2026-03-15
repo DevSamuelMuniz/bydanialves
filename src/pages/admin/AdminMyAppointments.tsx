@@ -198,6 +198,41 @@ export default function AdminMyAppointments() {
               </div>
             </div>
 
+            {showActions && isAttendant && (
+              <div className="flex gap-1.5 pt-0.5">
+                <Button
+                  size="sm"
+                  className="flex-1 h-7 text-xs gap-1 bg-green-600 hover:bg-green-700 text-white"
+                  onClick={() => openCompleteModal(a)}
+                >
+                  <CheckCircle2 className="h-3 w-3" />
+                  Concluir
+                </Button>
+                <AlertDialog>
+                  <AlertDialogTrigger asChild>
+                    <Button size="sm" variant="outline" className="h-7 text-xs gap-1 text-destructive border-destructive/40 hover:bg-destructive/10">
+                      <XCircle className="h-3 w-3" />
+                      Cancelar
+                    </Button>
+                  </AlertDialogTrigger>
+                  <AlertDialogContent>
+                    <AlertDialogHeader>
+                      <AlertDialogTitle>Cancelar atendimento?</AlertDialogTitle>
+                      <AlertDialogDescription>Esta ação não pode ser desfeita. O agendamento será marcado como cancelado.</AlertDialogDescription>
+                    </AlertDialogHeader>
+                    <AlertDialogFooter>
+                      <AlertDialogCancel>Voltar</AlertDialogCancel>
+                      <AlertDialogAction
+                        className="bg-destructive hover:bg-destructive/90 text-destructive-foreground"
+                        onClick={() => markCancel(a.id)}
+                      >
+                        Confirmar Cancelamento
+                      </AlertDialogAction>
+                    </AlertDialogFooter>
+                  </AlertDialogContent>
+                </AlertDialog>
+              </div>
+            )}
           </div>
         </CardContent>
       </Card>
