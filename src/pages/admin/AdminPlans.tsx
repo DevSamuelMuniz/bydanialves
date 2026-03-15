@@ -437,6 +437,35 @@ export default function AdminPlans() {
               </ScrollArea>
             </div>
 
+            {/* Professionals selection */}
+            <div className="space-y-2">
+              <Label>Profissionais que executam <span className="text-muted-foreground text-xs">({selectedProfessionals.length} selecionado{selectedProfessionals.length !== 1 ? "s" : ""})</span></Label>
+              {professionals.length === 0 ? (
+                <p className="text-sm text-muted-foreground py-2">Nenhum profissional cadastrado.</p>
+              ) : (
+                <ScrollArea className="h-32 rounded-lg border border-border/60 bg-muted/20 p-3">
+                  <div className="space-y-2">
+                    {professionals.map((p) => (
+                      <div key={p.user_id} className="flex items-center gap-3 rounded-md px-2 py-1.5 hover:bg-muted/60 transition-colors">
+                        <Checkbox
+                          id={`prof-${p.user_id}`}
+                          checked={selectedProfessionals.includes(p.user_id)}
+                          onCheckedChange={(checked) =>
+                            setSelectedProfessionals((prev) =>
+                              checked ? [...prev, p.user_id] : prev.filter((id) => id !== p.user_id)
+                            )
+                          }
+                        />
+                        <label htmlFor={`prof-${p.user_id}`} className="flex-1 cursor-pointer text-sm leading-snug">
+                          {p.full_name}
+                        </label>
+                      </div>
+                    ))}
+                  </div>
+                </ScrollArea>
+              )}
+            </div>
+
             <div className="space-y-2"><Label>Restrição</Label><Input value={form.restriction} onChange={(e) => setForm({ ...form, restriction: e.target.value })} /></div>
             <div className="space-y-2"><Label>Preço mensal (R$)</Label><Input type="number" step="0.01" value={form.price} onChange={(e) => setForm({ ...form, price: e.target.value })} required /></div>
             <div className="flex items-center gap-2">
