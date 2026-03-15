@@ -55,6 +55,11 @@ export default function AdminMyAppointments() {
   const [loading, setLoading] = useState(true);
   const [historyOpen, setHistoryOpen] = useState(true);
 
+  // Modal de conclusão
+  const [completeTarget, setCompleteTarget] = useState<any | null>(null);
+  const [paymentMethod, setPaymentMethod] = useState("cash");
+  const [completing, setCompleting] = useState(false);
+
   const fetchData = async () => {
     if (!user) return;
     setLoading(true);
