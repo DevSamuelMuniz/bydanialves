@@ -143,7 +143,7 @@ function NavGroupCollapsible({
 }) {
   const { pathname } = useLocation();
   const isActive = group.urls.some((u) => pathname === u || pathname.startsWith(u + "/"));
-  const [open, setOpen] = useState(isActive);
+  const [open, setOpen] = useState(true);
 
   if (collapsed) {
     return (
