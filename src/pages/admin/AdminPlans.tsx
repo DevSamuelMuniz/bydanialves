@@ -66,18 +66,28 @@ export default function AdminPlans() {
 
   const fetchData = async () => {
     setLoading(true);
-    const [plansRes, subsRes, servicesRes, profsRes] = await Promise.all([
+    const [plansRes, subsRes, servicesRes, profsRolesRes] = await Promise.all([
       supabase.from("plans").select("*").order("price"),
       supabase.from("subscriptions").select("*, plans(name), profiles!subscriptions_client_profile_fkey(full_name)").order("created_at", { ascending: false }),
       supabase.from("services").select("id, name, price").eq("active", true).order("name"),
-      supabase.from("user_roles").select("user_id, profiles!user_roles_user_id_fkey(full_name)").eq("role", "admin").eq("admin_level", "professional"),
+      supabase.from("user_roles").select("user_id").eq("role", "admin").eq("admin_level", "professional"),
     ]);
     setPlans(plansRes.data || []);
     setSubscriptions((subsRes.data as any[]) || []);
     setServices(servicesRes.data || []);
-    setProfessionals(
-      (profsRes.data || []).map((r: any) => ({ user_id: r.user_id, full_name: r.profiles?.full_name || r.user_id }))
-    );
+
+    // Busca os nomes dos profissionais separadamente
+    const profIds = (profsRolesRes.data || []).map((r: any) => r.user_id);
+    if (profIds.length > 0) {
+      const { data: profProfiles } = await supabase
+        .from("profiles")
+        .select("user_id, full_name")
+        .in("user_id", profIds)
+        .order("full_name");
+      setProfessionals((profProfiles || []).map((p: any) => ({ user_id: p.user_id, full_name: p.full_name })));
+    } else {
+      setProfessionals([]);
+    }
     setLoading(false);
   };
 
