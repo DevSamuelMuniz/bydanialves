@@ -134,6 +134,14 @@ export default function NewBooking() {
     if (!selectedDate) return [];
     const dayOfWeek = selectedDate.getDay();
 
+    // If the selected date is today, filter out slots that have already passed
+    const now = new Date();
+    const isToday =
+      selectedDate.getFullYear() === now.getFullYear() &&
+      selectedDate.getMonth() === now.getMonth() &&
+      selectedDate.getDate() === now.getDate();
+    const currentMinutes = isToday ? now.getHours() * 60 + now.getMinutes() : 0;
+
     if (selectedProfessional && selectedProfessional !== "none") {
       // Specific professional: use their schedule window
       let workStart = 8 * 60;
@@ -148,9 +156,10 @@ export default function NewBooking() {
       const relevantRanges = bookedRanges.filter(
         (r) => r.professionalId === selectedProfessional.user_id
       );
-      return generateTimeSlots(totalDuration, workStart, workEnd).filter((slot) =>
-        isSlotAvailable(slot, totalDuration, relevantRanges, 1)
-      );
+      return generateTimeSlots(totalDuration, workStart, workEnd).filter((slot) => {
+        if (isToday && toMin(slot) <= currentMinutes) return false;
+        return isSlotAvailable(slot, totalDuration, relevantRanges, 1);
+      });
     }
 
     // "Sem preferência": union of all available slots across all branch professionals
@@ -162,9 +171,10 @@ export default function NewBooking() {
 
     if (profsForDay.length === 0) {
       // Fallback: use default window
-      return generateTimeSlots(totalDuration, 8 * 60, 17 * 60).filter((slot) =>
-        isSlotAvailable(slot, totalDuration, bookedRanges, 3)
-      );
+      return generateTimeSlots(totalDuration, 8 * 60, 17 * 60).filter((slot) => {
+        if (isToday && toMin(slot) <= currentMinutes) return false;
+        return isSlotAvailable(slot, totalDuration, bookedRanges, 3);
+      });
     }
 
     // Collect every possible slot from every professional's window
@@ -184,6 +194,7 @@ export default function NewBooking() {
 
     // A slot is available if at least one prof is free at that time
     return Array.from(slotSet).sort().filter((slot) => {
+      if (isToday && toMin(slot) <= currentMinutes) return false;
       const [h, m] = slot.split(":").map(Number);
       const slotStart = h * 60 + m;
       const slotEnd = slotStart + totalDuration;
