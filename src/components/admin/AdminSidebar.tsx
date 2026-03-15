@@ -135,13 +135,14 @@ export function AdminSidebar() {
   const collapsed = state === "collapsed";
 
   const isProfessional = adminLevel === "professional";
+  const isAttendant = adminLevel === "attendant";
   const isManager = adminLevel === "manager" || adminLevel === "ceo";
   // Professional sees only the professionals dropdown (no other items except what perms allow)
   const showProfDropdown = isProfessional || perms.canViewProfessionals;
 
   const allItems: NavItemDef[] = [
     { title: "Dashboard",         url: "/admin",                icon: LayoutDashboard, tourId: "sidebar-admin-dashboard" },
-    { title: "Meus Atendimentos", url: "/admin/my-appointments",icon: ClipboardList,   tourId: "sidebar-admin-my-appointments" },
+    { title: isAttendant ? "Atendimentos" : "Meus Atendimentos", url: "/admin/my-appointments", icon: ClipboardList, tourId: "sidebar-admin-my-appointments" },
     { title: "Minha Escala",      url: "/admin/my-schedule",    icon: TableProperties, tourId: "sidebar-admin-my-schedule" },
     { title: "Clientes",          url: "/admin/clients",        icon: Users,           tourId: "sidebar-admin-clients" },
     { title: "Serviços",          url: "/admin/services",       icon: Scissors,        tourId: "sidebar-admin-services" },

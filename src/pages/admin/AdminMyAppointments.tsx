@@ -1,4 +1,6 @@
 import { useEffect, useState } from "react";
+import { format } from "date-fns";
+import { ptBR } from "date-fns/locale";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -6,9 +8,19 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Separator } from "@/components/ui/separator";
+import { Calendar } from "@/components/ui/calendar";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { useToast } from "@/hooks/use-toast";
-import { Clock, DollarSign, User, Scissors, CheckCircle2, XCircle, PlayCircle, ListChecks, AlertCircle, ChevronDown, ChevronUp } from "lucide-react";
-import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
+import { cn } from "@/lib/utils";
+import {
+  Clock, DollarSign, User, Scissors, CheckCircle2, XCircle,
+  PlayCircle, ListChecks, ChevronDown, ChevronUp, CalendarIcon, RotateCcw,
+} from "lucide-react";
+import {
+  AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
+  AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog";
 
 const statusConfig: Record<string, { label: string; color: string }> = {
   pending:   { label: "Pendente",   color: "bg-amber-500/15 text-amber-600 border-amber-400/30" },
@@ -18,9 +30,14 @@ const statusConfig: Record<string, { label: string; color: string }> = {
 };
 
 export default function AdminMyAppointments() {
-  const { user, adminBranchId } = useAuth();
+  const { user, adminLevel, adminBranchId } = useAuth();
   const { toast } = useToast();
+  const isAttendant = adminLevel === "attendant";
 
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+
+  const [selectedDate, setSelectedDate] = useState<Date>(today);
   const [profName, setProfName] = useState("");
   const [confirmed, setConfirmed] = useState<any[]>([]);
   const [history, setHistory] = useState<any[]>([]);
@@ -36,37 +53,42 @@ export default function AdminMyAppointments() {
       .select("full_name")
       .eq("user_id", user.id)
       .maybeSingle();
-
     setProfName(prof?.full_name || "");
+
+    const dateStr = format(selectedDate, "yyyy-MM-dd");
 
     let apptQuery = (supabase as any)
       .from("appointments")
       .select("*, services(name, price, duration_minutes), profiles!appointments_client_profile_fkey(full_name, phone)")
-      .eq("professional_id", user.id)
-      .order("appointment_date", { ascending: true })
       .order("appointment_time", { ascending: true });
 
-    if (adminBranchId) apptQuery = apptQuery.eq("branch_id", adminBranchId);
+    // Atendentes veem todos os agendamentos da filial no dia; profissionais veem apenas os seus
+    if (isAttendant) {
+      apptQuery = apptQuery.eq("appointment_date", dateStr);
+      if (adminBranchId) apptQuery = apptQuery.eq("branch_id", adminBranchId);
+    } else {
+      apptQuery = apptQuery
+        .eq("professional_id", user.id)
+        .order("appointment_date", { ascending: true });
+      if (adminBranchId) apptQuery = apptQuery.eq("branch_id", adminBranchId);
+    }
 
     const { data } = await apptQuery;
-
     const all = data || [];
     setConfirmed(all.filter((a: any) => ["pending", "confirmed"].includes(a.status)));
     setHistory(all.filter((a: any) => ["completed", "cancelled"].includes(a.status)).reverse());
     setLoading(false);
   };
 
-  useEffect(() => { fetchData(); }, [user]);
+  useEffect(() => { fetchData(); }, [user, selectedDate]);
 
   useEffect(() => {
     const channel = supabase
       .channel("my-appointments-realtime")
-      .on("postgres_changes", { event: "*", schema: "public", table: "appointments" }, () => {
-        fetchData();
-      })
+      .on("postgres_changes", { event: "*", schema: "public", table: "appointments" }, () => fetchData())
       .subscribe();
     return () => { supabase.removeChannel(channel); };
-  }, [user]);
+  }, [user, selectedDate]);
 
   const markComplete = async (id: string) => {
     const { error } = await supabase.from("appointments").update({ status: "completed" }).eq("id", id);
@@ -79,6 +101,8 @@ export default function AdminMyAppointments() {
     if (error) toast({ title: "Erro", description: error.message, variant: "destructive" });
     else { toast({ title: "Atendimento cancelado." }); fetchData(); }
   };
+
+  const isToday = format(selectedDate, "yyyy-MM-dd") === format(today, "yyyy-MM-dd");
 
   const AppointmentCard = ({ a, showActions }: { a: any; showActions: boolean }) => {
     const st = statusConfig[a.status] || statusConfig.pending;
@@ -116,7 +140,11 @@ export default function AdminMyAppointments() {
               </div>
               <div className="flex items-center gap-1.5">
                 <Clock className="h-3 w-3" />
-                <span>{new Date(a.appointment_date).toLocaleDateString("pt-BR")} às {a.appointment_time?.slice(0, 5)}</span>
+                <span>
+                  {isAttendant
+                    ? a.appointment_time?.slice(0, 5)
+                    : `${new Date(a.appointment_date + "T00:00:00").toLocaleDateString("pt-BR")} às ${a.appointment_time?.slice(0, 5)}`}
+                </span>
               </div>
               <div className="flex items-center gap-1.5">
                 <DollarSign className="h-3 w-3" />
@@ -131,7 +159,7 @@ export default function AdminMyAppointments() {
               <div className="flex gap-1.5 pt-0.5">
                 <Button
                   size="sm"
-                  className="flex-1 h-7 text-xs gap-1 bg-success hover:bg-success/90 text-success-foreground"
+                  className="flex-1 h-7 text-xs gap-1 bg-green-600 hover:bg-green-700 text-white"
                   onClick={() => markComplete(a.id)}
                 >
                   <CheckCircle2 className="h-3 w-3" />
@@ -147,11 +175,16 @@ export default function AdminMyAppointments() {
                   <AlertDialogContent>
                     <AlertDialogHeader>
                       <AlertDialogTitle>Cancelar atendimento?</AlertDialogTitle>
-                      <AlertDialogDescription>Esta ação não pode ser desfeita.</AlertDialogDescription>
+                      <AlertDialogDescription>Esta ação não pode ser desfeita. O agendamento será marcado como cancelado.</AlertDialogDescription>
                     </AlertDialogHeader>
                     <AlertDialogFooter>
                       <AlertDialogCancel>Voltar</AlertDialogCancel>
-                      <AlertDialogAction onClick={() => markCancel(a.id)}>Confirmar Cancelamento</AlertDialogAction>
+                      <AlertDialogAction
+                        className="bg-destructive hover:bg-destructive/90 text-destructive-foreground"
+                        onClick={() => markCancel(a.id)}
+                      >
+                        Confirmar Cancelamento
+                      </AlertDialogAction>
                     </AlertDialogFooter>
                   </AlertDialogContent>
                 </AlertDialog>
@@ -174,9 +207,63 @@ export default function AdminMyAppointments() {
 
   return (
     <div className="space-y-6">
-      <div>
-        <h1 className="font-serif text-2xl">Meus Atendimentos</h1>
-        {profName && <p className="text-sm text-muted-foreground mt-0.5">Olá, {profName} — aqui estão seus atendimentos</p>}
+      {/* Header */}
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+        <div>
+          <h1 className="font-serif text-2xl">
+            {isAttendant ? "Atendimentos" : "Meus Atendimentos"}
+          </h1>
+          {profName && (
+            <p className="text-sm text-muted-foreground mt-0.5">
+              {isAttendant
+                ? `Atendimentos de ${format(selectedDate, "dd 'de' MMMM", { locale: ptBR })}`
+                : `Olá, ${profName} — aqui estão seus atendimentos`}
+            </p>
+          )}
+        </div>
+
+        {/* Date filter (only for attendant) */}
+        {isAttendant && (
+          <div className="flex items-center gap-2">
+            <Popover>
+              <PopoverTrigger asChild>
+                <Button
+                  variant="outline"
+                  className={cn(
+                    "w-52 justify-start text-left font-normal gap-2",
+                    isToday && "border-primary/40 text-primary"
+                  )}
+                >
+                  <CalendarIcon className="h-4 w-4 shrink-0" />
+                  {isToday
+                    ? "Hoje"
+                    : format(selectedDate, "dd 'de' MMM, yyyy", { locale: ptBR })}
+                </Button>
+              </PopoverTrigger>
+              <PopoverContent className="w-auto p-0" align="end">
+                <Calendar
+                  mode="single"
+                  selected={selectedDate}
+                  onSelect={(d) => d && setSelectedDate(d)}
+                  initialFocus
+                  locale={ptBR}
+                  className="p-3 pointer-events-auto"
+                />
+              </PopoverContent>
+            </Popover>
+            {!isToday && (
+              <Button
+                variant="ghost"
+                size="icon"
+                className="h-9 w-9"
+                onClick={() => setSelectedDate(today)}
+                title="Voltar para hoje"
+              >
+                <RotateCcw className="h-4 w-4" />
+              </Button>
+            )}
+          </div>
+        )}
       </div>
 
       {loading ? (
@@ -195,7 +282,7 @@ export default function AdminMyAppointments() {
               <CardHeader className="py-3 px-4">
                 <CardTitle className="text-sm flex items-center gap-2">
                   <PlayCircle className="h-4 w-4 text-blue-500" />
-                  Em Atendimento
+                  {isAttendant ? "Pendentes / Confirmados" : "Em Atendimento"}
                   <Badge variant="outline" className="ml-auto bg-blue-500/15 text-blue-600 border-blue-400/30 text-xs">
                     {confirmed.length}
                   </Badge>
@@ -203,7 +290,7 @@ export default function AdminMyAppointments() {
               </CardHeader>
             </Card>
             {confirmed.length === 0
-              ? <EmptyCol icon={PlayCircle} text="Nenhum em andamento. Use 'Pegar Agendamento' na Agenda." />
+              ? <EmptyCol icon={PlayCircle} text="Nenhum agendamento para este dia." />
               : (
                 <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
                   {confirmed.map((a) => <AppointmentCard key={a.id} a={a} showActions />)}
@@ -218,7 +305,7 @@ export default function AdminMyAppointments() {
               <CardHeader className="py-3 px-4">
                 <CardTitle className="text-sm flex items-center gap-2">
                   <ListChecks className="h-4 w-4 text-muted-foreground" />
-                  Histórico
+                  Concluídos / Cancelados
                   <Badge variant="outline" className="ml-auto text-muted-foreground text-xs">
                     {history.length}
                   </Badge>
@@ -227,7 +314,7 @@ export default function AdminMyAppointments() {
                     size="icon"
                     className="h-6 w-6 ml-1 shrink-0"
                     onClick={() => setHistoryOpen((v) => !v)}
-                    title={historyOpen ? "Esconder histórico" : "Mostrar histórico"}
+                    title={historyOpen ? "Esconder" : "Mostrar"}
                   >
                     {historyOpen
                       ? <ChevronUp className="h-4 w-4 text-muted-foreground" />
@@ -239,7 +326,7 @@ export default function AdminMyAppointments() {
             </Card>
             {historyOpen && (
               history.length === 0
-                ? <EmptyCol icon={ListChecks} text="Nenhum histórico ainda" />
+                ? <EmptyCol icon={ListChecks} text="Nenhum registro para este dia." />
                 : (
                   <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
                     {history.map((a) => <AppointmentCard key={a.id} a={a} showActions={false} />)}
