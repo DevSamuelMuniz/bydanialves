@@ -142,7 +142,7 @@ export function AdminSidebar() {
 
   const allItems: NavItemDef[] = [
     { title: "Dashboard",         url: "/admin",                icon: LayoutDashboard, tourId: "sidebar-admin-dashboard" },
-    { title: isProfessional ? "Meus Atendimentos" : isAttendant ? "Atendimentos" : "Meus Atendimentos", url: "/admin/my-appointments", icon: ClipboardList, tourId: "sidebar-admin-my-appointments" },
+    { title: isAttendant ? "Atendimentos" : "Meus Atendimentos", url: "/admin/my-appointments", icon: ClipboardList, tourId: "sidebar-admin-my-appointments" },
     { title: "Minha Escala",      url: "/admin/my-schedule",    icon: TableProperties, tourId: "sidebar-admin-my-schedule" },
     { title: "Clientes",          url: "/admin/clients",        icon: Users,           tourId: "sidebar-admin-clients" },
     { title: "Serviços",          url: "/admin/services",       icon: Scissors,        tourId: "sidebar-admin-services" },
