@@ -134,6 +134,14 @@ export default function NewBooking() {
     if (!selectedDate) return [];
     const dayOfWeek = selectedDate.getDay();
 
+    // If the selected date is today, filter out slots that have already passed
+    const now = new Date();
+    const isToday =
+      selectedDate.getFullYear() === now.getFullYear() &&
+      selectedDate.getMonth() === now.getMonth() &&
+      selectedDate.getDate() === now.getDate();
+    const currentMinutes = isToday ? now.getHours() * 60 + now.getMinutes() : 0;
+
     if (selectedProfessional && selectedProfessional !== "none") {
       // Specific professional: use their schedule window
       let workStart = 8 * 60;
