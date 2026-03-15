@@ -10,8 +10,19 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { Separator } from "@/components/ui/separator";
 import { Calendar } from "@/components/ui/calendar";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { useToast } from "@/hooks/use-toast";
 import { cn } from "@/lib/utils";
+
+const PAYMENT_OPTIONS = [
+  { value: "cash",        label: "💵 Dinheiro" },
+  { value: "pix",         label: "📱 PIX" },
+  { value: "credit_card", label: "💳 Cartão de Crédito" },
+  { value: "debit_card",  label: "💳 Cartão de Débito" },
+  { value: "other",       label: "Outro" },
+];
 import {
   Clock, DollarSign, User, Scissors, CheckCircle2, XCircle,
   PlayCircle, ListChecks, ChevronDown, ChevronUp, CalendarIcon, RotateCcw,
