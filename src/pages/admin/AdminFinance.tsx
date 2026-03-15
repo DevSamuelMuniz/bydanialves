@@ -227,6 +227,15 @@ export default function AdminFinance() {
     ? appointmentServiceRevenue / completedAppointments.length
     : 0;
 
+  // Receita de assinaturas
+  const totalSubscriptionRevenue = useMemo(() =>
+    subscriptions.reduce((s, sub) => s + Number((sub.plans as any)?.price || 0), 0),
+  [subscriptions]);
+  const activeSubscriptions = subscriptions.filter((s) => s.status === "active");
+  const activeSubscriptionRevenue = useMemo(() =>
+    activeSubscriptions.reduce((s, sub) => s + Number((sub.plans as any)?.price || 0), 0),
+  [activeSubscriptions]);
+
   // Faturamento por filial
   const byBranch = useMemo(() => {
     const map: Record<string, { income: number; expense: number }> = {};
