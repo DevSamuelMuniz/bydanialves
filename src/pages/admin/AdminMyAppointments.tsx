@@ -381,5 +381,86 @@ export default function AdminMyAppointments() {
         </div>
       )}
     </div>
+
+    {/* Modal de conclusão com forma de pagamento */}
+    <Dialog open={!!completeTarget} onOpenChange={(o) => !o && setCompleteTarget(null)}>
+      <DialogContent className="max-w-sm">
+        <DialogHeader>
+          <DialogTitle className="flex items-center gap-2">
+            <CheckCircle2 className="w-5 h-5 text-green-600" />
+            Concluir Atendimento
+          </DialogTitle>
+        </DialogHeader>
+
+        {completeTarget && (
+          <div className="space-y-4">
+            {/* Resumo */}
+            <div className="rounded-xl border bg-muted/40 p-4 space-y-3">
+              <div className="flex items-center gap-2">
+                <Avatar className="w-9 h-9">
+                  <AvatarImage src={completeTarget.profiles?.avatar_url ?? undefined} />
+                  <AvatarFallback className="text-xs font-bold bg-primary/10 text-primary">
+                    {completeTarget.profiles?.full_name?.charAt(0) ?? "?"}
+                  </AvatarFallback>
+                </Avatar>
+                <div>
+                  <p className="text-sm font-semibold">{completeTarget.profiles?.full_name ?? "Cliente"}</p>
+                  {completeTarget.profiles?.phone && (
+                    <p className="text-xs text-muted-foreground">📱 {completeTarget.profiles.phone}</p>
+                  )}
+                </div>
+              </div>
+              <Separator />
+              <div className="grid grid-cols-2 gap-2 text-xs">
+                <div>
+                  <p className="text-muted-foreground">Serviço</p>
+                  <p className="font-medium">{completeTarget.services?.name ?? "—"}</p>
+                </div>
+                <div>
+                  <p className="text-muted-foreground">Horário</p>
+                  <p className="font-medium">{completeTarget.appointment_time?.slice(0, 5)}</p>
+                </div>
+                <div>
+                  <p className="text-muted-foreground">Duração</p>
+                  <p className="font-medium">{completeTarget.services?.duration_minutes ?? "—"} min</p>
+                </div>
+                <div>
+                  <p className="text-muted-foreground">Valor</p>
+                  <p className="font-semibold text-green-700">
+                    R$ {completeTarget.services?.price?.toFixed(2) ?? "—"}
+                  </p>
+                </div>
+              </div>
+            </div>
+
+            {/* Forma de pagamento */}
+            <div className="space-y-2">
+              <label className="text-sm font-medium flex items-center gap-1.5">
+                <DollarSign className="w-4 h-4 text-muted-foreground" />
+                Forma de pagamento
+              </label>
+              <Select value={paymentMethod} onValueChange={setPaymentMethod}>
+                <SelectTrigger>
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  {PAYMENT_OPTIONS.map((opt) => (
+                    <SelectItem key={opt.value} value={opt.value}>{opt.label}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+          </div>
+        )}
+
+        <DialogFooter className="gap-2">
+          <Button variant="outline" onClick={() => setCompleteTarget(null)}>Cancelar</Button>
+          <Button onClick={confirmComplete} disabled={completing} className="gap-1.5">
+            <CheckCircle2 className="w-4 h-4" />
+            {completing ? "Salvando..." : "Confirmar conclusão"}
+          </Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
   );
 }
