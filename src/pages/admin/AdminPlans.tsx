@@ -55,6 +55,9 @@ export default function AdminPlans() {
   const [selectedServices, setSelectedServices] = useState<string[]>([]);
   const [form, setForm] = useState({ name: "", description: "", restriction: "", price: "", active: true });
 
+  const [selectedProfessionals, setSelectedProfessionals] = useState<string[]>([]);
+  const [professionals, setProfessionals] = useState<{ user_id: string; full_name: string }[]>([]);
+
   const [linkDialogOpen, setLinkDialogOpen] = useState(false);
   const [clients, setClients] = useState<any[]>([]);
   const [selectedClientId, setSelectedClientId] = useState("");
@@ -62,14 +65,18 @@ export default function AdminPlans() {
 
   const fetchData = async () => {
     setLoading(true);
-    const [plansRes, subsRes, servicesRes] = await Promise.all([
+    const [plansRes, subsRes, servicesRes, profsRes] = await Promise.all([
       supabase.from("plans").select("*").order("price"),
       supabase.from("subscriptions").select("*, plans(name), profiles!subscriptions_client_profile_fkey(full_name)").order("created_at", { ascending: false }),
       supabase.from("services").select("id, name, price").eq("active", true).order("name"),
+      supabase.from("user_roles").select("user_id, profiles!user_roles_user_id_fkey(full_name)").eq("role", "admin").eq("admin_level", "professional"),
     ]);
     setPlans(plansRes.data || []);
     setSubscriptions((subsRes.data as any[]) || []);
     setServices(servicesRes.data || []);
+    setProfessionals(
+      (profsRes.data || []).map((r: any) => ({ user_id: r.user_id, full_name: r.profiles?.full_name || r.user_id }))
+    );
     setLoading(false);
   };
 
@@ -79,16 +86,20 @@ export default function AdminPlans() {
     setEditing(null);
     setForm({ name: "", description: "", restriction: "", price: "", active: true });
     setSelectedServices([]);
+    setSelectedProfessionals([]);
     setDialogOpen(true);
   };
 
-  const openEdit = (p: any) => {
+  const openEdit = async (p: any) => {
     setEditing(p);
     setForm({ name: p.name, description: p.description || "", restriction: p.restriction || "", price: String(p.price), active: p.active });
     // Pre-select services whose names appear in includes
     const existingLines = (p.includes || "").split("\n").map((s: string) => s.trim()).filter(Boolean);
     const matched = services.filter((s) => existingLines.includes(s.name)).map((s) => s.id);
     setSelectedServices(matched);
+    // Pre-select professionals already linked to this plan
+    const { data: linked } = await (supabase as any).from("plan_professionals").select("professional_id").eq("plan_id", p.id);
+    setSelectedProfessionals((linked || []).map((r: any) => r.professional_id));
     setDialogOpen(true);
   };
 
@@ -117,6 +128,14 @@ export default function AdminPlans() {
       const { data, error } = await supabase.from("plans").insert(payload).select("id").single();
       if (error || !data) { toast({ title: "Erro", description: error?.message || "Erro ao criar plano", variant: "destructive" }); return; }
       planId = data.id;
+    }
+
+    // Sync professionals: delete existing then re-insert
+    await (supabase as any).from("plan_professionals").delete().eq("plan_id", planId);
+    if (selectedProfessionals.length > 0) {
+      await (supabase as any).from("plan_professionals").insert(
+        selectedProfessionals.map((pid) => ({ plan_id: planId, professional_id: pid }))
+      );
     }
 
     toast({ title: "Sincronizando com Stripe..." });
@@ -416,6 +435,35 @@ export default function AdminPlans() {
                   </div>
                 )}
               </ScrollArea>
+            </div>
+
+            {/* Professionals selection */}
+            <div className="space-y-2">
+              <Label>Profissionais que executam <span className="text-muted-foreground text-xs">({selectedProfessionals.length} selecionado{selectedProfessionals.length !== 1 ? "s" : ""})</span></Label>
+              {professionals.length === 0 ? (
+                <p className="text-sm text-muted-foreground py-2">Nenhum profissional cadastrado.</p>
+              ) : (
+                <ScrollArea className="h-32 rounded-lg border border-border/60 bg-muted/20 p-3">
+                  <div className="space-y-2">
+                    {professionals.map((p) => (
+                      <div key={p.user_id} className="flex items-center gap-3 rounded-md px-2 py-1.5 hover:bg-muted/60 transition-colors">
+                        <Checkbox
+                          id={`prof-${p.user_id}`}
+                          checked={selectedProfessionals.includes(p.user_id)}
+                          onCheckedChange={(checked) =>
+                            setSelectedProfessionals((prev) =>
+                              checked ? [...prev, p.user_id] : prev.filter((id) => id !== p.user_id)
+                            )
+                          }
+                        />
+                        <label htmlFor={`prof-${p.user_id}`} className="flex-1 cursor-pointer text-sm leading-snug">
+                          {p.full_name}
+                        </label>
+                      </div>
+                    ))}
+                  </div>
+                </ScrollArea>
+              )}
             </div>
 
             <div className="space-y-2"><Label>Restrição</Label><Input value={form.restriction} onChange={(e) => setForm({ ...form, restriction: e.target.value })} /></div>
