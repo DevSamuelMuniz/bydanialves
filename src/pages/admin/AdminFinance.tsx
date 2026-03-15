@@ -77,6 +77,7 @@ export default function AdminFinance() {
 
   const [records, setRecords]           = useState<any[]>([]);
   const [completedAppointments, setCompletedAppointments] = useState<any[]>([]);
+  const [subscriptions, setSubscriptions] = useState<any[]>([]);
   const [branches, setBranches]         = useState<any[]>([]);
   const [loading, setLoading]           = useState(true);
   const [dialogOpen, setDialogOpen]     = useState(false);
