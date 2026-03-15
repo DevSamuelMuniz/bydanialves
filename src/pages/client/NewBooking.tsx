@@ -303,19 +303,28 @@ export default function NewBooking() {
     fetchProfessionals();
   }, [selectedBranch]);
 
-  // When date changes, filter professionals to those with an ACTIVE schedule on that day of week.
-  // Professionals with NO schedules configured at all are excluded (not yet set up).
+  // When date or selected services change, filter professionals:
+  // 1. Must have an ACTIVE schedule on that day of week
+  // 2. If any selected service is a plan service (is_system), restrict to plan-authorized professionals
+  const hasSystemService = selectedServices.some((s) => s.is_system);
+
   useEffect(() => {
     if (!selectedDate || allBranchProfessionals.length === 0) return;
     const dayOfWeek = selectedDate.getDay();
-    const availableProfs = allBranchProfessionals.filter((p) => {
+    let availableProfs = allBranchProfessionals.filter((p) => {
       // No schedules configured → exclude (not yet set up by admin)
       if (p.schedules.length === 0) return false;
       // Has at least one active entry matching this day of week
       return p.schedules.some((s) => s.day_of_week === dayOfWeek && s.active);
     });
+
+    // If a plan (is_system) service is selected and we have authorized professionals, restrict the list
+    if (hasSystemService && planProfessionalIds.length > 0) {
+      availableProfs = availableProfs.filter((p) => planProfessionalIds.includes(p.user_id));
+    }
+
     setProfessionals(availableProfs);
-  }, [selectedDate, allBranchProfessionals]);
+  }, [selectedDate, allBranchProfessionals, hasSystemService, planProfessionalIds]);
 
   useEffect(() => {
     if (!user) return;
