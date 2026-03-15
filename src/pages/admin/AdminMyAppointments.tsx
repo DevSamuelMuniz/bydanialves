@@ -138,7 +138,6 @@ export default function AdminMyAppointments() {
   };
 
   const markComplete = async (id: string) => { /* kept for compat */ };
-  };
 
   const markCancel = async (id: string) => {
     const { error } = await supabase.from("appointments").update({ status: "cancelled" }).eq("id", id);
