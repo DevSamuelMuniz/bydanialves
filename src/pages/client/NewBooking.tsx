@@ -335,7 +335,9 @@ export default function NewBooking() {
       const { data: servicesData } = await supabase
         .from("services")
         .select("*")
-        .eq("active", true);
+        .eq("active", true)
+        .order("is_system", { ascending: false })
+        .order("name");
       setServices((servicesData as unknown as ServiceItem[]) || []);
 
       const { data: sub } = await supabase
