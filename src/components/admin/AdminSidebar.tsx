@@ -16,7 +16,7 @@ import {
 import {
   LayoutDashboard, Users, Calendar, Scissors, DollarSign,
   Crown, Activity, ClipboardList, Building2, Tag, Star, Tv2, UserCheck,
-  ChevronDown, BarChart2, LogOut, History, CalendarDays,
+  ChevronDown, BarChart2, LogOut, History, CalendarDays, TableProperties,
 } from "lucide-react";
 import { useLocation } from "react-router-dom";
 import logoVertical from "@/assets/logo_vertical.png";
@@ -142,6 +142,7 @@ export function AdminSidebar() {
   const allItems: NavItemDef[] = [
     { title: "Dashboard",         url: "/admin",                icon: LayoutDashboard, tourId: "sidebar-admin-dashboard" },
     { title: "Meus Atendimentos", url: "/admin/my-appointments",icon: ClipboardList,   tourId: "sidebar-admin-my-appointments" },
+    { title: "Minha Escala",      url: "/admin/my-schedule",    icon: TableProperties, tourId: "sidebar-admin-my-schedule" },
     { title: "Clientes",          url: "/admin/clients",        icon: Users,           tourId: "sidebar-admin-clients" },
     { title: "Serviços",          url: "/admin/services",       icon: Scissors,        tourId: "sidebar-admin-services" },
     { title: "Planos",            url: "/admin/plans",          icon: Crown,           tourId: "sidebar-admin-plans" },
@@ -157,6 +158,7 @@ export function AdminSidebar() {
   const permMap: Record<string, boolean> = {
     "/admin":                 perms.canViewDashboard,
     "/admin/my-appointments": adminLevel === "attendant" || adminLevel === "professional",
+    "/admin/my-schedule":     adminLevel === "attendant" || adminLevel === "professional",
     "/admin/clients":         perms.canViewClients && adminLevel !== "professional",
     "/admin/services":        perms.canViewServices,
     "/admin/plans":           perms.canViewPlans,
