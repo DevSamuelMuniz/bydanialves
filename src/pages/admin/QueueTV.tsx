@@ -117,7 +117,7 @@ export default function QueueTV() {
   const [loading, setLoading] = useState(true);
   const [lastUpdate, setLastUpdate] = useState(new Date());
   const [isFullscreen, setIsFullscreen] = useState(false);
-  const [isDark, setIsDark] = useState(true);
+  const [isDark, setIsDark] = useState(false);
   const [muted, setMuted] = useState(false);
   const [shareOpen, setShareOpen] = useState(false);
   const [tokens, setTokens] = useState<QueueToken[]>([]);
