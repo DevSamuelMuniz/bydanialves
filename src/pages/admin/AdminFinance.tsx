@@ -115,6 +115,37 @@ export default function AdminFinance() {
       .then(({ data }) => setBranches(data || []));
   }, [isManager]);
 
+  // ─── Fetch plan professionals for bonification ──────────
+  useEffect(() => {
+    supabase
+      .from("plan_professionals")
+      .select("id, plan_id, professional_id, plans(name, price), profiles(full_name, avatar_url)")
+      .then(({ data }) => {
+        if (!data) return;
+        // Group by professional
+        const map: Record<string, { professional_id: string; full_name: string; avatar_url: string | null; plans: { plan_id: string; plan_name: string; plan_price: number }[] }> = {};
+        for (const row of data) {
+          const pid = row.professional_id;
+          const plan = row.plans as any;
+          const profile = row.profiles as any;
+          if (!map[pid]) {
+            map[pid] = {
+              professional_id: pid,
+              full_name: profile?.full_name ?? "Profissional",
+              avatar_url: profile?.avatar_url ?? null,
+              plans: [],
+            };
+          }
+          map[pid].plans.push({
+            plan_id: row.plan_id,
+            plan_name: plan?.name ?? "Plano",
+            plan_price: Number(plan?.price ?? 0),
+          });
+        }
+        setPlanProfessionals(Object.values(map));
+      });
+  }, []);
+
   // ─── Fetch ──────────────────────────────────────────────
   const fetchRecords = useCallback(async () => {
     setLoading(true);
