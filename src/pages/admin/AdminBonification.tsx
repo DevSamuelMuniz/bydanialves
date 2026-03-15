@@ -1,7 +1,7 @@
 import { useEffect, useState, useMemo } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAdminPermissions } from "@/hooks/use-admin-permissions";
-import AccessDenied from "@/components/admin/AccessDenied";
+import { AccessDenied } from "@/components/admin/AccessDenied";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
