@@ -349,7 +349,8 @@ export default function NewBooking() {
         .maybeSingle();
 
       if (sub && (sub as any).plans) {
-        const totalEscovas = parseEscovasFromIncludes((sub as any).plans.includes);
+        const plan = (sub as any).plans;
+        const totalEscovas = parseEscovasFromIncludes(plan.includes);
         const now = new Date();
         const startOfMonth = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}-01`;
         const endOfMonth = new Date(now.getFullYear(), now.getMonth() + 1, 0);
@@ -363,6 +364,13 @@ export default function NewBooking() {
           .neq("status", "cancelled");
         const escovasUsadas = (appointments || []).filter((a: any) => a.services?.is_system === true).length;
         setEscovasDisponiveis(Math.max(0, totalEscovas - escovasUsadas));
+
+        // Fetch professionals authorized for this plan
+        const { data: planProfs } = await supabase
+          .from("plan_professionals")
+          .select("professional_id")
+          .eq("plan_id", plan.id);
+        setPlanProfessionalIds((planProfs || []).map((p: any) => p.professional_id));
       }
       setLoading(false);
     };
