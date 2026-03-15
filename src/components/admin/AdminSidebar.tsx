@@ -9,6 +9,7 @@ import { useSidebar } from "@/components/ui/sidebar";
 import {
   Sidebar, SidebarContent, SidebarGroup, SidebarGroupContent, SidebarGroupLabel,
   SidebarHeader, SidebarMenu, SidebarMenuButton, SidebarMenuItem, SidebarFooter,
+  SidebarSeparator,
 } from "@/components/ui/sidebar";
 import {
   Collapsible, CollapsibleContent, CollapsibleTrigger,
@@ -17,6 +18,7 @@ import {
   LayoutDashboard, Users, Calendar, Scissors, DollarSign,
   Crown, Activity, ClipboardList, Building2, Tag, Star, Tv2, UserCheck,
   ChevronDown, BarChart2, LogOut, History, CalendarDays, TableProperties,
+  Settings2,
 } from "lucide-react";
 import { useLocation } from "react-router-dom";
 import logoVertical from "@/assets/logo_vertical.png";
@@ -127,6 +129,13 @@ interface NavItemDef {
   badge?: number;
 }
 
+interface NavGroup {
+  label: string;
+  emoji: string;
+  items: NavItemDef[];
+  extraSlot?: React.ReactNode;
+}
+
 export function AdminSidebar() {
   const { adminLevel, signOut } = useAuth();
   const perms = useAdminPermissions();
@@ -136,56 +145,55 @@ export function AdminSidebar() {
 
   const isProfessional = adminLevel === "professional";
   const isAttendant = adminLevel === "attendant";
-  const isManager = adminLevel === "manager" || adminLevel === "ceo";
-  // Professional sees only the professionals dropdown (no other items except what perms allow)
   const showProfDropdown = isProfessional || perms.canViewProfessionals;
-
-  const allItems: NavItemDef[] = [
-    { title: "Dashboard",         url: "/admin",                icon: LayoutDashboard, tourId: "sidebar-admin-dashboard" },
-    { title: isAttendant ? "Atendimentos" : "Meus Atendimentos", url: "/admin/my-appointments", icon: ClipboardList, tourId: "sidebar-admin-my-appointments" },
-    { title: "Minha Escala",      url: "/admin/my-schedule",    icon: TableProperties, tourId: "sidebar-admin-my-schedule" },
-    { title: "Clientes",          url: "/admin/clients",        icon: Users,           tourId: "sidebar-admin-clients" },
-    { title: "Serviços",          url: "/admin/services",       icon: Scissors,        tourId: "sidebar-admin-services" },
-    { title: "Planos",            url: "/admin/plans",          icon: Crown,           tourId: "sidebar-admin-plans" },
-    { title: "Financeiro",        url: "/admin/finance",        icon: DollarSign,      tourId: "sidebar-admin-finance" },
-    { title: "Filiais",           url: "/admin/branches",       icon: Building2,       tourId: "sidebar-admin-branches" },
-    { title: "Cupons",            url: "/admin/coupons",        icon: Tag,             tourId: "sidebar-admin-coupons" },
-    { title: "Avaliações",        url: "/admin/reviews",        icon: Star,            tourId: "sidebar-admin-reviews" },
-    { title: "TV de Fila",        url: "/admin/queue-tv",       icon: Tv2,             tourId: "sidebar-admin-queue-tv", badge: pendingCount },
-    { title: "Calendário",        url: "/admin/work-calendar",  icon: CalendarDays,    tourId: "sidebar-admin-work-calendar" },
-    { title: "Logs",              url: "/admin/logs",           icon: Activity,        tourId: "sidebar-admin-logs" },
-  ];
-
-  const permMap: Record<string, boolean> = {
-    "/admin":                 perms.canViewDashboard,
-    "/admin/my-appointments": adminLevel === "attendant" || adminLevel === "professional",
-    "/admin/my-schedule":     adminLevel === "attendant" || adminLevel === "professional",
-    "/admin/clients":         perms.canViewClients && adminLevel !== "professional",
-    "/admin/services":        perms.canViewServices,
-    "/admin/plans":           perms.canViewPlans,
-    "/admin/finance":         perms.canViewFinance,
-    "/admin/branches":        perms.canViewBranches,
-    "/admin/users":           perms.canViewUsers,
-    "/admin/coupons":         perms.canManageCoupons,
-    "/admin/reviews":         perms.canViewServices && adminLevel !== "professional",
-    "/admin/queue-tv":        perms.canViewQueueTV,
-    "/admin/work-calendar":   perms.canManageSystemSettings,
-    "/admin/logs":            perms.canViewLogs,
-  };
-
-  const items = allItems.filter((item) => permMap[item.url] ?? false);
-
-  // Profissional não vê o dropdown de Profissionais (Agenda e Histórico ficam fora do menu)
-  const showProfDropdownFinal = isProfessional ? false : showProfDropdown;
-
-  // Split items: before and after professionals slot
-  const financeIdx = items.findIndex((i) => i.url === "/admin/finance");
-  const splitIdx = financeIdx >= 0 ? financeIdx + 1 : items.length;
-  const itemsBefore = items.slice(0, splitIdx);
-  const itemsAfter = items.slice(splitIdx);
 
   const levelLabel = adminLevel ? ADMIN_LEVEL_LABELS[adminLevel] : null;
   const levelColor = adminLevel ? ADMIN_LEVEL_COLORS[adminLevel] : "";
+
+  // ---------- Visibilidade por grupo ----------
+  const gestaoItems: NavItemDef[] = [
+    perms.canViewDashboard && { title: "Dashboard", url: "/admin", icon: LayoutDashboard, tourId: "sidebar-admin-dashboard" },
+    (isAttendant || isProfessional) && { title: isAttendant ? "Atendimentos" : "Meus Atendimentos", url: "/admin/my-appointments", icon: ClipboardList, tourId: "sidebar-admin-my-appointments" },
+    (isAttendant || isProfessional) && { title: "Minha Escala", url: "/admin/my-schedule", icon: TableProperties, tourId: "sidebar-admin-my-schedule" },
+    (perms.canViewClients && adminLevel !== "professional") && { title: "Clientes", url: "/admin/clients", icon: Users, tourId: "sidebar-admin-clients" },
+    perms.canViewBranches && { title: "Filiais", url: "/admin/branches", icon: Building2, tourId: "sidebar-admin-branches" },
+    perms.canViewUsers && { title: "Usuários", url: "/admin/users", icon: Crown, tourId: "sidebar-admin-users" },
+  ].filter(Boolean) as NavItemDef[];
+
+  const servicosItems: NavItemDef[] = [
+    perms.canViewServices && { title: "Serviços", url: "/admin/services", icon: Scissors, tourId: "sidebar-admin-services" },
+    perms.canViewPlans && { title: "Planos", url: "/admin/plans", icon: Crown, tourId: "sidebar-admin-plans" },
+  ].filter(Boolean) as NavItemDef[];
+
+  const agendaItems: NavItemDef[] = [
+    perms.canManageSystemSettings && { title: "Calendário", url: "/admin/work-calendar", icon: CalendarDays, tourId: "sidebar-admin-work-calendar" },
+    perms.canViewQueueTV && { title: "TV de Fila", url: "/admin/queue-tv", icon: Tv2, tourId: "sidebar-admin-queue-tv", badge: pendingCount },
+  ].filter(Boolean) as NavItemDef[];
+
+  const financeiroItems: NavItemDef[] = [
+    perms.canViewFinance && { title: "Financeiro", url: "/admin/finance", icon: DollarSign, tourId: "sidebar-admin-finance" },
+    perms.canManageCoupons && { title: "Cupons", url: "/admin/coupons", icon: Tag, tourId: "sidebar-admin-coupons" },
+  ].filter(Boolean) as NavItemDef[];
+
+  const relatoriosItems: NavItemDef[] = [
+    (perms.canViewServices && adminLevel !== "professional") && { title: "Avaliações", url: "/admin/reviews", icon: Star, tourId: "sidebar-admin-reviews" },
+  ].filter(Boolean) as NavItemDef[];
+
+  const sistemaItems: NavItemDef[] = [
+    perms.canViewLogs && { title: "Logs", url: "/admin/logs", icon: Activity, tourId: "sidebar-admin-logs" },
+  ].filter(Boolean) as NavItemDef[];
+
+  // Profissionais dropdown slot vai no grupo Gestão, após Clientes
+  const showProfDropdownFinal = !isProfessional && showProfDropdown;
+
+  const groups: Array<{ label: string; emoji: string; items: NavItemDef[]; showProfDropdown?: boolean }> = [
+    { label: "Gestão", emoji: "👥", items: gestaoItems, showProfDropdown: showProfDropdownFinal },
+    { label: "Serviços", emoji: "💈", items: servicosItems },
+    { label: "Agenda", emoji: "📅", items: agendaItems },
+    { label: "Financeiro", emoji: "💰", items: financeiroItems },
+    { label: "Relatórios", emoji: "📊", items: relatoriosItems },
+    { label: "Sistema", emoji: "⚙️", items: sistemaItems },
+  ].filter((g) => g.items.length > 0 || g.showProfDropdown);
 
   const renderItem = (item: NavItemDef) => (
     <SidebarMenuItem key={item.title}>
@@ -218,6 +226,7 @@ export function AdminSidebar() {
 
   return (
     <Sidebar collapsible="icon" className="border-r border-sidebar-border/60">
+      {/* Logo */}
       <SidebarHeader className={`border-b border-sidebar-border/40 transition-all duration-200 ${collapsed ? "items-center p-3" : "items-center p-4 pb-3"}`}>
         {collapsed
           ? <img src={logoIcon} alt="DA" className="w-8 h-8 object-contain" />
@@ -232,24 +241,31 @@ export function AdminSidebar() {
         )}
       </SidebarHeader>
 
-      <SidebarContent className="flex-1">
-        <SidebarGroup>
-          {!collapsed && (
-            <SidebarGroupLabel className="text-xs uppercase tracking-wider text-muted-foreground font-sans font-medium px-4">
-              Administração
-            </SidebarGroupLabel>
-          )}
-          <SidebarGroupContent>
-            <SidebarMenu>
-              {itemsBefore.map(renderItem)}
-              {showProfDropdownFinal && <ProfessionaisGroup canManage={perms.canViewProfessionals} />}
-              {itemsAfter.map(renderItem)}
-            </SidebarMenu>
-          </SidebarGroupContent>
-        </SidebarGroup>
+      <SidebarContent className="flex-1 overflow-y-auto">
+        {groups.map((group, idx) => (
+          <SidebarGroup key={group.label} className={idx > 0 ? "pt-0" : ""}>
+            {!collapsed && (
+              <SidebarGroupLabel className="flex items-center gap-1.5 text-[11px] uppercase tracking-wider text-muted-foreground font-medium px-4 py-2">
+                <span>{group.emoji}</span>
+                <span>{group.label}</span>
+              </SidebarGroupLabel>
+            )}
+            {collapsed && idx > 0 && (
+              <SidebarSeparator className="mx-2 my-1 opacity-40" />
+            )}
+            <SidebarGroupContent>
+              <SidebarMenu>
+                {group.items.map(renderItem)}
+                {group.showProfDropdown && (
+                  <ProfessionaisGroup canManage={perms.canViewProfessionals} />
+                )}
+              </SidebarMenu>
+            </SidebarGroupContent>
+          </SidebarGroup>
+        ))}
       </SidebarContent>
 
-      <SidebarFooter className="p-3 pt-0">
+      <SidebarFooter className="border-t border-sidebar-border/40 p-3">
         <Button
           variant="ghost"
           className={`w-full hover:text-destructive rounded-lg transition-all duration-200 ${collapsed ? "justify-center px-2" : "justify-start text-muted-foreground"}`}
