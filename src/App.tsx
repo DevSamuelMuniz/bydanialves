@@ -23,6 +23,7 @@ import AdminAgenda from "./pages/admin/AdminAgenda";
 import AdminMyAppointments from "./pages/admin/AdminMyAppointments";
 import AdminServices from "./pages/admin/AdminServices";
 import AdminFinance from "./pages/admin/AdminFinance";
+import AdminBonification from "./pages/admin/AdminBonification";
 import AdminUsers from "./pages/admin/AdminUsers";
 import AdminPlans from "./pages/admin/AdminPlans";
 import AdminProfile from "./pages/admin/AdminProfile";
@@ -83,6 +84,7 @@ const App = () => (
               <Route path="services" element={<AdminServices />} />
               <Route path="plans" element={<AdminPlans />} />
               <Route path="finance" element={<AdminFinance />} />
+              <Route path="bonification" element={<AdminBonification />} />
               <Route path="branches" element={<AdminBranches />} />
               <Route path="coupons" element={<AdminCoupons />} />
               <Route path="reviews" element={<AdminReviews />} />

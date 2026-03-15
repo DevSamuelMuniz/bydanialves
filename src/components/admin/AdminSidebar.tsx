@@ -17,7 +17,7 @@ import {
 import {
   LayoutDashboard, Users, Calendar, Scissors, DollarSign,
   Crown, Activity, ClipboardList, Building2, Tag, Star, Tv2, UserCheck,
-  ChevronDown, BarChart2, LogOut, CalendarDays, TableProperties,
+  ChevronDown, BarChart2, LogOut, CalendarDays, TableProperties, Award,
 } from "lucide-react";
 import { useLocation } from "react-router-dom";
 import logoVertical from "@/assets/logo_vertical.png";
@@ -210,6 +210,7 @@ export function AdminSidebar() {
 
   const financeiroItems: NavItemDef[] = [
     perms.canViewFinance && { title: "Financeiro", url: "/admin/finance", icon: DollarSign, tourId: "sidebar-admin-finance" },
+    perms.canViewBonification && { title: "Bonificação", url: "/admin/bonification", icon: Award },
     perms.canManageCoupons && { title: "Cupons", url: "/admin/coupons", icon: Tag, tourId: "sidebar-admin-coupons" },
   ].filter(Boolean) as NavItemDef[];
 
@@ -240,7 +241,7 @@ export function AdminSidebar() {
     },
     {
       label: "Financeiro",
-      urls: ["/admin/finance", "/admin/coupons"],
+      urls: ["/admin/finance", "/admin/bonification", "/admin/coupons"],
       items: financeiroItems,
     },
     {
