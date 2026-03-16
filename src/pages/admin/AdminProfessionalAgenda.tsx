@@ -437,8 +437,8 @@ export default function AdminProfessionalAgenda() {
       {/* Kanban */}
       {loading ? (
         <div className="w-full overflow-x-auto">
-          <div className="grid grid-cols-4 gap-4 min-w-[900px]">
-            {[0,1,2,3].map(i => (
+          <div className="grid grid-cols-3 gap-4 min-w-[700px]">
+            {[0,1,2].map(i => (
               <div key={i} className="space-y-3">
                 <Skeleton className="h-10 w-full rounded-lg" />
                 {[0,1].map(j => <Skeleton key={j} className="h-44 w-full rounded-xl" />)}
@@ -448,7 +448,7 @@ export default function AdminProfessionalAgenda() {
         </div>
       ) : (
         <div className="w-full overflow-x-auto">
-          <div className="grid grid-cols-4 gap-4 min-w-[900px]">
+          <div className="grid grid-cols-3 gap-4 min-w-[700px]">
             {columns.map((col) => (
               <div key={col.key} className="space-y-3 min-w-0">
                 <div className={`flex items-center justify-between rounded-lg px-3 py-2 ${col.headerColor}`}>
