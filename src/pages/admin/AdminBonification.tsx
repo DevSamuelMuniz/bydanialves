@@ -961,38 +961,69 @@ export default function AdminBonification() {
           </DialogHeader>
           <div className="space-y-3 py-2">
             <p className="text-sm text-muted-foreground">
-              Informe as horas de cada profissional no período. Quem trabalhou mais receberá uma fatia maior do fundo.
+              Horas calculadas automaticamente dos atendimentos concluídos no período. Você pode ajustar manualmente se necessário.
             </p>
-            {professionals.length === 0 ? (
+            {hoursLoading ? (
+              <div className="space-y-2">
+                {[1, 2, 3].map((i) => (
+                  <div key={i} className="h-20 rounded-lg bg-muted animate-pulse" />
+                ))}
+              </div>
+            ) : professionals.length === 0 ? (
               <p className="text-sm text-muted-foreground text-center py-4">
                 Nenhum profissional encontrado. Cadastre profissionais primeiro.
               </p>
             ) : (
               hoursForm.map((f, i) => (
                 <div key={f.professional_id} className="rounded-lg border border-border/60 p-3 space-y-2">
-                  <div className="flex items-center gap-2">
-                    <div className="w-7 h-7 rounded-full bg-primary/10 flex items-center justify-center shrink-0">
-                      <span className="text-xs font-bold text-primary">
-                        {f.full_name.charAt(0).toUpperCase()}
-                      </span>
+                  <div className="flex items-center justify-between gap-2">
+                    <div className="flex items-center gap-2">
+                      <div className="w-7 h-7 rounded-full bg-primary/10 flex items-center justify-center shrink-0">
+                        <span className="text-xs font-bold text-primary">
+                          {f.full_name.charAt(0).toUpperCase()}
+                        </span>
+                      </div>
+                      <span className="font-medium text-sm text-foreground">{f.full_name}</span>
                     </div>
-                    <span className="font-medium text-sm text-foreground">{f.full_name}</span>
+                    {f.report_hours > 0 && (
+                      <span className="text-xs text-muted-foreground bg-muted px-2 py-0.5 rounded-full">
+                        Relatório: {f.report_hours}h
+                      </span>
+                    )}
                   </div>
                   <div className="grid grid-cols-2 gap-2">
                     <div className="space-y-1">
-                      <Label className="text-xs">Horas trabalhadas</Label>
-                      <Input
-                        type="number"
-                        min={0}
-                        step={0.5}
-                        placeholder="0"
-                        value={f.hours}
-                        onChange={(e) => {
-                          const updated = [...hoursForm];
-                          updated[i] = { ...updated[i], hours: e.target.value };
-                          setHoursForm(updated);
-                        }}
-                      />
+                      <Label className="text-xs">Horas (editável)</Label>
+                      <div className="flex gap-1.5">
+                        <Input
+                          type="number"
+                          min={0}
+                          step={0.5}
+                          placeholder="0"
+                          value={f.hours}
+                          onChange={(e) => {
+                            const updated = [...hoursForm];
+                            updated[i] = { ...updated[i], hours: e.target.value };
+                            setHoursForm(updated);
+                          }}
+                        />
+                        {f.report_hours > 0 && f.hours !== String(f.report_hours) && (
+                          <Button
+                            type="button"
+                            variant="ghost"
+                            size="icon"
+                            className="shrink-0 h-10 w-10 text-muted-foreground hover:text-primary"
+                            title="Usar valor do relatório"
+                            onClick={() => {
+                              const updated = [...hoursForm];
+                              updated[i] = { ...updated[i], hours: String(f.report_hours) };
+                              setHoursForm(updated);
+                            }}
+                          >
+                            <Timer className="w-4 h-4" />
+                          </Button>
+                        )}
+                      </div>
                     </div>
                     <div className="space-y-1">
                       <Label className="text-xs">Observação</Label>
