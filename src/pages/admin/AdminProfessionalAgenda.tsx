@@ -436,34 +436,38 @@ export default function AdminProfessionalAgenda() {
 
       {/* Kanban */}
       {loading ? (
-        <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-4 w-full">
-          {[0,1,2,3].map(i => (
-            <div key={i} className="space-y-3">
-              <Skeleton className="h-10 w-full rounded-lg" />
-              {[0,1].map(j => <Skeleton key={j} className="h-44 w-full rounded-xl" />)}
-            </div>
-          ))}
+        <div className="w-full overflow-x-auto">
+          <div className="grid grid-cols-4 gap-4 min-w-[900px]">
+            {[0,1,2,3].map(i => (
+              <div key={i} className="space-y-3">
+                <Skeleton className="h-10 w-full rounded-lg" />
+                {[0,1].map(j => <Skeleton key={j} className="h-44 w-full rounded-xl" />)}
+              </div>
+            ))}
+          </div>
         </div>
       ) : (
-        <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-4 w-full">
-          {columns.map((col) => (
-            <div key={col.key} className="space-y-3">
-              <div className={`flex items-center justify-between rounded-lg px-3 py-2 ${col.headerColor}`}>
-                <div className="flex items-center gap-2 font-semibold text-sm">
-                  {col.icon}
-                  {col.title}
+        <div className="w-full overflow-x-auto">
+          <div className="grid grid-cols-4 gap-4 min-w-[900px]">
+            {columns.map((col) => (
+              <div key={col.key} className="space-y-3 min-w-0">
+                <div className={`flex items-center justify-between rounded-lg px-3 py-2 ${col.headerColor}`}>
+                  <div className="flex items-center gap-2 font-semibold text-sm">
+                    {col.icon}
+                    {col.title}
+                  </div>
+                  <Badge variant="secondary" className="text-xs h-5 min-w-5 px-1.5">{col.items.length}</Badge>
                 </div>
-                <Badge variant="secondary" className="text-xs h-5 min-w-5 px-1.5">{col.items.length}</Badge>
+                {col.items.length === 0 ? (
+                  <div className="rounded-xl border border-dashed border-border bg-muted/20 flex items-center justify-center py-10 text-xs text-muted-foreground">
+                    {col.emptyMsg}
+                  </div>
+                ) : (
+                  col.items.map((a) => <AppointmentCard key={a.id} a={a} col={col} />)
+                )}
               </div>
-              {col.items.length === 0 ? (
-                <div className="rounded-xl border border-dashed border-border bg-muted/20 flex items-center justify-center py-10 text-xs text-muted-foreground">
-                  {col.emptyMsg}
-                </div>
-              ) : (
-                col.items.map((a) => <AppointmentCard key={a.id} a={a} col={col} />)
-              )}
-            </div>
-          ))}
+            ))}
+          </div>
         </div>
       )}
 
