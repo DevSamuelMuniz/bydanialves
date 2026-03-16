@@ -121,6 +121,8 @@ export default function AdminBonification() {
     active: true,
   });
   const [deleteRuleId, setDeleteRuleId] = useState<string | null>(null);
+  const [autoSalesLoading, setAutoSalesLoading] = useState(false);
+  const [autoSalesValue, setAutoSalesValue] = useState<number | null>(null);
 
   // Hours dialog
   const [hoursDialogOpen, setHoursDialogOpen] = useState(false);
