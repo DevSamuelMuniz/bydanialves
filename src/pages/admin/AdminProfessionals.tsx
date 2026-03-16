@@ -982,6 +982,15 @@ function ProfessionalCard({ prof, canManage, onEdit, onEditWeek, onDeleteAll, on
               </span>
             )}
           </div>
+          <Button
+            size="sm"
+            variant="outline"
+            className="mt-2 h-7 text-xs gap-1.5 w-full"
+            onClick={onViewDetails}
+          >
+            <Search className="h-3 w-3" />
+            Ver dados
+          </Button>
           
         </div>
       </div>
