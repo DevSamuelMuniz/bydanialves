@@ -337,9 +337,13 @@ export default function AdminMyAppointments() {
           )}
         </div>
 
-        {/* Date filter (only for attendant) */}
+        {/* Date filter + Agendar (only for attendant) */}
         {isAttendant && (
           <div className="flex items-center gap-2">
+            <Button size="sm" className="gap-2" onClick={openBookingDialog}>
+              <Plus className="h-4 w-4" />
+              Agendar
+            </Button>
             <Popover>
               <PopoverTrigger asChild>
                 <Button
