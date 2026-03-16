@@ -459,6 +459,58 @@ export default function AdminProfessionals() {
         )}
       </div>
 
+      {/* ── Filtros ── */}
+      {!loading && professionals.length > 0 && (
+        <div className="flex flex-wrap items-center gap-3">
+          <div className="relative flex-1 min-w-[200px]">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+            <Input
+              placeholder="Buscar por nome..."
+              value={filterSearch}
+              onChange={(e) => setFilterSearch(e.target.value)}
+              className="pl-9"
+            />
+          </div>
+
+          <Select value={filterBranch} onValueChange={setFilterBranch}>
+            <SelectTrigger className="w-[180px]">
+              <Building2 className="h-4 w-4 mr-2 text-muted-foreground shrink-0" />
+              <SelectValue placeholder="Filial" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">Todas as filiais</SelectItem>
+              {branches.map((b) => (
+                <SelectItem key={b.id} value={b.id}>{b.name}</SelectItem>
+              ))}
+              <SelectItem value="none">Sem filial</SelectItem>
+            </SelectContent>
+          </Select>
+
+          <Select value={filterLevel} onValueChange={setFilterLevel}>
+            <SelectTrigger className="w-[160px]">
+              <Users className="h-4 w-4 mr-2 text-muted-foreground shrink-0" />
+              <SelectValue placeholder="Cargo" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">Todos os cargos</SelectItem>
+              <SelectItem value="professional">Profissional</SelectItem>
+              <SelectItem value="attendant">Atendente</SelectItem>
+            </SelectContent>
+          </Select>
+
+          {hasActiveFilters && (
+            <Button variant="ghost" size="sm" onClick={clearFilters} className="gap-1.5 text-muted-foreground">
+              <X className="h-3.5 w-3.5" />
+              Limpar
+            </Button>
+          )}
+
+          <span className="text-sm text-muted-foreground ml-auto">
+            {filteredProfessionals.length} de {professionals.length}
+          </span>
+        </div>
+      )}
+
       {loading ? (
         <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
           {[...Array(4)].map((_, i) => <Skeleton key={i} className="h-64 w-full rounded-xl" />)}
@@ -476,9 +528,18 @@ export default function AdminProfessionals() {
             )}
           </CardContent>
         </Card>
+      ) : filteredProfessionals.length === 0 ? (
+        <Card className="border-dashed">
+          <CardContent className="py-12 text-center text-muted-foreground space-y-3">
+            <Search className="h-8 w-8 mx-auto opacity-30" />
+            <p className="font-medium">Nenhum profissional encontrado</p>
+            <p className="text-sm">Tente ajustar os filtros</p>
+            <Button variant="outline" size="sm" onClick={clearFilters}>Limpar filtros</Button>
+          </CardContent>
+        </Card>
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
-          {professionals.map((prof) => (
+          {filteredProfessionals.map((prof) => (
             <ProfessionalCard
               key={prof.user_id}
               prof={prof}
