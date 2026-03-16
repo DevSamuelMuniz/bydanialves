@@ -37,7 +37,7 @@ const PAYMENT_OPTIONS = [
 ];
 import {
   Clock, DollarSign, User, Scissors, CheckCircle2, XCircle,
-  PlayCircle, ListChecks, ChevronDown, ChevronUp, CalendarIcon, RotateCcw,
+  PlayCircle, ListChecks, ChevronDown, ChevronUp, CalendarIcon, RotateCcw, Plus, Search, CalendarDays,
 } from "lucide-react";
 import {
   AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
