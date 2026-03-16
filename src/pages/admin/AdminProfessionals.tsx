@@ -815,9 +815,10 @@ interface ProfCardProps {
   onEditWeek: () => void;
   onDeleteAll: () => void;
   onRemove: () => void;
+  onViewDetails: () => void;
 }
 
-function ProfessionalCard({ prof, canManage, onEdit, onEditWeek, onDeleteAll, onRemove }: ProfCardProps) {
+function ProfessionalCard({ prof, canManage, onEdit, onEditWeek, onDeleteAll, onRemove, onViewDetails }: ProfCardProps) {
   const levelLabel = prof.admin_level ? ADMIN_LEVEL_LABELS[prof.admin_level] : null;
   const levelColor = prof.admin_level ? ADMIN_LEVEL_COLORS[prof.admin_level] : "";
   const initials = prof.full_name.split(" ").map((w) => w[0]).slice(0, 2).join("").toUpperCase();
