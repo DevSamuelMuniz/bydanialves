@@ -13,8 +13,20 @@ import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
 import { useToast } from "@/hooks/use-toast";
 import { cn } from "@/lib/utils";
+
+function generateSlots(start = 8, end = 20): string[] {
+  const slots: string[] = [];
+  for (let h = start; h < end; h++) {
+    slots.push(`${String(h).padStart(2, "0")}:00`);
+    slots.push(`${String(h).padStart(2, "0")}:30`);
+  }
+  return slots;
+}
 
 const PAYMENT_OPTIONS = [
   { value: "cash",        label: "💵 Dinheiro" },
@@ -25,7 +37,7 @@ const PAYMENT_OPTIONS = [
 ];
 import {
   Clock, DollarSign, User, Scissors, CheckCircle2, XCircle,
-  PlayCircle, ListChecks, ChevronDown, ChevronUp, CalendarIcon, RotateCcw,
+  PlayCircle, ListChecks, ChevronDown, ChevronUp, CalendarIcon, RotateCcw, Plus, Search, CalendarDays,
 } from "lucide-react";
 import {
   AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
@@ -59,6 +71,66 @@ export default function AdminMyAppointments() {
   const [completeTarget, setCompleteTarget] = useState<any | null>(null);
   const [paymentMethod, setPaymentMethod] = useState("cash");
   const [completing, setCompleting] = useState(false);
+
+  // Dialog de agendamento manual
+  const [bookingOpen, setBookingOpen] = useState(false);
+  const [bookingLoading, setBookingLoading] = useState(false);
+  const [bookingForm, setBookingForm] = useState({
+    client_id: "", service_id: "", branch_id: "", date: undefined as Date | undefined, time: "", notes: "",
+  });
+  const [allClients, setAllClients] = useState<{ user_id: string; full_name: string; phone: string | null }[]>([]);
+  const [services, setServices] = useState<{ id: string; name: string; price: number; duration_minutes: number }[]>([]);
+  const [clientSearch, setClientSearch] = useState("");
+
+  const loadBookingData = async () => {
+    if (allClients.length === 0) {
+      const { data: clients } = await supabase.from("profiles").select("user_id, full_name, phone").order("full_name");
+      setAllClients(clients || []);
+    }
+    if (services.length === 0) {
+      const { data: svcs } = await supabase.from("services").select("id, name, price, duration_minutes").eq("active", true).order("name");
+      setServices(svcs || []);
+    }
+  };
+
+  const openBookingDialog = async () => {
+    setBookingForm({ client_id: "", service_id: "", branch_id: adminBranchId ?? "", date: undefined, time: "", notes: "" });
+    setClientSearch("");
+    setBookingOpen(true);
+    await loadBookingData();
+  };
+
+  const handleManualBooking = async () => {
+    const { client_id, service_id, branch_id, date, time } = bookingForm;
+    if (!client_id || !service_id || !date || !time) {
+      toast({ title: "Preencha todos os campos obrigatórios", variant: "destructive" });
+      return;
+    }
+    setBookingLoading(true);
+    const { error } = await supabase.from("appointments").insert({
+      client_id,
+      service_id,
+      professional_id: null,
+      branch_id: branch_id || null,
+      appointment_date: format(date, "yyyy-MM-dd"),
+      appointment_time: time + ":00",
+      status: "confirmed",
+      notes: bookingForm.notes || null,
+    } as any);
+    setBookingLoading(false);
+    if (error) {
+      toast({ title: "Erro ao agendar", description: error.message, variant: "destructive" });
+    } else {
+      toast({ title: "✅ Agendamento criado!", description: "Serviço agendado manualmente com sucesso." });
+      setBookingOpen(false);
+      fetchData();
+    }
+  };
+
+  const filteredClients = allClients.filter((c) =>
+    c.full_name.toLowerCase().includes(clientSearch.toLowerCase()) ||
+    (c.phone && c.phone.includes(clientSearch))
+  );
 
   const fetchData = async () => {
     if (!user) return;
@@ -265,9 +337,13 @@ export default function AdminMyAppointments() {
           )}
         </div>
 
-        {/* Date filter (only for attendant) */}
+        {/* Date filter + Agendar (only for attendant) */}
         {isAttendant && (
           <div className="flex items-center gap-2">
+            <Button size="sm" className="gap-2" onClick={openBookingDialog}>
+              <Plus className="h-4 w-4" />
+              Agendar
+            </Button>
             <Popover>
               <PopoverTrigger asChild>
                 <Button
@@ -463,6 +539,147 @@ export default function AdminMyAppointments() {
           <Button onClick={confirmComplete} disabled={completing} className="gap-1.5">
             <CheckCircle2 className="w-4 h-4" />
             {completing ? "Salvando..." : "Confirmar conclusão"}
+          </Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
+
+    {/* Dialog de Agendamento Manual (Atendente) */}
+    <Dialog open={bookingOpen} onOpenChange={setBookingOpen}>
+      <DialogContent className="max-w-lg max-h-[90vh] overflow-y-auto">
+        <DialogHeader>
+          <DialogTitle className="font-serif text-xl flex items-center gap-2">
+            <Scissors className="h-5 w-5 text-primary" />
+            Agendar Manualmente
+          </DialogTitle>
+        </DialogHeader>
+
+        <div className="space-y-4 py-2">
+          {/* Cliente */}
+          <div className="space-y-2">
+            <Label>Cliente <span className="text-destructive">*</span></Label>
+            <div className="relative">
+              <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
+              <Input
+                placeholder="Buscar cliente por nome ou telefone..."
+                value={clientSearch}
+                onChange={(e) => setClientSearch(e.target.value)}
+                className="pl-8"
+              />
+            </div>
+            {clientSearch && (
+              <div className="border border-border rounded-lg max-h-40 overflow-y-auto divide-y divide-border">
+                {filteredClients.length === 0 ? (
+                  <p className="text-xs text-muted-foreground p-3 text-center">Nenhum cliente encontrado</p>
+                ) : (
+                  filteredClients.slice(0, 8).map((c) => (
+                    <button
+                      key={c.user_id}
+                      className={`w-full text-left px-3 py-2 text-sm hover:bg-muted/50 transition-colors ${bookingForm.client_id === c.user_id ? "bg-primary/10 font-semibold" : ""}`}
+                      onClick={() => { setBookingForm((f) => ({ ...f, client_id: c.user_id })); setClientSearch(c.full_name); }}
+                    >
+                      <span>{c.full_name}</span>
+                      {c.phone && <span className="text-muted-foreground text-xs ml-2">{c.phone}</span>}
+                    </button>
+                  ))
+                )}
+              </div>
+            )}
+            {bookingForm.client_id && (
+              <p className="text-xs text-primary font-medium">
+                ✓ {allClients.find((c) => c.user_id === bookingForm.client_id)?.full_name} selecionado(a)
+              </p>
+            )}
+          </div>
+
+          {/* Serviço */}
+          <div className="space-y-2">
+            <Label>Serviço <span className="text-destructive">*</span></Label>
+            <Select value={bookingForm.service_id} onValueChange={(v) => setBookingForm((f) => ({ ...f, service_id: v }))}>
+              <SelectTrigger>
+                <SelectValue placeholder="Selecione o serviço" />
+              </SelectTrigger>
+              <SelectContent>
+                {services.map((s) => (
+                  <SelectItem key={s.id} value={s.id}>
+                    {s.name} — R$ {Number(s.price).toFixed(2)} ({s.duration_minutes}min)
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+
+          {/* Data */}
+          <div className="space-y-2">
+            <Label>Data <span className="text-destructive">*</span></Label>
+            <Popover>
+              <PopoverTrigger asChild>
+                <Button variant="outline" className="w-full justify-start font-normal">
+                  <CalendarDays className="mr-2 h-4 w-4" />
+                  {bookingForm.date ? format(bookingForm.date, "dd 'de' MMMM 'de' yyyy", { locale: ptBR }) : "Selecionar data"}
+                </Button>
+              </PopoverTrigger>
+              <PopoverContent className="w-auto p-0">
+                <Calendar
+                  mode="single"
+                  selected={bookingForm.date}
+                  onSelect={(d) => setBookingForm((f) => ({ ...f, date: d }))}
+                  locale={ptBR}
+                  disabled={(d) => d < new Date(new Date().setHours(0, 0, 0, 0))}
+                />
+              </PopoverContent>
+            </Popover>
+          </div>
+
+          {/* Horário */}
+          <div className="space-y-2">
+            <Label>Horário <span className="text-destructive">*</span></Label>
+            <div className="grid grid-cols-4 sm:grid-cols-6 gap-1.5 max-h-36 overflow-y-auto pr-1">
+              {generateSlots().filter((slot) => {
+                if (!bookingForm.date) return true;
+                const now = new Date();
+                const d = bookingForm.date;
+                const isTodaySlot =
+                  d.getFullYear() === now.getFullYear() &&
+                  d.getMonth() === now.getMonth() &&
+                  d.getDate() === now.getDate();
+                if (!isTodaySlot) return true;
+                const [h, m] = slot.split(":").map(Number);
+                return h * 60 + m > now.getHours() * 60 + now.getMinutes();
+              }).map((slot) => (
+                <button
+                  key={slot}
+                  onClick={() => setBookingForm((f) => ({ ...f, time: slot }))}
+                  className={`rounded-lg border text-xs py-1.5 font-medium transition-colors ${
+                    bookingForm.time === slot
+                      ? "bg-primary text-primary-foreground border-primary"
+                      : "border-border hover:bg-muted"
+                  }`}
+                >
+                  {slot}
+                </button>
+              ))}
+            </div>
+          </div>
+
+          {/* Observações */}
+          <div className="space-y-2">
+            <Label>Observações</Label>
+            <Textarea
+              placeholder="Observações sobre o agendamento..."
+              value={bookingForm.notes}
+              onChange={(e) => setBookingForm((f) => ({ ...f, notes: e.target.value }))}
+              rows={2}
+              className="text-sm"
+            />
+          </div>
+        </div>
+
+        <DialogFooter className="gap-2">
+          <Button variant="outline" onClick={() => setBookingOpen(false)}>Cancelar</Button>
+          <Button onClick={handleManualBooking} disabled={bookingLoading} className="gap-2">
+            <Plus className="h-4 w-4" />
+            {bookingLoading ? "Agendando..." : "Confirmar Agendamento"}
           </Button>
         </DialogFooter>
       </DialogContent>
