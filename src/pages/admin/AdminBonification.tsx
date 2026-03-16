@@ -239,8 +239,9 @@ export default function AdminBonification() {
     return new Date().toLocaleString("pt-BR", { month: "long", year: "numeric" });
   }
 
-  function openAddRule() {
+  async function openAddRule() {
     setEditingRule(null);
+    setAutoSalesValue(null);
     setRuleForm({
       percentage: "10",
       total_sales: "",
@@ -249,6 +250,23 @@ export default function AdminBonification() {
       active: true,
     });
     setRuleDialogOpen(true);
+
+    // Auto-fetch active subscriptions revenue (same as Finance tab)
+    setAutoSalesLoading(true);
+    try {
+      const { data: subs } = await supabase
+        .from("subscriptions")
+        .select("plan_id, plans(price)")
+        .eq("status", "active");
+
+      if (subs && subs.length > 0) {
+        const total = (subs as any[]).reduce((acc, s) => acc + (s.plans?.price ?? 0), 0);
+        setAutoSalesValue(total);
+        setRuleForm((f) => ({ ...f, total_sales: String(total.toFixed(2)) }));
+      }
+    } finally {
+      setAutoSalesLoading(false);
+    }
   }
 
   function openEditRule(rule: BonificationRule) {
