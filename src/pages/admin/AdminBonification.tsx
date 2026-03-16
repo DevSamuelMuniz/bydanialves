@@ -121,6 +121,8 @@ export default function AdminBonification() {
     active: true,
   });
   const [deleteRuleId, setDeleteRuleId] = useState<string | null>(null);
+  const [autoSalesLoading, setAutoSalesLoading] = useState(false);
+  const [autoSalesValue, setAutoSalesValue] = useState<number | null>(null);
 
   // Hours dialog
   const [hoursDialogOpen, setHoursDialogOpen] = useState(false);
@@ -237,8 +239,9 @@ export default function AdminBonification() {
     return new Date().toLocaleString("pt-BR", { month: "long", year: "numeric" });
   }
 
-  function openAddRule() {
+  async function openAddRule() {
     setEditingRule(null);
+    setAutoSalesValue(null);
     setRuleForm({
       percentage: "10",
       total_sales: "",
@@ -247,10 +250,28 @@ export default function AdminBonification() {
       active: true,
     });
     setRuleDialogOpen(true);
+
+    // Auto-fetch active subscriptions revenue (same as Finance tab)
+    setAutoSalesLoading(true);
+    try {
+      const { data: subs } = await supabase
+        .from("subscriptions")
+        .select("plan_id, plans(price)")
+        .eq("status", "active");
+
+      if (subs && subs.length > 0) {
+        const total = (subs as any[]).reduce((acc, s) => acc + (s.plans?.price ?? 0), 0);
+        setAutoSalesValue(total);
+        setRuleForm((f) => ({ ...f, total_sales: String(total.toFixed(2)) }));
+      }
+    } finally {
+      setAutoSalesLoading(false);
+    }
   }
 
   function openEditRule(rule: BonificationRule) {
     setEditingRule(rule);
+    setAutoSalesValue(null);
     setRuleForm({
       percentage: String(rule.percentage),
       total_sales: rule.total_sales ? String(rule.total_sales) : "",
@@ -891,7 +912,17 @@ export default function AdminBonification() {
               />
             </div>
             <div className="space-y-2">
-              <Label>Total de Vendas de Planos no Mês (R$)</Label>
+              <div className="flex items-center justify-between gap-2">
+                <Label>Total de Assinaturas Ativas (R$)</Label>
+                {autoSalesLoading && (
+                  <span className="text-xs text-muted-foreground animate-pulse">Buscando…</span>
+                )}
+                {!autoSalesLoading && autoSalesValue !== null && !editingRule && (
+                  <span className="text-xs bg-primary/10 text-primary px-2 py-0.5 rounded-full font-medium">
+                    ✓ Preenchido automaticamente do financeiro
+                  </span>
+                )}
+              </div>
               <Input
                 type="number"
                 min={0}
@@ -901,7 +932,7 @@ export default function AdminBonification() {
                 placeholder="ex: 5000.00"
               />
               <p className="text-xs text-muted-foreground">
-                Valor total arrecadado com planos neste período
+                Soma das assinaturas ativas · 10% será o fundo de bonificação
               </p>
             </div>
             <div className="space-y-2">
