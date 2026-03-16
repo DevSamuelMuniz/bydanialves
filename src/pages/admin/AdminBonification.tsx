@@ -44,9 +44,11 @@ import {
   Clock,
   DollarSign,
   Users,
-  BookOpen,
   History,
   TrendingUp,
+  Calculator,
+  Timer,
+  Sparkles,
 } from "lucide-react";
 
 const fmt = (n: number) =>
@@ -54,28 +56,31 @@ const fmt = (n: number) =>
 
 // ─── Types ───────────────────────────────────────────────────────────────────
 
-interface Plan {
-  id: string;
-  name: string;
-  price: number;
-  active: boolean;
-}
-
 interface BonificationRule {
   id: string;
-  plan_id: string;
   percentage: number;
   description: string | null;
   active: boolean;
+  is_global: boolean;
+  reference_period: string | null;
+  total_sales: number | null;
   created_at: string;
-  plans?: Plan;
 }
 
 interface Professional {
   user_id: string;
   full_name: string;
   avatar_url: string | null;
-  plans: { plan_id: string; plan_name: string; plan_price: number }[];
+}
+
+interface ProfessionalHours {
+  id: string;
+  professional_id: string;
+  reference_period: string;
+  hours_worked: number;
+  rule_id: string | null;
+  notes: string | null;
+  profiles?: { full_name: string; avatar_url: string | null };
 }
 
 interface BonificationPayment {
@@ -99,9 +104,9 @@ interface BonificationPayment {
 export default function AdminBonification() {
   const perms = useAdminPermissions();
 
-  const [plans, setPlans] = useState<Plan[]>([]);
   const [rules, setRules] = useState<BonificationRule[]>([]);
   const [professionals, setProfessionals] = useState<Professional[]>([]);
+  const [allHours, setAllHours] = useState<ProfessionalHours[]>([]);
   const [payments, setPayments] = useState<BonificationPayment[]>([]);
   const [loading, setLoading] = useState(true);
 
@@ -109,22 +114,24 @@ export default function AdminBonification() {
   const [ruleDialogOpen, setRuleDialogOpen] = useState(false);
   const [editingRule, setEditingRule] = useState<BonificationRule | null>(null);
   const [ruleForm, setRuleForm] = useState({
-    plan_id: "",
     percentage: "10",
+    total_sales: "",
+    reference_period: "",
     description: "",
     active: true,
   });
   const [deleteRuleId, setDeleteRuleId] = useState<string | null>(null);
 
-  // Payment dialog
-  const [paymentDialogOpen, setPaymentDialogOpen] = useState(false);
-  const [selectedProfessional, setSelectedProfessional] = useState<Professional | null>(null);
-  const [paymentForm, setPaymentForm] = useState({
-    plan_id: "",
-    hours_worked: "",
-    reference_period: "",
-    notes: "",
-  });
+  // Hours dialog
+  const [hoursDialogOpen, setHoursDialogOpen] = useState(false);
+  const [hoursRuleId, setHoursRuleId] = useState<string | null>(null);
+  const [hoursForm, setHoursForm] = useState<
+    { professional_id: string; full_name: string; hours: string; notes: string }[]
+  >([]);
+
+  // Distribute dialog
+  const [distributeDialogOpen, setDistributeDialogOpen] = useState(false);
+  const [distributeRuleId, setDistributeRuleId] = useState<string | null>(null);
 
   // History filters
   const [filterStatus, setFilterStatus] = useState("all");
@@ -134,57 +141,62 @@ export default function AdminBonification() {
 
   async function fetchAll() {
     setLoading(true);
-    const [plansRes, rulesRes, ppRes, paymentsRes, profilesRes] = await Promise.all([
-      supabase.from("plans").select("id,name,price,active").order("name"),
+    const [rulesRes, profRes, hoursRes, paymentsRes] = await Promise.all([
       supabase
         .from("bonification_rules" as any)
-        .select("*, plans(id,name,price,active)")
+        .select("id,percentage,description,active,is_global,reference_period,total_sales,created_at")
         .order("created_at", { ascending: false }),
       supabase
-        .from("plan_professionals")
-        .select("professional_id, plan_id, plans(id,name,price,active)"),
+        .from("user_roles")
+        .select("user_id, profiles(user_id,full_name,avatar_url)")
+        .eq("role", "admin")
+        .eq("admin_level", "professional"),
+      supabase
+        .from("professional_hours" as any)
+        .select("*")
+        .order("created_at", { ascending: false }),
       supabase
         .from("bonification_payments" as any)
         .select("*, plans(name)")
         .order("created_at", { ascending: false }),
-      supabase.from("profiles").select("user_id,full_name,avatar_url"),
     ]);
 
-    if (plansRes.data) setPlans(plansRes.data as Plan[]);
     if (rulesRes.data) setRules(rulesRes.data as unknown as BonificationRule[]);
 
-    // Group professionals — join profiles manually (no FK defined on plan_professionals)
-    if (ppRes.data && profilesRes.data) {
-      const profileMap = new Map(
-        (profilesRes.data as any[]).map((p) => [p.user_id, p])
-      );
-      const map = new Map<string, Professional>();
-      for (const row of ppRes.data as any[]) {
-        const uid = row.professional_id;
-        const prof = profileMap.get(uid);
-        if (!map.has(uid)) {
-          map.set(uid, {
-            user_id: uid,
-            full_name: prof?.full_name ?? "—",
-            avatar_url: prof?.avatar_url ?? null,
-            plans: [],
-          });
-        }
-        if (row.plans) {
-          map.get(uid)!.plans.push({
-            plan_id: row.plan_id,
-            plan_name: row.plans.name,
-            plan_price: row.plans.price,
-          });
-        }
-      }
-      setProfessionals(Array.from(map.values()));
+    if (profRes.data) {
+      const profs: Professional[] = (profRes.data as any[])
+        .map((r) => r.profiles)
+        .filter(Boolean)
+        .map((p: any) => ({
+          user_id: p.user_id,
+          full_name: p.full_name ?? "—",
+          avatar_url: p.avatar_url ?? null,
+        }));
+      setProfessionals(profs);
     }
 
-    // Enrich payments with profile data manually
-    if (paymentsRes.data && profilesRes.data) {
+    // Enrich hours with profile names
+    if (hoursRes.data && profRes.data) {
       const profileMap = new Map(
-        (profilesRes.data as any[]).map((p) => [p.user_id, p])
+        (profRes.data as any[])
+          .map((r) => r.profiles)
+          .filter(Boolean)
+          .map((p: any) => [p.user_id, p])
+      );
+      const enriched = (hoursRes.data as any[]).map((h) => ({
+        ...h,
+        profiles: profileMap.get(h.professional_id) ?? null,
+      }));
+      setAllHours(enriched as unknown as ProfessionalHours[]);
+    }
+
+    // Enrich payments with profile
+    if (paymentsRes.data) {
+      const profileMap = new Map(
+        ((profRes.data ?? []) as any[])
+          .map((r) => r.profiles)
+          .filter(Boolean)
+          .map((p: any) => [p.user_id, p])
       );
       const enriched = (paymentsRes.data as any[]).map((pay) => ({
         ...pay,
@@ -192,6 +204,7 @@ export default function AdminBonification() {
       }));
       setPayments(enriched as unknown as BonificationPayment[]);
     }
+
     setLoading(false);
   }
 
@@ -203,8 +216,8 @@ export default function AdminBonification() {
 
   const kpis = useMemo(() => {
     const pool = rules
-      .filter((r) => r.active && r.plans)
-      .reduce((acc, r) => acc + (r.plans!.price * r.percentage) / 100, 0);
+      .filter((r) => r.active && r.total_sales)
+      .reduce((acc, r) => acc + ((r.total_sales ?? 0) * r.percentage) / 100, 0);
 
     const pending = payments
       .filter((p) => p.status === "pending")
@@ -219,17 +232,28 @@ export default function AdminBonification() {
 
   // ─── Rule helpers ────────────────────────────────────────────────────────────
 
+  function getCurrentPeriod() {
+    return new Date().toLocaleString("pt-BR", { month: "long", year: "numeric" });
+  }
+
   function openAddRule() {
     setEditingRule(null);
-    setRuleForm({ plan_id: "", percentage: "10", description: "", active: true });
+    setRuleForm({
+      percentage: "10",
+      total_sales: "",
+      reference_period: getCurrentPeriod(),
+      description: "",
+      active: true,
+    });
     setRuleDialogOpen(true);
   }
 
   function openEditRule(rule: BonificationRule) {
     setEditingRule(rule);
     setRuleForm({
-      plan_id: rule.plan_id,
       percentage: String(rule.percentage),
+      total_sales: rule.total_sales ? String(rule.total_sales) : "",
+      reference_period: rule.reference_period ?? "",
       description: rule.description ?? "",
       active: rule.active,
     });
@@ -237,17 +261,21 @@ export default function AdminBonification() {
   }
 
   async function saveRule() {
-    if (!ruleForm.plan_id)
-      return toast({ title: "Selecione um plano", variant: "destructive" });
     const pct = parseFloat(ruleForm.percentage);
     if (isNaN(pct) || pct <= 0 || pct > 100)
       return toast({ title: "Porcentagem inválida (1-100)", variant: "destructive" });
+    if (!ruleForm.reference_period.trim())
+      return toast({ title: "Informe o período de referência", variant: "destructive" });
 
-    const payload = {
-      plan_id: ruleForm.plan_id,
+    const totalSales = parseFloat(ruleForm.total_sales || "0") || 0;
+
+    const payload: any = {
       percentage: pct,
+      total_sales: totalSales,
+      reference_period: ruleForm.reference_period.trim(),
       description: ruleForm.description || null,
       active: ruleForm.active,
+      is_global: true,
     };
 
     if (editingRule) {
@@ -281,60 +309,116 @@ export default function AdminBonification() {
     fetchAll();
   }
 
-  // ─── Payment helpers ─────────────────────────────────────────────────────────
+  // ─── Hours helpers ───────────────────────────────────────────────────────────
 
-  function openPaymentDialog(prof: Professional) {
-    setSelectedProfessional(prof);
-    setPaymentForm({
-      plan_id: prof.plans[0]?.plan_id ?? "",
-      hours_worked: "",
-      reference_period: new Date().toLocaleString("pt-BR", {
-        month: "long",
-        year: "numeric",
-      }),
-      notes: "",
+  function openHoursDialog(ruleId: string) {
+    setHoursRuleId(ruleId);
+    const rule = rules.find((r) => r.id === ruleId);
+    const period = rule?.reference_period ?? getCurrentPeriod();
+    // Pre-fill existing hours for this period
+    const form = professionals.map((prof) => {
+      const existing = allHours.find(
+        (h) => h.professional_id === prof.user_id && h.rule_id === ruleId
+      );
+      return {
+        professional_id: prof.user_id,
+        full_name: prof.full_name,
+        hours: existing ? String(existing.hours_worked) : "",
+        notes: existing?.notes ?? "",
+      };
     });
-    setPaymentDialogOpen(true);
+    setHoursForm(form);
+    setHoursDialogOpen(true);
   }
 
-  async function savePayment() {
-    if (!selectedProfessional || !paymentForm.plan_id)
-      return toast({ title: "Selecione um plano", variant: "destructive" });
-    if (!paymentForm.reference_period.trim())
-      return toast({ title: "Informe o período de referência", variant: "destructive" });
+  async function saveHours() {
+    if (!hoursRuleId) return;
+    const rule = rules.find((r) => r.id === hoursRuleId);
+    const period = rule?.reference_period ?? getCurrentPeriod();
 
-    const rule = rules.find(
-      (r) => r.plan_id === paymentForm.plan_id && r.active
+    const toSave = hoursForm.filter((f) => f.hours.trim() !== "" && parseFloat(f.hours) >= 0);
+    if (toSave.length === 0)
+      return toast({ title: "Informe pelo menos 1 hora", variant: "destructive" });
+
+    const upserts = toSave.map((f) => ({
+      professional_id: f.professional_id,
+      reference_period: period,
+      hours_worked: parseFloat(f.hours) || 0,
+      rule_id: hoursRuleId,
+      notes: f.notes || null,
+    }));
+
+    const { error } = await supabase
+      .from("professional_hours" as any)
+      .upsert(upserts, { onConflict: "professional_id,reference_period" });
+
+    if (error)
+      return toast({ title: "Erro ao salvar horas", description: error.message, variant: "destructive" });
+
+    toast({ title: "Horas salvas com sucesso!" });
+    setHoursDialogOpen(false);
+    fetchAll();
+  }
+
+  // ─── Distribute bonus ────────────────────────────────────────────────────────
+
+  function openDistribute(ruleId: string) {
+    setDistributeRuleId(ruleId);
+    setDistributeDialogOpen(true);
+  }
+
+  async function distributeBonus() {
+    if (!distributeRuleId) return;
+    const rule = rules.find((r) => r.id === distributeRuleId);
+    if (!rule) return;
+
+    const period = rule.reference_period ?? getCurrentPeriod();
+    const totalSales = rule.total_sales ?? 0;
+    const bonusPool = (totalSales * rule.percentage) / 100;
+
+    // Get hours for this rule
+    const hoursForRule = allHours.filter((h) => h.rule_id === distributeRuleId);
+    const totalHours = hoursForRule.reduce((a, h) => a + h.hours_worked, 0);
+
+    if (totalHours === 0)
+      return toast({ title: "Nenhuma hora registrada para este período", variant: "destructive" });
+
+    if (bonusPool === 0)
+      return toast({ title: "Valor total de vendas não informado na regra", variant: "destructive" });
+
+    // Check if payments already exist for this period+rule
+    const existing = payments.filter(
+      (p) => p.rule_id === distributeRuleId && p.reference_period === period
     );
-    const plan = selectedProfessional.plans.find(
-      (p) => p.plan_id === paymentForm.plan_id
-    );
-    if (!plan) return;
+    if (existing.length > 0)
+      return toast({ title: "Distribuição já realizada para este período", variant: "destructive" });
 
-    const pct = rule ? rule.percentage : 10;
-    const bonus = (plan.plan_price * pct) / 100;
-
-    const payload = {
-      professional_id: selectedProfessional.user_id,
-      plan_id: paymentForm.plan_id,
-      rule_id: rule?.id ?? null,
-      hours_worked: parseFloat(paymentForm.hours_worked) || 0,
-      bonus_amount: bonus,
-      reference_period: paymentForm.reference_period.trim(),
-      notes: paymentForm.notes || null,
-      status: "pending",
-    };
+    const newPayments = hoursForRule
+      .filter((h) => h.hours_worked > 0)
+      .map((h) => ({
+        professional_id: h.professional_id,
+        rule_id: distributeRuleId,
+        plan_id: null,
+        hours_worked: h.hours_worked,
+        bonus_amount: parseFloat(((h.hours_worked / totalHours) * bonusPool).toFixed(2)),
+        reference_period: period,
+        status: "pending",
+        notes: `Distribuição proporcional: ${h.hours_worked}h de ${totalHours}h totais`,
+      }));
 
     const { error } = await supabase
       .from("bonification_payments" as any)
-      .insert(payload);
-    if (error)
-      return toast({ title: "Erro ao registrar", description: error.message, variant: "destructive" });
+      .insert(newPayments);
 
-    toast({ title: "Lançamento registrado!" });
-    setPaymentDialogOpen(false);
+    if (error)
+      return toast({ title: "Erro ao distribuir", description: error.message, variant: "destructive" });
+
+    toast({ title: `Bônus distribuído para ${newPayments.length} profissional(is)!` });
+    setDistributeDialogOpen(false);
     fetchAll();
   }
+
+  // ─── Mark paid ───────────────────────────────────────────────────────────────
 
   async function markAsPaid(id: string) {
     const { error } = await supabase
@@ -352,10 +436,7 @@ export default function AdminBonification() {
   const filteredPayments = useMemo(() => {
     return payments.filter((p) => {
       if (filterStatus !== "all" && p.status !== filterStatus) return false;
-      if (
-        filterPeriod &&
-        !p.reference_period.toLowerCase().includes(filterPeriod.toLowerCase())
-      )
+      if (filterPeriod && !p.reference_period.toLowerCase().includes(filterPeriod.toLowerCase()))
         return false;
       return true;
     });
@@ -377,7 +458,7 @@ export default function AdminBonification() {
         <div>
           <h1 className="text-2xl font-bold text-foreground">Bonificação</h1>
           <p className="text-sm text-muted-foreground">
-            Gerencie regras, profissionais e pagamentos de bonificação
+            Distribua o fundo de bônus proporcionalmente às horas trabalhadas
           </p>
         </div>
       </div>
@@ -419,14 +500,30 @@ export default function AdminBonification() {
         </Card>
       </div>
 
+      {/* How it works banner */}
+      <Card className="border-primary/20 bg-primary/5">
+        <CardContent className="p-4 flex items-start gap-3">
+          <Sparkles className="w-5 h-5 text-primary mt-0.5 shrink-0" />
+          <div className="text-sm text-foreground/80 space-y-1">
+            <p className="font-semibold text-foreground">Como funciona o modelo de distribuição</p>
+            <ol className="list-decimal list-inside space-y-0.5 text-muted-foreground">
+              <li>CEO cria uma <strong>regra mensal</strong> com o valor total de vendas e a % de bônus</li>
+              <li>Registra as <strong>horas trabalhadas</strong> de cada profissional no período</li>
+              <li>Clica em <strong>Distribuir</strong> — o sistema divide proporcionalmente às horas</li>
+              <li>Quem trabalhou mais, recebe mais do fundo</li>
+            </ol>
+          </div>
+        </CardContent>
+      </Card>
+
       {/* Tabs */}
       <Tabs defaultValue="rules">
         <TabsList className="bg-muted/50">
           <TabsTrigger value="rules" className="gap-2">
-            <BookOpen className="w-4 h-4" /> Regras
+            <Calculator className="w-4 h-4" /> Regras
           </TabsTrigger>
-          <TabsTrigger value="professionals" className="gap-2">
-            <Users className="w-4 h-4" /> Profissionais
+          <TabsTrigger value="hours" className="gap-2">
+            <Timer className="w-4 h-4" /> Horas Trabalhadas
           </TabsTrigger>
           <TabsTrigger value="history" className="gap-2">
             <History className="w-4 h-4" /> Histórico
@@ -437,185 +534,181 @@ export default function AdminBonification() {
         <TabsContent value="rules" className="space-y-4 mt-4">
           <div className="flex justify-end">
             <Button onClick={openAddRule} size="sm" className="gap-2">
-              <Plus className="w-4 h-4" /> Nova Regra
+              <Plus className="w-4 h-4" /> Nova Regra Mensal
             </Button>
           </div>
 
           {loading ? (
             <div className="space-y-3">
-              {[1, 2, 3].map((i) => (
-                <div key={i} className="h-20 rounded-lg bg-muted animate-pulse" />
+              {[1, 2].map((i) => (
+                <div key={i} className="h-28 rounded-lg bg-muted animate-pulse" />
               ))}
             </div>
           ) : rules.length === 0 ? (
             <Card className="border-dashed border-border/60">
               <CardContent className="p-10 text-center">
-                <BookOpen className="w-10 h-10 mx-auto mb-3 text-muted-foreground/50" />
+                <Calculator className="w-10 h-10 mx-auto mb-3 text-muted-foreground/50" />
                 <p className="text-muted-foreground">Nenhuma regra criada.</p>
                 <p className="text-sm text-muted-foreground/70">
-                  Crie regras para definir as porcentagens de bonificação por plano.
+                  Crie uma regra mensal para iniciar a distribuição de bônus.
                 </p>
               </CardContent>
             </Card>
           ) : (
             <div className="space-y-3">
-              {rules.map((rule) => (
-                <Card key={rule.id} className="border-border/60">
-                  <CardContent className="p-4 flex items-center justify-between gap-4">
-                    <div className="flex items-center gap-4 min-w-0">
-                      <div className="p-2 rounded-lg bg-primary/10 shrink-0">
-                        <DollarSign className="w-5 h-5 text-primary" />
-                      </div>
-                      <div className="min-w-0">
-                        <div className="flex items-center gap-2 flex-wrap">
-                          <span className="font-semibold text-foreground truncate">
-                            {rule.plans?.name ?? "—"}
-                          </span>
-                          <Badge
-                            variant={rule.active ? "default" : "secondary"}
-                            className="text-xs"
-                          >
-                            {rule.active ? "Ativa" : "Inativa"}
-                          </Badge>
+              {rules.map((rule) => {
+                const pool = ((rule.total_sales ?? 0) * rule.percentage) / 100;
+                const hoursForRule = allHours.filter((h) => h.rule_id === rule.id);
+                const totalHours = hoursForRule.reduce((a, h) => a + h.hours_worked, 0);
+                const alreadyDistributed = payments.some(
+                  (p) => p.rule_id === rule.id && p.reference_period === rule.reference_period
+                );
+                return (
+                  <Card key={rule.id} className="border-border/60">
+                    <CardContent className="p-4 space-y-3">
+                      <div className="flex items-start justify-between gap-4 flex-wrap">
+                        <div className="flex items-center gap-3 min-w-0">
+                          <div className="p-2 rounded-lg bg-primary/10 shrink-0">
+                            <DollarSign className="w-5 h-5 text-primary" />
+                          </div>
+                          <div className="min-w-0">
+                            <div className="flex items-center gap-2 flex-wrap">
+                              <span className="font-semibold text-foreground">
+                                {rule.reference_period ?? "—"}
+                              </span>
+                              <Badge variant={rule.active ? "default" : "secondary"} className="text-xs">
+                                {rule.active ? "Ativa" : "Inativa"}
+                              </Badge>
+                              {alreadyDistributed && (
+                                <Badge className="text-xs bg-green-500/20 text-green-700 border-green-500/30">
+                                  Distribuído
+                                </Badge>
+                              )}
+                            </div>
+                            <p className="text-sm text-muted-foreground mt-0.5">
+                              Vendas: <span className="font-medium text-foreground">{fmt(rule.total_sales ?? 0)}</span>
+                              {" · "}
+                              <span className="font-medium text-primary">{rule.percentage}%</span>
+                              {" = fundo "}
+                              <span className="font-bold text-primary">{fmt(pool)}</span>
+                            </p>
+                            {rule.description && (
+                              <p className="text-xs text-muted-foreground/70 mt-0.5">{rule.description}</p>
+                            )}
+                            <p className="text-xs text-muted-foreground/70 mt-0.5">
+                              {totalHours > 0
+                                ? `${totalHours}h totais registradas com ${hoursForRule.length} profissional(is)`
+                                : "Nenhuma hora registrada ainda"}
+                            </p>
+                          </div>
                         </div>
-                        <p className="text-sm text-muted-foreground mt-0.5">
-                          <span className="font-medium text-primary">
-                            {rule.percentage}%
-                          </span>
-                          {rule.plans && (
-                            <span className="ml-2 text-muted-foreground/70">
-                              → {fmt((rule.plans.price * rule.percentage) / 100)} por
-                              assinatura
-                            </span>
+                        <div className="flex items-center gap-2 shrink-0 flex-wrap">
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            className="gap-1"
+                            onClick={() => openHoursDialog(rule.id)}
+                          >
+                            <Timer className="w-4 h-4" /> Registrar Horas
+                          </Button>
+                          {!alreadyDistributed && totalHours > 0 && pool > 0 && (
+                            <Button
+                              size="sm"
+                              className="gap-1"
+                              onClick={() => openDistribute(rule.id)}
+                            >
+                              <Sparkles className="w-4 h-4" /> Distribuir
+                            </Button>
                           )}
-                        </p>
-                        {rule.description && (
-                          <p className="text-xs text-muted-foreground/70 mt-0.5 truncate">
-                            {rule.description}
-                          </p>
-                        )}
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            onClick={() => openEditRule(rule)}
+                          >
+                            <Pencil className="w-4 h-4" />
+                          </Button>
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            className="text-destructive hover:text-destructive"
+                            onClick={() => setDeleteRuleId(rule.id)}
+                          >
+                            <Trash2 className="w-4 h-4" />
+                          </Button>
+                        </div>
                       </div>
-                    </div>
-                    <div className="flex items-center gap-2 shrink-0">
-                      <Button
-                        variant="ghost"
-                        size="icon"
-                        onClick={() => openEditRule(rule)}
-                      >
-                        <Pencil className="w-4 h-4" />
-                      </Button>
-                      <Button
-                        variant="ghost"
-                        size="icon"
-                        className="text-destructive hover:text-destructive"
-                        onClick={() => setDeleteRuleId(rule.id)}
-                      >
-                        <Trash2 className="w-4 h-4" />
-                      </Button>
-                    </div>
-                  </CardContent>
-                </Card>
-              ))}
+                    </CardContent>
+                  </Card>
+                );
+              })}
             </div>
           )}
         </TabsContent>
 
-        {/* ── Tab 2: Profissionais ── */}
-        <TabsContent value="professionals" className="space-y-4 mt-4">
+        {/* ── Tab 2: Horas Trabalhadas ── */}
+        <TabsContent value="hours" className="space-y-4 mt-4">
           {loading ? (
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              {[1, 2, 3, 4].map((i) => (
-                <div key={i} className="h-40 rounded-lg bg-muted animate-pulse" />
+            <div className="space-y-3">
+              {[1, 2, 3].map((i) => (
+                <div key={i} className="h-16 rounded-lg bg-muted animate-pulse" />
               ))}
             </div>
-          ) : professionals.length === 0 ? (
+          ) : allHours.length === 0 ? (
             <Card className="border-dashed border-border/60">
               <CardContent className="p-10 text-center">
-                <Users className="w-10 h-10 mx-auto mb-3 text-muted-foreground/50" />
-                <p className="text-muted-foreground">
-                  Nenhum profissional vinculado a planos.
+                <Timer className="w-10 h-10 mx-auto mb-3 text-muted-foreground/50" />
+                <p className="text-muted-foreground">Nenhuma hora registrada.</p>
+                <p className="text-sm text-muted-foreground/70">
+                  Vá em Regras e clique em "Registrar Horas" para começar.
                 </p>
               </CardContent>
             </Card>
           ) : (
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              {professionals.map((prof) => {
-                const totalBonus = prof.plans.reduce((acc, p) => {
-                  const rule = rules.find(
-                    (r) => r.plan_id === p.plan_id && r.active
-                  );
-                  const pct = rule ? rule.percentage : 10;
-                  return acc + (p.plan_price * pct) / 100;
-                }, 0);
-
+            <div className="space-y-3">
+              {/* Group by period */}
+              {Array.from(new Set(allHours.map((h) => h.reference_period))).map((period) => {
+                const periodHours = allHours.filter((h) => h.reference_period === period);
+                const totalH = periodHours.reduce((a, h) => a + h.hours_worked, 0);
                 return (
-                  <Card key={prof.user_id} className="border-border/60">
-                    <CardContent className="p-4 space-y-3">
-                      <div className="flex items-center justify-between gap-3">
-                        <div className="flex items-center gap-3 min-w-0">
-                          {prof.avatar_url ? (
-                            <img
-                              src={prof.avatar_url}
-                              alt={prof.full_name}
-                              className="w-10 h-10 rounded-full object-cover shrink-0"
-                            />
-                          ) : (
-                            <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center shrink-0">
-                              <span className="text-sm font-bold text-primary">
-                                {prof.full_name.charAt(0).toUpperCase()}
-                              </span>
+                  <div key={period} className="space-y-2">
+                    <div className="flex items-center gap-2">
+                      <span className="text-sm font-semibold text-foreground capitalize">{period}</span>
+                      <span className="text-xs text-muted-foreground">— {totalH}h totais</span>
+                    </div>
+                    {periodHours.map((h) => (
+                      <Card key={h.id} className="border-border/60">
+                        <CardContent className="p-3 flex items-center justify-between gap-3">
+                          <div className="flex items-center gap-3 min-w-0">
+                            {h.profiles?.avatar_url ? (
+                              <img
+                                src={h.profiles.avatar_url}
+                                alt={h.profiles.full_name}
+                                className="w-8 h-8 rounded-full object-cover shrink-0"
+                              />
+                            ) : (
+                              <div className="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center shrink-0">
+                                <span className="text-xs font-bold text-primary">
+                                  {(h.profiles?.full_name ?? "?").charAt(0).toUpperCase()}
+                                </span>
+                              </div>
+                            )}
+                            <div>
+                              <p className="font-medium text-foreground text-sm">{h.profiles?.full_name ?? "—"}</p>
+                              {h.notes && <p className="text-xs text-muted-foreground truncate">{h.notes}</p>}
                             </div>
-                          )}
-                          <div className="min-w-0">
-                            <p className="font-semibold text-foreground truncate">
-                              {prof.full_name}
-                            </p>
-                            <p className="text-xs text-muted-foreground">
-                              {prof.plans.length} plano(s) vinculado(s)
-                            </p>
                           </div>
-                        </div>
-                        <div className="text-right shrink-0">
-                          <p className="text-xs text-muted-foreground">Bônus total</p>
-                          <p className="text-lg font-bold text-primary">
-                            {fmt(totalBonus)}
-                          </p>
-                        </div>
-                      </div>
-
-                      <div className="space-y-1">
-                        {prof.plans.map((p) => {
-                          const rule = rules.find(
-                            (r) => r.plan_id === p.plan_id && r.active
-                          );
-                          const pct = rule ? rule.percentage : 10;
-                          const bonus = (p.plan_price * pct) / 100;
-                          return (
-                            <div
-                              key={p.plan_id}
-                              className="flex items-center justify-between text-sm rounded-md bg-muted/40 px-3 py-1.5"
-                            >
-                              <span className="text-foreground/80 truncate">
-                                {p.plan_name}
-                              </span>
-                              <span className="font-medium text-primary ml-2 shrink-0">
-                                {pct}% → {fmt(bonus)}
-                              </span>
-                            </div>
-                          );
-                        })}
-                      </div>
-
-                      <Button
-                        size="sm"
-                        variant="outline"
-                        className="w-full gap-2"
-                        onClick={() => openPaymentDialog(prof)}
-                      >
-                        <Plus className="w-4 h-4" /> Registrar Lançamento
-                      </Button>
-                    </CardContent>
-                  </Card>
+                          <div className="text-right shrink-0">
+                            <p className="font-bold text-primary">{h.hours_worked}h</p>
+                            {totalH > 0 && (
+                              <p className="text-xs text-muted-foreground">
+                                {((h.hours_worked / totalH) * 100).toFixed(1)}% do total
+                              </p>
+                            )}
+                          </div>
+                        </CardContent>
+                      </Card>
+                    ))}
+                  </div>
                 );
               })}
             </div>
@@ -680,25 +773,20 @@ export default function AdminBonification() {
                           {p.profiles?.full_name ?? "—"}
                         </p>
                         <p className="text-xs text-muted-foreground">
-                          {p.plans?.name ?? "—"} · {p.reference_period}
-                          {p.hours_worked > 0 && ` · ${p.hours_worked}h`}
+                          {p.reference_period}
+                          {p.hours_worked > 0 && ` · ${p.hours_worked}h trabalhadas`}
                         </p>
                         {p.notes && (
-                          <p className="text-xs text-muted-foreground/60 truncate">
-                            {p.notes}
-                          </p>
+                          <p className="text-xs text-muted-foreground/60 truncate">{p.notes}</p>
                         )}
                       </div>
                     </div>
                     <div className="flex items-center gap-3 shrink-0 flex-wrap justify-end">
                       <div className="text-right">
-                        <p className="font-bold text-foreground">
-                          {fmt(p.bonus_amount)}
-                        </p>
+                        <p className="font-bold text-foreground">{fmt(p.bonus_amount)}</p>
                         {p.paid_at && (
                           <p className="text-xs text-muted-foreground">
-                            Pago em{" "}
-                            {new Date(p.paid_at).toLocaleDateString("pt-BR")}
+                            Pago em {new Date(p.paid_at).toLocaleDateString("pt-BR")}
                           </p>
                         )}
                       </div>
@@ -740,72 +828,61 @@ export default function AdminBonification() {
           </DialogHeader>
           <div className="space-y-4 py-2">
             <div className="space-y-2">
-              <Label>Plano</Label>
-              <Select
-                value={ruleForm.plan_id}
-                onValueChange={(v) =>
-                  setRuleForm((f) => ({ ...f, plan_id: v }))
-                }
-              >
-                <SelectTrigger>
-                  <SelectValue placeholder="Selecione um plano…" />
-                </SelectTrigger>
-                <SelectContent>
-                  {plans
-                    .filter((p) => p.active)
-                    .map((p) => (
-                      <SelectItem key={p.id} value={p.id}>
-                        {p.name} — {fmt(p.price)}
-                      </SelectItem>
-                    ))}
-                </SelectContent>
-              </Select>
+              <Label>Período de Referência</Label>
+              <Input
+                value={ruleForm.reference_period}
+                onChange={(e) => setRuleForm((f) => ({ ...f, reference_period: e.target.value }))}
+                placeholder="ex: Março 2026"
+              />
             </div>
             <div className="space-y-2">
-              <Label>Porcentagem de Bonificação (%)</Label>
+              <Label>Total de Vendas de Planos no Mês (R$)</Label>
+              <Input
+                type="number"
+                min={0}
+                step={0.01}
+                value={ruleForm.total_sales}
+                onChange={(e) => setRuleForm((f) => ({ ...f, total_sales: e.target.value }))}
+                placeholder="ex: 5000.00"
+              />
+              <p className="text-xs text-muted-foreground">
+                Valor total arrecadado com planos neste período
+              </p>
+            </div>
+            <div className="space-y-2">
+              <Label>Porcentagem de Bônus (%)</Label>
               <Input
                 type="number"
                 min={0.1}
                 max={100}
                 step={0.1}
                 value={ruleForm.percentage}
-                onChange={(e) =>
-                  setRuleForm((f) => ({ ...f, percentage: e.target.value }))
-                }
+                onChange={(e) => setRuleForm((f) => ({ ...f, percentage: e.target.value }))}
                 placeholder="10"
               />
-              {ruleForm.plan_id && (
+              {ruleForm.total_sales && (
                 <p className="text-xs text-muted-foreground">
-                  Valor calculado:{" "}
-                  <span className="font-medium text-primary">
-                    {fmt(
-                      ((plans.find((p) => p.id === ruleForm.plan_id)?.price ??
-                        0) *
-                        parseFloat(ruleForm.percentage || "0")) /
-                        100
-                    )}
+                  Fundo disponível:{" "}
+                  <span className="font-semibold text-primary">
+                    {fmt((parseFloat(ruleForm.total_sales || "0") * parseFloat(ruleForm.percentage || "0")) / 100)}
                   </span>{" "}
-                  por assinatura
+                  a ser distribuído proporcionalmente às horas
                 </p>
               )}
             </div>
             <div className="space-y-2">
-              <Label>Descrição (opcional)</Label>
+              <Label>Observação (opcional)</Label>
               <Textarea
                 value={ruleForm.description}
-                onChange={(e) =>
-                  setRuleForm((f) => ({ ...f, description: e.target.value }))
-                }
-                placeholder="Descreva a regra…"
+                onChange={(e) => setRuleForm((f) => ({ ...f, description: e.target.value }))}
+                placeholder="Notas sobre esta regra…"
                 rows={2}
               />
             </div>
             <div className="flex items-center gap-3">
               <Switch
                 checked={ruleForm.active}
-                onCheckedChange={(v) =>
-                  setRuleForm((f) => ({ ...f, active: v }))
-                }
+                onCheckedChange={(v) => setRuleForm((f) => ({ ...f, active: v }))}
                 id="rule-active"
               />
               <Label htmlFor="rule-active">Regra ativa</Label>
@@ -822,149 +899,112 @@ export default function AdminBonification() {
         </DialogContent>
       </Dialog>
 
-      {/* ── Payment Dialog ── */}
-      <Dialog open={paymentDialogOpen} onOpenChange={setPaymentDialogOpen}>
-        <DialogContent className="sm:max-w-md">
+      {/* ── Hours Dialog ── */}
+      <Dialog open={hoursDialogOpen} onOpenChange={setHoursDialogOpen}>
+        <DialogContent className="sm:max-w-lg max-h-[80vh] overflow-y-auto">
           <DialogHeader>
-            <DialogTitle>Registrar Lançamento</DialogTitle>
+            <DialogTitle>Registrar Horas Trabalhadas</DialogTitle>
           </DialogHeader>
-          {selectedProfessional && (
-            <div className="space-y-4 py-2">
-              <div className="flex items-center gap-3 p-3 rounded-lg bg-muted/50">
-                {selectedProfessional.avatar_url ? (
-                  <img
-                    src={selectedProfessional.avatar_url}
-                    alt={selectedProfessional.full_name}
-                    className="w-9 h-9 rounded-full object-cover"
-                  />
-                ) : (
-                  <div className="w-9 h-9 rounded-full bg-primary/10 flex items-center justify-center">
-                    <span className="text-sm font-bold text-primary">
-                      {selectedProfessional.full_name.charAt(0).toUpperCase()}
-                    </span>
+          <div className="space-y-3 py-2">
+            <p className="text-sm text-muted-foreground">
+              Informe as horas de cada profissional no período. Quem trabalhou mais receberá uma fatia maior do fundo.
+            </p>
+            {professionals.length === 0 ? (
+              <p className="text-sm text-muted-foreground text-center py-4">
+                Nenhum profissional encontrado. Cadastre profissionais primeiro.
+              </p>
+            ) : (
+              hoursForm.map((f, i) => (
+                <div key={f.professional_id} className="rounded-lg border border-border/60 p-3 space-y-2">
+                  <div className="flex items-center gap-2">
+                    <div className="w-7 h-7 rounded-full bg-primary/10 flex items-center justify-center shrink-0">
+                      <span className="text-xs font-bold text-primary">
+                        {f.full_name.charAt(0).toUpperCase()}
+                      </span>
+                    </div>
+                    <span className="font-medium text-sm text-foreground">{f.full_name}</span>
                   </div>
-                )}
-                <span className="font-semibold text-foreground">
-                  {selectedProfessional.full_name}
-                </span>
-              </div>
-
-              <div className="space-y-2">
-                <Label>Plano</Label>
-                <Select
-                  value={paymentForm.plan_id}
-                  onValueChange={(v) =>
-                    setPaymentForm((f) => ({ ...f, plan_id: v }))
-                  }
-                >
-                  <SelectTrigger>
-                    <SelectValue placeholder="Selecione…" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {selectedProfessional.plans.map((p) => {
-                      const rule = rules.find(
-                        (r) => r.plan_id === p.plan_id && r.active
-                      );
-                      const pct = rule ? rule.percentage : 10;
-                      return (
-                        <SelectItem key={p.plan_id} value={p.plan_id}>
-                          {p.plan_name} — {pct}% = {fmt((p.plan_price * pct) / 100)}
-                        </SelectItem>
-                      );
-                    })}
-                  </SelectContent>
-                </Select>
-              </div>
-
-              <div className="space-y-2">
-                <Label>Período de Referência</Label>
-                <Input
-                  value={paymentForm.reference_period}
-                  onChange={(e) =>
-                    setPaymentForm((f) => ({
-                      ...f,
-                      reference_period: e.target.value,
-                    }))
-                  }
-                  placeholder="ex: Março 2026"
-                />
-              </div>
-
-              <div className="space-y-2">
-                <Label>Horas Trabalhadas (opcional)</Label>
-                <Input
-                  type="number"
-                  min={0}
-                  value={paymentForm.hours_worked}
-                  onChange={(e) =>
-                    setPaymentForm((f) => ({
-                      ...f,
-                      hours_worked: e.target.value,
-                    }))
-                  }
-                  placeholder="0"
-                />
-              </div>
-
-              <div className="space-y-2">
-                <Label>Observações (opcional)</Label>
-                <Textarea
-                  value={paymentForm.notes}
-                  onChange={(e) =>
-                    setPaymentForm((f) => ({ ...f, notes: e.target.value }))
-                  }
-                  placeholder="Notas adicionais…"
-                  rows={2}
-                />
-              </div>
-
-              {paymentForm.plan_id && (
-                <div className="p-3 rounded-lg bg-primary/5 border border-primary/20 text-center">
-                  <p className="text-xs text-muted-foreground mb-1">
-                    Valor do lançamento
-                  </p>
-                  <p className="text-2xl font-bold text-primary">
-                    {fmt(
-                      (() => {
-                        const plan = selectedProfessional.plans.find(
-                          (p) => p.plan_id === paymentForm.plan_id
-                        );
-                        if (!plan) return 0;
-                        const rule = rules.find(
-                          (r) => r.plan_id === paymentForm.plan_id && r.active
-                        );
-                        const pct = rule ? rule.percentage : 10;
-                        return (plan.plan_price * pct) / 100;
-                      })()
-                    )}
-                  </p>
+                  <div className="grid grid-cols-2 gap-2">
+                    <div className="space-y-1">
+                      <Label className="text-xs">Horas trabalhadas</Label>
+                      <Input
+                        type="number"
+                        min={0}
+                        step={0.5}
+                        placeholder="0"
+                        value={f.hours}
+                        onChange={(e) => {
+                          const updated = [...hoursForm];
+                          updated[i] = { ...updated[i], hours: e.target.value };
+                          setHoursForm(updated);
+                        }}
+                      />
+                    </div>
+                    <div className="space-y-1">
+                      <Label className="text-xs">Observação</Label>
+                      <Input
+                        placeholder="opcional"
+                        value={f.notes}
+                        onChange={(e) => {
+                          const updated = [...hoursForm];
+                          updated[i] = { ...updated[i], notes: e.target.value };
+                          setHoursForm(updated);
+                        }}
+                      />
+                    </div>
+                  </div>
                 </div>
-              )}
-            </div>
-          )}
+              ))
+            )}
+          </div>
           <DialogFooter>
-            <Button
-              variant="outline"
-              onClick={() => setPaymentDialogOpen(false)}
-            >
+            <Button variant="outline" onClick={() => setHoursDialogOpen(false)}>
               Cancelar
             </Button>
-            <Button onClick={savePayment}>Registrar</Button>
+            <Button onClick={saveHours}>Salvar Horas</Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
 
-      {/* ── Delete Rule Confirm ── */}
-      <AlertDialog
-        open={!!deleteRuleId}
-        onOpenChange={(o) => !o && setDeleteRuleId(null)}
-      >
+      {/* ── Distribute Confirm Dialog ── */}
+      <AlertDialog open={distributeDialogOpen} onOpenChange={setDistributeDialogOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Distribuir Bônus?</AlertDialogTitle>
+            <AlertDialogDescription>
+              {(() => {
+                if (!distributeRuleId) return null;
+                const rule = rules.find((r) => r.id === distributeRuleId);
+                if (!rule) return null;
+                const pool = ((rule.total_sales ?? 0) * rule.percentage) / 100;
+                const hoursForRule = allHours.filter((h) => h.rule_id === distributeRuleId);
+                const totalHours = hoursForRule.reduce((a, h) => a + h.hours_worked, 0);
+                return (
+                  <span>
+                    O fundo de <strong>{fmt(pool)}</strong> será distribuído entre{" "}
+                    <strong>{hoursForRule.length} profissional(is)</strong> com base em{" "}
+                    <strong>{totalHours}h</strong> totais registradas.
+                    <br />
+                    Lançamentos pendentes serão criados automaticamente. Esta ação não pode ser desfeita.
+                  </span>
+                );
+              })()}
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancelar</AlertDialogCancel>
+            <AlertDialogAction onClick={distributeBonus}>Distribuir</AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      {/* ── Delete Rule Dialog ── */}
+      <AlertDialog open={!!deleteRuleId} onOpenChange={(o) => !o && setDeleteRuleId(null)}>
         <AlertDialogContent>
           <AlertDialogHeader>
             <AlertDialogTitle>Excluir regra?</AlertDialogTitle>
             <AlertDialogDescription>
-              Esta ação não pode ser desfeita. Os lançamentos existentes não serão
-              afetados.
+              As horas e lançamentos associados também serão removidos. Esta ação é irreversível.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
