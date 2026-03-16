@@ -73,6 +73,7 @@ const App = () => (
               <Route path="history" element={<ClientHistory />} />
               <Route path="plans" element={<ClientPlans />} />
               <Route path="profile" element={<ClientProfile />} />
+              <Route path="manual" element={<ClientManual />} />
             </Route>
 
             {/* Admin routes */}
