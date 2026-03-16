@@ -14,7 +14,7 @@ import AdminLayout from "./layouts/AdminLayout";
 import ClientDashboard from "./pages/client/ClientDashboard";
 import NewBooking from "./pages/client/NewBooking";
 import ClientHistory from "./pages/client/ClientHistory";
-
+import ClientManual from "./pages/client/ClientManual";
 import ClientProfile from "./pages/client/ClientProfile";
 import ClientPlans from "./pages/client/ClientPlans";
 import AdminDashboard from "./pages/admin/AdminDashboard";
