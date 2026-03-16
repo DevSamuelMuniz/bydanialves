@@ -67,11 +67,25 @@ export default function AdminClients() {
   const [unblockModal, setUnblockModal] = useState<{ client: ClientProfile } | null>(null);
 
   const fetchClients = async () => {
+    // Exclui todos os perfis que possuem cargo admin (gerente, ceo, atendente, profissional)
+    const { data: adminRoles } = await supabase
+      .from("user_roles")
+      .select("user_id")
+      .eq("role", "admin");
+
+    const adminUserIds = (adminRoles || []).map((r) => r.user_id);
+
     let query = supabase.from("profiles").select("*").order("full_name");
+
+    if (adminUserIds.length > 0) {
+      query = query.not("user_id", "in", `(${adminUserIds.join(",")})`);
+    }
+
     // Atendentes e profissionais veem apenas clientes da sua filial
     if (isRestricted && adminBranchId) {
       query = query.eq("branch_id", adminBranchId);
     }
+
     const { data } = await query;
     const resolved = ((data as any[]) || []).map((p) => {
       if (p.avatar_url && !p.avatar_url.startsWith("http")) {
