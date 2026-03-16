@@ -548,6 +548,7 @@ export default function AdminProfessionals() {
               onEditWeek={() => openWeekDialog(prof)}
               onDeleteAll={() => deleteAllSchedules(prof)}
               onRemove={() => removeProfessional(prof)}
+              onViewDetails={() => { setDetailsProf(prof); setDetailsDialog(true); }}
             />
           ))}
         </div>
