@@ -138,6 +138,10 @@ export default function AdminProfessionals() {
   const [newBranchId, setNewBranchId] = useState<string>("");
   const [creatingProf, setCreatingProf] = useState(false);
 
+  // Details dialog
+  const [detailsDialog, setDetailsDialog] = useState(false);
+  const [detailsProf, setDetailsProf] = useState<ProfessionalProfile | null>(null);
+
   const canManage = perms.canManageBranches;
 
   // ── Filtros ──
