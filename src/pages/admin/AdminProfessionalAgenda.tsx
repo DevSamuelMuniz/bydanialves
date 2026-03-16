@@ -357,7 +357,7 @@ export default function AdminProfessionalAgenda() {
   };
 
   return (
-    <div className="space-y-5">
+    <div className="space-y-5 -mx-4 md:-mx-8 px-4 md:px-8">
       <div className="flex items-center justify-between">
         <div>
           <h1 className="font-serif text-2xl">Agenda do Profissional</h1>
