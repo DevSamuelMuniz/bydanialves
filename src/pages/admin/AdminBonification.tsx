@@ -141,14 +141,16 @@ export default function AdminBonification() {
 
   async function fetchAll() {
     setLoading(true);
-    const [rulesRes, profRes, hoursRes, paymentsRes] = await Promise.all([
+
+    const [rulesRes, rolesRes, hoursRes, paymentsRes] = await Promise.all([
       supabase
         .from("bonification_rules" as any)
         .select("id,percentage,description,active,is_global,reference_period,total_sales,created_at")
         .order("created_at", { ascending: false }),
+      // Step 1: get professional user_ids (no FK join with profiles)
       supabase
         .from("user_roles")
-        .select("user_id, profiles(user_id,full_name,avatar_url)")
+        .select("user_id")
         .eq("role", "admin")
         .eq("admin_level", "professional"),
       supabase
@@ -163,26 +165,31 @@ export default function AdminBonification() {
 
     if (rulesRes.data) setRules(rulesRes.data as unknown as BonificationRule[]);
 
-    if (profRes.data) {
-      const profs: Professional[] = (profRes.data as any[])
-        .map((r) => r.profiles)
-        .filter(Boolean)
-        .map((p: any) => ({
+    // Step 2: fetch profiles separately using the user_ids
+    const profIds = (rolesRes.data ?? []).map((r: any) => r.user_id);
+    let profileMap = new Map<string, { user_id: string; full_name: string; avatar_url: string | null }>();
+
+    if (profIds.length > 0) {
+      const { data: profilesData } = await supabase
+        .from("profiles")
+        .select("user_id, full_name, avatar_url")
+        .in("user_id", profIds);
+
+      if (profilesData) {
+        profilesData.forEach((p: any) => profileMap.set(p.user_id, p));
+        const profs: Professional[] = profilesData.map((p: any) => ({
           user_id: p.user_id,
           full_name: p.full_name ?? "—",
           avatar_url: p.avatar_url ?? null,
         }));
-      setProfessionals(profs);
+        setProfessionals(profs);
+      }
+    } else {
+      setProfessionals([]);
     }
 
     // Enrich hours with profile names
-    if (hoursRes.data && profRes.data) {
-      const profileMap = new Map(
-        (profRes.data as any[])
-          .map((r) => r.profiles)
-          .filter(Boolean)
-          .map((p: any) => [p.user_id, p])
-      );
+    if (hoursRes.data) {
       const enriched = (hoursRes.data as any[]).map((h) => ({
         ...h,
         profiles: profileMap.get(h.professional_id) ?? null,
@@ -192,12 +199,6 @@ export default function AdminBonification() {
 
     // Enrich payments with profile
     if (paymentsRes.data) {
-      const profileMap = new Map(
-        ((profRes.data ?? []) as any[])
-          .map((r) => r.profiles)
-          .filter(Boolean)
-          .map((p: any) => [p.user_id, p])
-      );
       const enriched = (paymentsRes.data as any[]).map((pay) => ({
         ...pay,
         profiles: profileMap.get(pay.professional_id) ?? null,
