@@ -195,7 +195,6 @@ export function AdminSidebar() {
     (isAttendant || isProfessional) && { title: "Minha Escala", url: "/admin/my-schedule", icon: TableProperties, tourId: "sidebar-admin-my-schedule" },
     (perms.canViewClients && adminLevel !== "professional") && { title: "Clientes", url: "/admin/clients", icon: Users, tourId: "sidebar-admin-clients" },
     perms.canViewBranches && { title: "Filiais", url: "/admin/branches", icon: Building2, tourId: "sidebar-admin-branches" },
-    perms.canViewUsers && { title: "Usuários", url: "/admin/users", icon: Crown, tourId: "sidebar-admin-users" },
   ].filter(Boolean) as NavItemDef[];
 
   const servicosItems: NavItemDef[] = [
@@ -225,7 +224,7 @@ export function AdminSidebar() {
   const groups: NavGroupDef[] = [
     {
       label: "Gestão",
-      urls: ["/admin", "/admin/my-appointments", "/admin/my-schedule", "/admin/clients", "/admin/branches", "/admin/users", "/admin/professionals"],
+      urls: ["/admin", "/admin/my-appointments", "/admin/my-schedule", "/admin/clients", "/admin/branches", "/admin/professionals"],
       items: gestaoItems,
       showProfDropdown: showProfDropdownFinal,
     },
