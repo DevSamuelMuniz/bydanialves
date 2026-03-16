@@ -311,12 +311,33 @@ export default function AdminBonification() {
 
   // ─── Hours helpers ───────────────────────────────────────────────────────────
 
-  function openHoursDialog(ruleId: string) {
+  const [hoursLoading, setHoursLoading] = useState(false);
+
+  async function openHoursDialog(ruleId: string) {
     setHoursRuleId(ruleId);
     const rule = rules.find((r) => r.id === ruleId);
     const period = rule?.reference_period ?? getCurrentPeriod();
-    // Pre-fill existing hours for this period
-    const form = professionals.map((prof) => {
+
+    // Parse period string like "março 2026" → date range
+    const parsePeriod = (p: string): { from: string; to: string } | null => {
+      const months: Record<string, number> = {
+        janeiro: 0, fevereiro: 1, março: 2, abril: 3, maio: 4, junho: 5,
+        julho: 6, agosto: 7, setembro: 8, outubro: 9, novembro: 10, dezembro: 11,
+      };
+      const parts = p.toLowerCase().trim().split(/\s+/);
+      const monthIdx = months[parts[0]];
+      const year = parseInt(parts[1]);
+      if (monthIdx == null || isNaN(year)) return null;
+      const from = new Date(year, monthIdx, 1).toISOString().split("T")[0];
+      const to = new Date(year, monthIdx + 1, 0).toISOString().split("T")[0];
+      return { from, to };
+    };
+
+    setHoursLoading(true);
+    setHoursDialogOpen(true);
+
+    // Build initial form from saved hours
+    const baseForm = professionals.map((prof) => {
       const existing = allHours.find(
         (h) => h.professional_id === prof.user_id && h.rule_id === ruleId
       );
@@ -325,10 +346,43 @@ export default function AdminBonification() {
         full_name: prof.full_name,
         hours: existing ? String(existing.hours_worked) : "",
         notes: existing?.notes ?? "",
+        report_hours: 0, // will be filled from appointments
       };
     });
-    setHoursForm(form);
-    setHoursDialogOpen(true);
+
+    // Fetch completed appointments in period to auto-calculate hours
+    const range = parsePeriod(period);
+    if (range) {
+      const profIds = professionals.map((p) => p.user_id);
+      const { data: appts } = await supabase
+        .from("appointments")
+        .select("professional_id, services(duration_minutes)")
+        .in("professional_id", profIds)
+        .eq("status", "completed")
+        .gte("appointment_date", range.from)
+        .lte("appointment_date", range.to);
+
+      if (appts) {
+        // Sum duration_minutes per professional → convert to hours (decimal)
+        const minutesMap: Record<string, number> = {};
+        (appts as any[]).forEach((a) => {
+          const mins = (a.services as any)?.duration_minutes ?? 60;
+          minutesMap[a.professional_id] = (minutesMap[a.professional_id] ?? 0) + mins;
+        });
+
+        baseForm.forEach((f) => {
+          const mins = minutesMap[f.professional_id] ?? 0;
+          f.report_hours = parseFloat((mins / 60).toFixed(2));
+          // Auto-fill from report if not already manually saved
+          if (!f.hours) {
+            f.hours = f.report_hours > 0 ? String(f.report_hours) : "";
+          }
+        });
+      }
+    }
+
+    setHoursForm(baseForm);
+    setHoursLoading(false);
   }
 
   async function saveHours() {
