@@ -988,7 +988,7 @@ function ProfessionalCard({ prof, canManage, onEdit, onEditWeek, onDeleteAll, on
             className="mt-2 h-7 text-xs gap-1.5 w-full"
             onClick={onViewDetails}
           >
-            <Search className="h-3 w-3" />
+            <Eye className="h-3 w-3" />
             Ver dados
           </Button>
           
