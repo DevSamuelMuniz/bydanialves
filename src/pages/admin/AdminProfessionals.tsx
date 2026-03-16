@@ -808,6 +808,97 @@ export default function AdminProfessionals() {
           </div>
         </DialogContent>
       </Dialog>
+
+      {/* ── Dialog: Ver Dados do Funcionário ── */}
+      <Dialog open={detailsDialog} onOpenChange={setDetailsDialog}>
+        {detailsProf && (
+          <DialogContent className="max-w-md">
+            <DialogHeader>
+              <DialogTitle className="font-serif text-lg">Dados do Funcionário</DialogTitle>
+            </DialogHeader>
+
+            <div className="space-y-5 py-1">
+              {/* Avatar + nome */}
+              <div className="flex items-center gap-4">
+                <div className="h-16 w-16 rounded-full bg-primary/10 flex items-center justify-center text-primary font-bold text-xl shrink-0 overflow-hidden">
+                  {detailsProf.avatar_url
+                    ? <img src={detailsProf.avatar_url} alt={detailsProf.full_name} className="h-full w-full object-cover" />
+                    : detailsProf.full_name.split(" ").map((w) => w[0]).slice(0, 2).join("").toUpperCase()
+                  }
+                </div>
+                <div>
+                  <p className="font-semibold text-base">{detailsProf.full_name}</p>
+                  {detailsProf.bio && <p className="text-sm text-muted-foreground mt-0.5">{detailsProf.bio}</p>}
+                  <div className="flex items-center gap-2 mt-1.5 flex-wrap">
+                    {detailsProf.admin_level && (
+                      <Badge variant="outline" className={`text-xs ${ADMIN_LEVEL_COLORS[detailsProf.admin_level]}`}>
+                        {ADMIN_LEVEL_LABELS[detailsProf.admin_level]}
+                      </Badge>
+                    )}
+                  </div>
+                </div>
+              </div>
+
+              <div className="border-t border-border" />
+
+              {/* Info grid */}
+              <div className="grid grid-cols-2 gap-4 text-sm">
+                <div className="space-y-1">
+                  <p className="text-xs text-muted-foreground uppercase tracking-wide font-medium">Filial</p>
+                  <p className="font-medium flex items-center gap-1.5">
+                    <Building2 className="h-3.5 w-3.5 text-muted-foreground" />
+                    {detailsProf.branch_name || "Sem filial"}
+                  </p>
+                </div>
+                <div className="space-y-1">
+                  <p className="text-xs text-muted-foreground uppercase tracking-wide font-medium">Dias na escala</p>
+                  <p className="font-medium flex items-center gap-1.5">
+                    <CalendarDays className="h-3.5 w-3.5 text-muted-foreground" />
+                    {detailsProf.schedules.filter((s) => s.active).length} dia{detailsProf.schedules.filter((s) => s.active).length !== 1 ? "s" : ""}
+                  </p>
+                </div>
+              </div>
+
+              {/* Escala detalhada */}
+              {detailsProf.schedules.length > 0 && (
+                <div className="space-y-2">
+                  <p className="text-xs text-muted-foreground uppercase tracking-wide font-medium">Escala semanal</p>
+                  <div className="space-y-1.5">
+                    {[...detailsProf.schedules]
+                      .sort((a, b) => {
+                        const ai = DAYS.findIndex((d) => d.value === a.day_of_week);
+                        const bi = DAYS.findIndex((d) => d.value === b.day_of_week);
+                        return ai - bi;
+                      })
+                      .map((sched) => {
+                        const day = DAYS.find((d) => d.value === sched.day_of_week);
+                        return (
+                          <div key={sched.id} className="flex items-center justify-between rounded-md bg-muted/40 px-3 py-1.5 text-sm">
+                            <span className="font-medium w-16">{day?.label}</span>
+                            <span className="text-muted-foreground flex items-center gap-1">
+                              <Clock className="h-3 w-3" />
+                              {sched.start_time} – {sched.end_time}
+                            </span>
+                            <Badge
+                              variant="outline"
+                              className={`text-[10px] px-1.5 py-0 ${sched.active ? "border-green-500/40 text-green-700 dark:text-green-400" : "border-muted text-muted-foreground"}`}
+                            >
+                              {sched.active ? "Ativo" : "Inativo"}
+                            </Badge>
+                          </div>
+                        );
+                      })}
+                  </div>
+                </div>
+              )}
+            </div>
+
+            <div className="flex justify-end pt-2">
+              <Button variant="outline" onClick={() => setDetailsDialog(false)}>Fechar</Button>
+            </div>
+          </DialogContent>
+        )}
+      </Dialog>
     </div>
   );
 }
