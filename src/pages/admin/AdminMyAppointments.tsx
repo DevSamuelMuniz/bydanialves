@@ -72,6 +72,66 @@ export default function AdminMyAppointments() {
   const [paymentMethod, setPaymentMethod] = useState("cash");
   const [completing, setCompleting] = useState(false);
 
+  // Dialog de agendamento manual
+  const [bookingOpen, setBookingOpen] = useState(false);
+  const [bookingLoading, setBookingLoading] = useState(false);
+  const [bookingForm, setBookingForm] = useState({
+    client_id: "", service_id: "", branch_id: "", date: undefined as Date | undefined, time: "", notes: "",
+  });
+  const [allClients, setAllClients] = useState<{ user_id: string; full_name: string; phone: string | null }[]>([]);
+  const [services, setServices] = useState<{ id: string; name: string; price: number; duration_minutes: number }[]>([]);
+  const [clientSearch, setClientSearch] = useState("");
+
+  const loadBookingData = async () => {
+    if (allClients.length === 0) {
+      const { data: clients } = await supabase.from("profiles").select("user_id, full_name, phone").order("full_name");
+      setAllClients(clients || []);
+    }
+    if (services.length === 0) {
+      const { data: svcs } = await supabase.from("services").select("id, name, price, duration_minutes").eq("active", true).order("name");
+      setServices(svcs || []);
+    }
+  };
+
+  const openBookingDialog = async () => {
+    setBookingForm({ client_id: "", service_id: "", branch_id: adminBranchId ?? "", date: undefined, time: "", notes: "" });
+    setClientSearch("");
+    setBookingOpen(true);
+    await loadBookingData();
+  };
+
+  const handleManualBooking = async () => {
+    const { client_id, service_id, branch_id, date, time } = bookingForm;
+    if (!client_id || !service_id || !date || !time) {
+      toast({ title: "Preencha todos os campos obrigatórios", variant: "destructive" });
+      return;
+    }
+    setBookingLoading(true);
+    const { error } = await supabase.from("appointments").insert({
+      client_id,
+      service_id,
+      professional_id: null,
+      branch_id: branch_id || null,
+      appointment_date: format(date, "yyyy-MM-dd"),
+      appointment_time: time + ":00",
+      status: "confirmed",
+      notes: bookingForm.notes || null,
+    } as any);
+    setBookingLoading(false);
+    if (error) {
+      toast({ title: "Erro ao agendar", description: error.message, variant: "destructive" });
+    } else {
+      toast({ title: "✅ Agendamento criado!", description: "Serviço agendado manualmente com sucesso." });
+      setBookingOpen(false);
+      fetchData();
+    }
+  };
+
+  const filteredClients = allClients.filter((c) =>
+    c.full_name.toLowerCase().includes(clientSearch.toLowerCase()) ||
+    (c.phone && c.phone.includes(clientSearch))
+  );
+
   const fetchData = async () => {
     if (!user) return;
     setLoading(true);
