@@ -4,7 +4,7 @@ import { AppSidebar, NavItem } from "@/components/AppSidebar";
 import { NavLink } from "@/components/NavLink";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
-import { Crown, AlertTriangle, LayoutDashboard, CalendarPlus, History, User } from "lucide-react";
+import { Crown, AlertTriangle, LayoutDashboard, CalendarPlus, History, User, BookOpen } from "lucide-react";
 
 const items: NavItem[] = [
   { title: "Dashboard",        url: "/client",          icon: LayoutDashboard, tourId: "sidebar-dashboard" },
@@ -12,6 +12,7 @@ const items: NavItem[] = [
   { title: "Histórico",        url: "/client/history",  icon: History,         tourId: "sidebar-history" },
   { title: "Meu Plano",        url: "/client/plans",    icon: Crown,           tourId: "sidebar-plans" },
   { title: "Perfil",           url: "/client/profile",  icon: User,            tourId: "sidebar-profile" },
+  { title: "Cartilha de Uso",  url: "/client/manual",   icon: BookOpen },
 ];
 
 export function ClientSidebar() {
