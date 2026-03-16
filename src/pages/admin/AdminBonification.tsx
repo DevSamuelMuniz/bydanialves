@@ -126,7 +126,7 @@ export default function AdminBonification() {
   const [hoursDialogOpen, setHoursDialogOpen] = useState(false);
   const [hoursRuleId, setHoursRuleId] = useState<string | null>(null);
   const [hoursForm, setHoursForm] = useState<
-    { professional_id: string; full_name: string; hours: string; notes: string }[]
+    { professional_id: string; full_name: string; hours: string; notes: string; report_hours: number }[]
   >([]);
 
   // Distribute dialog
