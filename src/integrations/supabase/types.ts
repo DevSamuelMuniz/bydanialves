@@ -184,8 +184,11 @@ export type Database = {
           created_at: string
           description: string | null
           id: string
+          is_global: boolean
           percentage: number
           plan_id: string | null
+          reference_period: string | null
+          total_sales: number | null
           updated_at: string
         }
         Insert: {
@@ -193,8 +196,11 @@ export type Database = {
           created_at?: string
           description?: string | null
           id?: string
+          is_global?: boolean
           percentage?: number
           plan_id?: string | null
+          reference_period?: string | null
+          total_sales?: number | null
           updated_at?: string
         }
         Update: {
@@ -202,8 +208,11 @@ export type Database = {
           created_at?: string
           description?: string | null
           id?: string
+          is_global?: boolean
           percentage?: number
           plan_id?: string | null
+          reference_period?: string | null
+          total_sales?: number | null
           updated_at?: string
         }
         Relationships: [
@@ -437,6 +446,47 @@ export type Database = {
           updated_at?: string
         }
         Relationships: []
+      }
+      professional_hours: {
+        Row: {
+          created_at: string
+          hours_worked: number
+          id: string
+          notes: string | null
+          professional_id: string
+          reference_period: string
+          rule_id: string | null
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          hours_worked?: number
+          id?: string
+          notes?: string | null
+          professional_id: string
+          reference_period: string
+          rule_id?: string | null
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          hours_worked?: number
+          id?: string
+          notes?: string | null
+          professional_id?: string
+          reference_period?: string
+          rule_id?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "professional_hours_rule_id_fkey"
+            columns: ["rule_id"]
+            isOneToOne: false
+            referencedRelation: "bonification_rules"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       professional_schedules: {
         Row: {
