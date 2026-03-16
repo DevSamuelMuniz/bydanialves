@@ -14,7 +14,7 @@ import AdminLayout from "./layouts/AdminLayout";
 import ClientDashboard from "./pages/client/ClientDashboard";
 import NewBooking from "./pages/client/NewBooking";
 import ClientHistory from "./pages/client/ClientHistory";
-
+import ClientManual from "./pages/client/ClientManual";
 import ClientProfile from "./pages/client/ClientProfile";
 import ClientPlans from "./pages/client/ClientPlans";
 import AdminDashboard from "./pages/admin/AdminDashboard";
@@ -73,6 +73,7 @@ const App = () => (
               <Route path="history" element={<ClientHistory />} />
               <Route path="plans" element={<ClientPlans />} />
               <Route path="profile" element={<ClientProfile />} />
+              <Route path="manual" element={<ClientManual />} />
             </Route>
 
             {/* Admin routes */}
