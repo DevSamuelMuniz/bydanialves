@@ -140,6 +140,30 @@ export default function AdminProfessionals() {
 
   const canManage = perms.canManageBranches;
 
+  // ── Filtros ──
+  const [filterSearch, setFilterSearch] = useState("");
+  const [filterBranch, setFilterBranch] = useState("all");
+  const [filterLevel, setFilterLevel] = useState("all");
+
+  const filteredProfessionals = useMemo(() => {
+    return professionals.filter((p) => {
+      const matchSearch = filterSearch.trim() === "" ||
+        p.full_name.toLowerCase().includes(filterSearch.toLowerCase());
+      const matchBranch = filterBranch === "all" ||
+        (filterBranch === "none" ? !p.branch_id : p.branch_id === filterBranch);
+      const matchLevel = filterLevel === "all" || p.admin_level === filterLevel;
+      return matchSearch && matchBranch && matchLevel;
+    });
+  }, [professionals, filterSearch, filterBranch, filterLevel]);
+
+  const hasActiveFilters = filterSearch !== "" || filterBranch !== "all" || filterLevel !== "all";
+
+  const clearFilters = () => {
+    setFilterSearch("");
+    setFilterBranch("all");
+    setFilterLevel("all");
+  };
+
   const fetchAll = async () => {
     setLoading(true);
 
