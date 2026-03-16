@@ -271,6 +271,7 @@ export default function AdminBonification() {
 
   function openEditRule(rule: BonificationRule) {
     setEditingRule(rule);
+    setAutoSalesValue(null);
     setRuleForm({
       percentage: String(rule.percentage),
       total_sales: rule.total_sales ? String(rule.total_sales) : "",
