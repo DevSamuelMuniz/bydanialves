@@ -318,30 +318,30 @@ export default function PublicQueueTV() {
             <Loader2 className="h-10 w-10 animate-spin text-muted-foreground" />
           </div>
         ) : (
-          <main className="flex-1 grid grid-cols-3 gap-0 divide-x divide-border/40 overflow-hidden">
+          <main className="flex-1 grid grid-cols-1 sm:grid-cols-3 gap-0 sm:divide-x divide-border/40 overflow-hidden">
             {columns.map(({ key, items }) => {
               const cfg = STATUS_CONFIG[key];
               const Icon = cfg.icon;
               const isFlashing = key === "pending" && pendingFlash;
               return (
-                <section key={key} className="flex flex-col overflow-hidden">
+                <section key={key} className="flex flex-col overflow-hidden sm:min-h-0 min-h-[33vh]">
                   <div
-                    className={`flex items-center justify-between px-6 py-4 border-b border-border/40 shrink-0 ${cfg.headerBg} ${isFlashing ? "pending-flash" : ""}`}
+                    className={`flex items-center justify-between px-3 sm:px-6 py-3 sm:py-4 border-b border-border/40 shrink-0 ${cfg.headerBg} ${isFlashing ? "pending-flash" : ""}`}
                   >
-                    <div className="flex items-center gap-3">
-                      <div className={`h-9 w-9 rounded-xl flex items-center justify-center ${cfg.bg} border`}>
-                        <Icon className={`h-5 w-5 ${cfg.iconColor}`} />
+                    <div className="flex items-center gap-2 sm:gap-3">
+                      <div className={`h-7 w-7 sm:h-9 sm:w-9 rounded-xl flex items-center justify-center ${cfg.bg} border`}>
+                        <Icon className={`h-4 w-4 sm:h-5 sm:w-5 ${cfg.iconColor}`} />
                       </div>
-                      <span className="font-semibold text-lg">{cfg.label}</span>
+                      <span className="font-semibold text-base sm:text-lg">{cfg.label}</span>
                     </div>
-                    <span className={`text-2xl font-serif font-bold tabular-nums px-3 py-1 rounded-lg ${cfg.badge}`}>
+                    <span className={`text-xl sm:text-2xl font-serif font-bold tabular-nums px-2.5 sm:px-3 py-1 rounded-lg ${cfg.badge}`}>
                       {items.length}
                     </span>
                   </div>
-                  <div className="flex-1 overflow-y-auto p-4 space-y-3">
+                  <div className="flex-1 overflow-y-auto p-2 sm:p-4 space-y-2 sm:space-y-3">
                     {items.length === 0 ? (
-                      <div className="flex flex-col items-center justify-center h-full gap-3 text-muted-foreground/40 py-16">
-                        <Icon className="h-12 w-12" />
+                      <div className="flex flex-col items-center justify-center h-full gap-3 text-muted-foreground/40 py-8 sm:py-16">
+                        <Icon className="h-10 w-10 sm:h-12 sm:w-12" />
                         <p className="text-sm">Nenhum agendamento</p>
                       </div>
                     ) : (
@@ -350,30 +350,30 @@ export default function PublicQueueTV() {
                         return (
                           <div
                             key={appt.id}
-                            className={`rounded-2xl border p-5 flex items-center gap-4 ${cfg.bg} ${isNew ? "queue-card-new border-warning/60" : ""}`}
+                            className={`rounded-xl sm:rounded-2xl border p-3 sm:p-5 flex items-center gap-3 sm:gap-4 ${cfg.bg} ${isNew ? "queue-card-new border-warning/60" : ""}`}
                           >
-                            <div className={`h-12 w-12 rounded-xl flex items-center justify-center shrink-0 font-serif font-bold text-xl ${cfg.badge}`}>
+                            <div className={`h-9 w-9 sm:h-12 sm:w-12 rounded-xl flex items-center justify-center shrink-0 font-serif font-bold text-base sm:text-xl ${cfg.badge}`}>
                               {idx + 1}
                             </div>
                             <div className="flex-1 min-w-0">
                               <div className="flex items-center gap-2">
-                                <p className="font-bold text-xl leading-tight truncate">{appt.client_name}</p>
+                                <p className="font-bold text-base sm:text-xl leading-tight truncate">{appt.client_name}</p>
                                 {isNew && (
                                   <span className="shrink-0 text-xs font-semibold px-2 py-0.5 rounded-full bg-warning/20 text-warning border border-warning/30 animate-pulse">
                                     Novo
                                   </span>
                                 )}
                               </div>
-                              <p className="text-base text-muted-foreground truncate mt-0.5">{appt.service_name}</p>
+                              <p className="text-sm sm:text-base text-muted-foreground truncate mt-0.5">{appt.service_name}</p>
                               {appt.branch_name && (
                                 <p className="text-xs text-muted-foreground/60 mt-1">{appt.branch_name}</p>
                               )}
                             </div>
                             <div className="text-right shrink-0">
-                              <p className="text-2xl font-mono font-bold tabular-nums">{appt.appointment_time}</p>
+                              <p className="text-lg sm:text-2xl font-mono font-bold tabular-nums">{appt.appointment_time}</p>
                               <div className="flex items-center justify-end gap-1 mt-1">
                                 <div className={`h-2 w-2 rounded-full ${cfg.dot} ${cfg.pulse ? "animate-pulse" : ""}`} />
-                                <span className={`text-xs font-medium ${cfg.iconColor}`}>{cfg.label}</span>
+                                <span className={`text-xs font-medium ${cfg.iconColor} hidden sm:inline`}>{cfg.label}</span>
                               </div>
                             </div>
                           </div>
@@ -388,16 +388,18 @@ export default function PublicQueueTV() {
         )}
 
         {/* Footer */}
-        <footer className="px-8 py-3 border-t border-border/40 bg-card/40 flex items-center justify-between shrink-0">
-          <div className="flex items-center gap-6 text-sm text-muted-foreground/60">
+        <footer className="px-3 sm:px-8 py-2 sm:py-3 border-t border-border/40 bg-card/40 flex items-center justify-between shrink-0">
+          <div className="flex items-center gap-3 sm:gap-6 text-xs sm:text-sm text-muted-foreground/60">
             <span className="flex items-center gap-1.5">
               <div className="h-2 w-2 rounded-full bg-success animate-pulse" />
-              Atualização automática a cada 30s
+              <span className="hidden sm:inline">Atualização automática a cada 30s</span>
+              <span className="sm:hidden">Auto 30s</span>
             </span>
-            <span>{appointments.length} agendamento{appointments.length !== 1 ? "s" : ""} hoje</span>
+            <span>{appointments.length} agend.</span>
             {muted && (
               <span className="flex items-center gap-1 text-destructive/60">
-                <VolumeX className="h-3.5 w-3.5" /> Som desativado
+                <VolumeX className="h-3.5 w-3.5" />
+                <span className="hidden sm:inline">Som desativado</span>
               </span>
             )}
           </div>
