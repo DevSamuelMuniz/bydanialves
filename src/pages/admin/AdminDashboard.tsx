@@ -36,6 +36,16 @@ const BAR_COLORS = [
   "hsl(40,45%,56%)", "hsl(40,38%,60%)", "hsl(40,30%,65%)",
 ];
 
+// Normalize branch name for comparison (remove accents, lowercase, trim)
+function normalizeName(s: string): string {
+  return (s || "")
+    .toLowerCase()
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .replace(/\s+/g, " ")
+    .trim();
+}
+
 export default function AdminDashboard() {
   const navigate = useNavigate();
   const { canViewDashboard, canViewDashboardFinancials, canViewBranchKpis, adminLevel } = useAdminPermissions();
@@ -50,6 +60,7 @@ export default function AdminDashboard() {
 
   // ─── State ────────────────────────────────────────────────────────────────
   const [loading, setLoading] = useState(true);
+  const [branchesLoaded, setBranchesLoaded] = useState(false);
   const [branches, setBranches] = useState<{ id: string; name: string }[]>([]);
   const [branchFilter, setBranchFilter] = useState<string>("all");
 
@@ -74,22 +85,33 @@ export default function AdminDashboard() {
   const [reviewCount, setReviewCount] = useState(0);
   const [allReviews, setAllReviews] = useState<{ rating: number; comment: string | null; created_at: string; service_name: string }[]>([]);
 
-  // ─── Load branches ────────────────────────────────────────────────────────
+  // ─── Load branches first, then trigger data fetch ─────────────────────────
   useEffect(() => {
-    if (!isManagerOrCeo) return;
+    if (!isManagerOrCeo) {
+      setBranchesLoaded(true); // non-manager: skip branch loading
+      return;
+    }
     supabase.from("branches").select("id, name").eq("active", true).order("name")
-      .then(({ data }) => setBranches(data || []));
+      .then(({ data }) => {
+        setBranches(data || []);
+        setBranchesLoaded(true);
+      });
+  }, [isManagerOrCeo]);
+
+  // For non-manager staff: branchesLoaded triggered immediately above
+  useEffect(() => {
+    if (!isManagerOrCeo) setBranchesLoaded(true);
   }, [isManagerOrCeo]);
 
   // ─── Resolve which branch ID is active ───────────────────────────────────
   // For staff with fixed branch: always their branch
-  // For CEO/Manager: use dropdown filter (or null = all)
+  // For CEO/Manager: use dropdown filter (null = all)
   const activeBranchId: string | null = adminBranchId
-    ? adminBranchId
+    ? adminBranchId  // fixed staff
     : (isManagerOrCeo && branchFilter !== "all" ? branchFilter : null);
 
   // ─── Fetch all dashboard data ─────────────────────────────────────────────
-  const fetchData = useCallback(async () => {
+  const fetchData = useCallback(async (currentBranches: { id: string; name: string }[], currentActiveBranchId: string | null) => {
     setLoading(true);
 
     const today = new Date().toISOString().split("T")[0];
@@ -99,7 +121,7 @@ export default function AdminDashboard() {
 
     // Helper: add branch_id filter to appointment queries
     const withBranchAppt = (q: any) =>
-      activeBranchId ? q.eq("branch_id", activeBranchId) : q;
+      currentActiveBranchId ? q.eq("branch_id", currentActiveBranchId) : q;
 
     // ── Appointment queries (all respect branch filter) ──
     const [
@@ -157,7 +179,6 @@ export default function AdminDashboard() {
     ]);
 
     // ── Clients: get client user_ids to filter profiles ──
-    // We only count profiles that have role = 'client' (not admins)
     const { data: clientRoles } = await supabase
       .from("user_roles")
       .select("user_id")
@@ -170,8 +191,8 @@ export default function AdminDashboard() {
       .select("id", { count: "exact", head: true })
       .in("user_id", clientUserIds.length > 0 ? clientUserIds : ["00000000-0000-0000-0000-000000000000"]);
 
-    if (activeBranchId) {
-      clientCountQuery = clientCountQuery.eq("branch_id", activeBranchId);
+    if (currentActiveBranchId) {
+      clientCountQuery = clientCountQuery.eq("branch_id", currentActiveBranchId);
     }
 
     let recentClientsQuery = supabase
@@ -181,8 +202,8 @@ export default function AdminDashboard() {
       .order("created_at", { ascending: false })
       .limit(6);
 
-    if (activeBranchId) {
-      recentClientsQuery = recentClientsQuery.eq("branch_id", activeBranchId);
+    if (currentActiveBranchId) {
+      recentClientsQuery = recentClientsQuery.eq("branch_id", currentActiveBranchId);
     }
 
     const [clientCountRes, recentClientsRes] = await Promise.all([
@@ -191,20 +212,23 @@ export default function AdminDashboard() {
     ]);
 
     // ── Financial records ──
-    // financial_records.branch stores the branch name as text (not ID)
-    // We match using ilike (case-insensitive) to avoid casing mismatches
+    // financial_records.branch stores the branch NAME as text.
+    // When a specific branch is selected, filter by that branch name (ilike).
+    // When "all", load all records — no branch filter.
     let finQuery = supabase
       .from("financial_records")
       .select("amount, created_at, branch")
       .eq("type", "income")
       .gte("created_at", monthStart);
 
-    if (activeBranchId) {
-      const found = branches.find((b) => b.id === activeBranchId);
+    if (currentActiveBranchId) {
+      const found = currentBranches.find((b) => b.id === currentActiveBranchId);
       if (found) {
+        // Use ilike for case-insensitive matching
         finQuery = finQuery.ilike("branch", found.name);
       }
     }
+    // When no branch filter: fetch ALL records (no branch filter applied)
 
     const finRes = await finQuery;
 
@@ -264,9 +288,16 @@ export default function AdminDashboard() {
     setCompletionRate(allAppts.length > 0 ? Math.round((done / allAppts.length) * 100) : 0);
 
     setLoading(false);
-  }, [activeBranchId, branches]);
+  }, []);
 
-  // ─── Fetch reviews (not branch-filtered — reviews don't have branch_id) ──
+  // ─── Trigger fetchData only after branches are loaded ────────────────────
+  // Pass branches & activeBranchId as arguments to avoid stale closure
+  useEffect(() => {
+    if (!branchesLoaded) return;
+    fetchData(branches, activeBranchId);
+  }, [branchesLoaded, branchFilter, adminBranchId, branches, fetchData]);
+
+  // ─── Fetch reviews ────────────────────────────────────────────────────────
   const fetchReviews = useCallback(async () => {
     const { data: reviewsData } = await supabase
       .from("reviews")
@@ -291,7 +322,7 @@ export default function AdminDashboard() {
     }
   }, []);
 
-  // ─── Fetch branch KPIs (always global comparison, no filter) ─────────────
+  // ─── Fetch branch KPIs (always global — compares all branches) ───────────
   const fetchBranchKpis = useCallback(async () => {
     if (!canViewBranchKpis) return;
 
@@ -316,21 +347,17 @@ export default function AdminDashboard() {
       }
     }
 
-    // financial_records.branch = branch name (text) — match case-insensitive
+    // financial_records.branch = branch name (text) — match with normalization
     for (const r of (branchFinRes.data || [])) {
-      const rBranch = (r.branch || "").toLowerCase().trim();
-      const entry = Object.values(branchMap).find((b) => b.name.toLowerCase().trim() === rBranch);
+      const rBranchNorm = normalizeName(r.branch || "");
+      const entry = Object.values(branchMap).find((b) => normalizeName(b.name) === rBranchNorm);
       if (entry) entry.revenue += Number(r.amount);
     }
 
     setBranchKpis(Object.values(branchMap).sort((a, b) => b.count - a.count));
   }, [canViewBranchKpis]);
 
-  // ─── Trigger fetches ──────────────────────────────────────────────────────
-  useEffect(() => {
-    fetchData();
-  }, [fetchData]);
-
+  // ─── Trigger reviews & branch kpis ───────────────────────────────────────
   useEffect(() => {
     fetchReviews();
     fetchBranchKpis();
@@ -367,6 +394,11 @@ export default function AdminDashboard() {
     );
   }
 
+  // ─── Active branch label ──────────────────────────────────────────────────
+  const activeBranchLabel = activeBranchId
+    ? (branches.find((b) => b.id === activeBranchId)?.name || "Filial")
+    : "Todas as filiais";
+
   // ─── KPI definitions ──────────────────────────────────────────────────────
   const kpis = [
     { label: "Hoje", value: todayAppointments.length, icon: CalendarDays, color: "text-primary", bg: "bg-primary/10" },
@@ -375,7 +407,7 @@ export default function AdminDashboard() {
     { label: "Clientes", value: totalClients, icon: Users, color: "text-violet-600 dark:text-violet-400", bg: "bg-violet-500/10" },
   ];
 
-  // ─── Professional view (only ratings) ────────────────────────────────────
+  // ─── Professional view ────────────────────────────────────────────────────
   if (isProfessional) {
     return (
       <div className="space-y-6">
@@ -459,7 +491,10 @@ export default function AdminDashboard() {
         {isManagerOrCeo && branches.length > 0 && (
           <div className="flex items-center gap-2 animate-slide-up">
             <Building2 className="h-4 w-4 text-muted-foreground" />
-            <Select value={branchFilter} onValueChange={(v) => { setBranchFilter(v); }}>
+            <Select
+              value={branchFilter}
+              onValueChange={(v) => setBranchFilter(v)}
+            >
               <SelectTrigger className="w-52 h-9 text-sm">
                 <SelectValue placeholder="Filtrar por filial" />
               </SelectTrigger>
@@ -484,10 +519,8 @@ export default function AdminDashboard() {
               </div>
               <p className="text-2xl font-serif font-bold tracking-tight">{kpi.value}</p>
               <p className="text-xs text-muted-foreground font-medium mt-0.5">{kpi.label}</p>
-              {activeBranchId && branchFilter !== "all" && (
-                <p className="text-[9px] text-primary/60 mt-0.5 truncate">
-                  {branches.find((b) => b.id === activeBranchId)?.name}
-                </p>
+              {activeBranchId && (
+                <p className="text-[9px] text-primary/60 mt-0.5 truncate">{activeBranchLabel}</p>
               )}
             </CardContent>
           </Card>
@@ -509,7 +542,7 @@ export default function AdminDashboard() {
                 </span>
               </div>
               <p className="text-xs text-muted-foreground mb-4">
-                Evolução diária — {branchFilter !== "all" && branches.find(b => b.id === branchFilter)?.name || "todas as filiais"}
+                Evolução diária — {activeBranchLabel}
               </p>
               {monthlyRevenue.every(d => d.value === 0) ? (
                 <div className="flex items-center justify-center h-[190px] text-sm text-muted-foreground">
@@ -607,7 +640,6 @@ export default function AdminDashboard() {
           <CardContent className="pt-6 flex flex-col items-center justify-center flex-1 gap-3">
             <h3 className="font-serif text-base font-medium tracking-tight self-start">Taxa de Conclusão</h3>
             <p className="text-xs text-muted-foreground self-start -mt-2 mb-2">Últimos 30 dias</p>
-            {/* Gauge SVG */}
             <div className="relative flex items-center justify-center">
               <svg width="160" height="90" viewBox="0 0 160 90">
                 <path d="M 14 80 A 66 66 0 0 1 146 80" fill="none" stroke="hsl(var(--muted))" strokeWidth="14" strokeLinecap="round" />
@@ -704,9 +736,9 @@ export default function AdminDashboard() {
           <CardContent className="pt-6">
             <div className="flex items-center justify-between mb-4">
               <h3 className="font-serif text-base font-medium tracking-tight">Últimos Clientes Cadastrados</h3>
-              {activeBranchId && branchFilter !== "all" && (
+              {activeBranchId && (
                 <Badge variant="outline" className="text-[10px] px-2 py-0 text-primary border-primary/30">
-                  {branches.find(b => b.id === activeBranchId)?.name}
+                  {activeBranchLabel}
                 </Badge>
               )}
             </div>
