@@ -316,9 +316,10 @@ export default function AdminDashboard() {
       }
     }
 
-    // financial_records.branch = branch name (text)
+    // financial_records.branch = branch name (text) — match case-insensitive
     for (const r of (branchFinRes.data || [])) {
-      const entry = Object.values(branchMap).find((b) => b.name === r.branch);
+      const rBranch = (r.branch || "").toLowerCase().trim();
+      const entry = Object.values(branchMap).find((b) => b.name.toLowerCase().trim() === rBranch);
       if (entry) entry.revenue += Number(r.amount);
     }
 
