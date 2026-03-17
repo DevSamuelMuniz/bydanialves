@@ -4,7 +4,8 @@ import {
   Maximize2, Minimize2, RefreshCw, Clock, Users, CheckCircle2,
   Loader2, WifiOff, Volume2, VolumeX,
 } from "lucide-react";
-import logoHorizontal from "@/assets/logo_horizontal.png";
+import logoBlack from "@/assets/logo-black.png";
+import logoGold from "@/assets/logo-gold.png";
 
 interface Appointment {
   id: string;

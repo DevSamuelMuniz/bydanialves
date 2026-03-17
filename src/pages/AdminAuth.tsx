@@ -9,7 +9,8 @@ import { useToast } from "@/hooks/use-toast";
 import { ShieldCheck, Eye, EyeOff } from "lucide-react";
 import { PasswordInput } from "@/components/PasswordInput";
 import authBg from "@/assets/auth-bg.jpg";
-import logoHorizontal from "@/assets/logo_horizontal.png";
+import logoBlack from "@/assets/logo-black.png";
+import logoGold from "@/assets/logo-gold.png";
 import { AuthImageOverlay } from "@/components/AuthImageOverlay";
 
 export default function AdminAuth() {

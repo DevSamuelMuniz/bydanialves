@@ -8,7 +8,8 @@ import {
   GitBranch, Pencil, X, QrCode, Download,
 } from "lucide-react";
 import { QRCodeSVG, QRCodeCanvas } from "qrcode.react";
-import logoHorizontal from "@/assets/logo_horizontal.png";
+import logoBlack from "@/assets/logo-black.png";
+import logoGold from "@/assets/logo-gold.png";
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetDescription } from "@/components/ui/sheet";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";

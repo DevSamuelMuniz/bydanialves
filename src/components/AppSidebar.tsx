@@ -16,8 +16,9 @@ import {
 } from "@/components/ui/sidebar";
 import { LogOut, LucideIcon } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import logoVertical from "@/assets/logo_vertical.png";
-import logoIcon from "@/assets/logo_icon.png";
+import logoBlack from "@/assets/logo-black.png";
+import logoGold from "@/assets/logo-gold.png";
+import { useTheme } from "next-themes";
 
 export interface NavItem {
   title: string;
