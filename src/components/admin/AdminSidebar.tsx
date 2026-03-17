@@ -20,8 +20,9 @@ import {
   ChevronDown, BarChart2, LogOut, CalendarDays, TableProperties, Award,
 } from "lucide-react";
 import { useLocation } from "react-router-dom";
-import logoVertical from "@/assets/logo_vertical.png";
-import logoIcon from "@/assets/logo_icon.png";
+import logoBlack from "@/assets/logo-black.png";
+import logoGold from "@/assets/logo-gold.png";
+import { useTheme } from "next-themes";
 
 function usePendingQueueCount() {
   const [count, setCount] = useState(0);
@@ -255,6 +256,13 @@ export function AdminSidebar() {
     },
   ].filter((g) => g.items.length > 0 || g.showProfDropdown);
 
+  // Logo com alternância dark/light
+  function AdminLogoImg({ collapsed }: { collapsed: boolean }) {
+    const { resolvedTheme } = useTheme();
+    const logo = resolvedTheme === "dark" ? logoGold : logoBlack;
+    return <img src={logo} alt="Dani Alves Esmalteria" className={collapsed ? "w-8 h-8 object-contain" : "w-28 h-auto object-contain"} />;
+  }
+
   const renderItem = (item: NavItemDef) => (
     <SidebarMenuItem key={item.title}>
       <SidebarMenuButton asChild tooltip={item.title}>
@@ -287,10 +295,7 @@ export function AdminSidebar() {
   return (
     <Sidebar collapsible="icon" className="border-r border-sidebar-border/60">
       <SidebarHeader className={`border-b border-sidebar-border/40 transition-all duration-200 ${collapsed ? "items-center p-3" : "items-center p-4 pb-3"}`}>
-        {collapsed
-          ? <img src={logoIcon} alt="DA" className="w-8 h-8 object-contain" />
-          : <img src={logoVertical} alt="Dani Alves Beauty Express" className="w-28 h-auto object-contain" />
-        }
+        <AdminLogoImg collapsed={collapsed} />
         {levelLabel && !collapsed && (
           <div className="w-full pt-1">
             <Badge variant="outline" className={`text-xs w-full justify-center py-1 ${levelColor}`}>

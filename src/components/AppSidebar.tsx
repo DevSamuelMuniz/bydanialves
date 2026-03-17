@@ -16,8 +16,9 @@ import {
 } from "@/components/ui/sidebar";
 import { LogOut, LucideIcon } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import logoVertical from "@/assets/logo_vertical.png";
-import logoIcon from "@/assets/logo_icon.png";
+import logoBlack from "@/assets/logo-black.png";
+import logoGold from "@/assets/logo-gold.png";
+import { useTheme } from "next-themes";
 
 export interface NavItem {
   title: string;
@@ -37,17 +38,15 @@ interface AppSidebarProps {
 export function AppSidebar({ items, groupLabel, topBadge, bottomSlot }: AppSidebarProps) {
   const { signOut } = useAuth();
   const { state } = useSidebar();
+  const { resolvedTheme } = useTheme();
   const collapsed = state === "collapsed";
-  const imgClass = collapsed ? "w-8 h-8 object-contain rounded-md" : "w-32 h-auto object-contain";
+  const logo = resolvedTheme === "dark" ? logoGold : logoBlack;
 
   return (
     <Sidebar collapsible="icon" className="border-r border-sidebar-border/60">
       {/* Logo */}
       <SidebarHeader className={`border-b border-sidebar-border/40 transition-all duration-200 ${collapsed ? "items-center p-3" : "items-center p-4 pb-3"}`}>
-        {collapsed
-          ? <img src={logoIcon} alt="DA" className="w-8 h-8 object-contain" />
-          : <img src={logoVertical} alt="Dani Alves Beauty Express" className="w-28 h-auto object-contain" />
-        }
+        <img src={logo} alt="Dani Alves Esmalteria" className={collapsed ? "w-8 h-8 object-contain" : "w-28 h-auto object-contain"} />
         {topBadge && !collapsed && (
           <div className="w-full pt-1">{topBadge}</div>
         )}

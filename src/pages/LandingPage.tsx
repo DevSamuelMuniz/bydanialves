@@ -122,7 +122,8 @@ import {
   Check, Crown, ArrowLeft, Loader2, User, LogIn, Moon, Sun,
 } from "lucide-react";
 import { useTheme } from "next-themes";
-import logoHorizontal from "@/assets/logo_horizontal.png";
+import logoBlack from "@/assets/logo-black.png";
+import logoGold from "@/assets/logo-gold.png";
 import { supabase } from "@/integrations/supabase/client";
 import gallery1 from "@/assets/gallery-1.jpeg";
 import gallery2 from "@/assets/gallery-2.png";
@@ -249,7 +250,7 @@ function SubscriptionModal({ open, onClose, selectedPlan }: { open: boolean; onC
     <Dialog open={open} onOpenChange={(v) => { if (!v) onClose(); }}>
       <DialogContent className="max-w-md p-0 overflow-hidden gap-0">
         <div className="gradient-gold p-5 flex items-center gap-3">
-          <img src={logoHorizontal} alt="Dani Alves Beauty Express" className="h-10 object-contain border-2 border-white/30 shadow rounded" />
+          <img src={logoGold} alt="Dani Alves Esmalteria" className="h-10 object-contain border-2 border-white/30 shadow rounded" />
           <div>
             <p className="text-primary-foreground font-serif font-bold text-lg leading-tight">Dani Alves Studio</p>
             <p className="text-primary-foreground/80 text-xs">
@@ -448,7 +449,8 @@ export default function LandingPage() {
         <header className={`fixed top-0 left-0 right-0 z-50 border-b transition-all duration-300 ${scrolled ? "bg-background/95 backdrop-blur-md shadow-md border-border/60" : "glass border-border/40"}`}>
           <div className="max-w-6xl mx-auto px-6 h-16 flex items-center justify-between">
             <button onClick={() => window.scrollTo({ top: 0, behavior: "smooth" })} className="focus:outline-none">
-              <img alt="Dani Alves Beauty Express" className="h-10 object-contain cursor-pointer" src={logoHorizontal} />
+              <img alt="Dani Alves Esmalteria" className="h-10 object-contain cursor-pointer dark:hidden" src={logoBlack} />
+              <img alt="Dani Alves Esmalteria" className="h-10 object-contain cursor-pointer hidden dark:block" src={logoGold} />
             </button>
             <nav className="hidden md:flex items-center gap-8 text-sm font-medium text-muted-foreground">
               <button onClick={() => scrollTo("beneficios")} className="hover:text-foreground transition-colors">Benefícios</button>
@@ -718,7 +720,8 @@ export default function LandingPage() {
           <div className="max-w-6xl mx-auto px-6">
             <div className="grid grid-cols-1 md:grid-cols-3 gap-10">
               <div>
-                <img src={logoHorizontal} alt="Dani Alves Beauty Express" className="h-16 object-contain mb-4" />
+                <img src={logoBlack} alt="Dani Alves Esmalteria" className="h-16 object-contain mb-4 dark:hidden" />
+                <img src={logoGold} alt="Dani Alves Esmalteria" className="h-16 object-contain mb-4 hidden dark:block" />
                 <p className="text-sm text-muted-foreground max-w-xs">Beleza, cuidado e exclusividade em cada detalhe. Visite uma de nossas unidades e sinta a diferença.</p>
               </div>
               <div>
