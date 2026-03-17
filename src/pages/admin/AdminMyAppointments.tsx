@@ -19,11 +19,10 @@ import { Textarea } from "@/components/ui/textarea";
 import { useToast } from "@/hooks/use-toast";
 import { cn } from "@/lib/utils";
 
-function generateSlots(start = 8, end = 20): string[] {
+function generateSlots(start = 8, end = 17): string[] {
   const slots: string[] = [];
-  for (let h = start; h < end; h++) {
+  for (let h = start; h <= end; h++) {
     slots.push(`${String(h).padStart(2, "0")}:00`);
-    slots.push(`${String(h).padStart(2, "0")}:30`);
   }
   return slots;
 }
