@@ -248,34 +248,34 @@ export default function PublicQueueTV() {
         className="min-h-screen bg-background text-foreground flex flex-col select-none"
       >
         {/* Header */}
-        <header className="flex items-center justify-between px-8 py-5 border-b border-border/40 bg-card/60 backdrop-blur shrink-0">
-          <div className="flex items-center gap-4">
-            <img src={logoHorizontal} alt="Dani Alves Beauty Express" className="h-10 object-contain" />
-            <div className="w-px h-10 bg-border/40" />
-            <div>
-              <h1 className="text-2xl font-serif font-bold tracking-tight">TV de Fila</h1>
-              <p className="text-sm text-muted-foreground">
+        <header className="flex items-center justify-between px-3 sm:px-6 md:px-8 py-3 sm:py-5 border-b border-border/40 bg-card/60 backdrop-blur shrink-0 gap-2">
+          <div className="flex items-center gap-2 sm:gap-4 min-w-0">
+            <img src={logoHorizontal} alt="Dani Alves Beauty Express" className="h-7 sm:h-10 object-contain shrink-0" />
+            <div className="w-px h-7 sm:h-10 bg-border/40 shrink-0" />
+            <div className="min-w-0">
+              <h1 className="text-base sm:text-2xl font-serif font-bold tracking-tight truncate">TV de Fila</h1>
+              <p className="text-xs text-muted-foreground hidden sm:block">
                 {label || "Atendimentos de hoje"}
               </p>
             </div>
           </div>
 
-          <div className="flex items-center gap-6">
+          <div className="flex items-center gap-2 sm:gap-6 shrink-0">
             <LiveClock />
-            <div className="flex items-center gap-2">
-              <span className="text-xs text-muted-foreground/60 hidden sm:block">
+            <div className="flex items-center gap-1 sm:gap-2">
+              <span className="text-xs text-muted-foreground/60 hidden lg:block">
                 Atualizado às {lastUpdate.toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit", second: "2-digit" })}
               </span>
               <button
                 onClick={fetchData}
-                className="h-9 w-9 rounded-lg flex items-center justify-center hover:bg-secondary/60 transition-colors text-muted-foreground hover:text-foreground"
+                className="h-8 w-8 sm:h-9 sm:w-9 rounded-lg flex items-center justify-center hover:bg-secondary/60 transition-colors text-muted-foreground hover:text-foreground"
               >
                 <RefreshCw className="h-4 w-4" />
               </button>
               {/* Mute toggle */}
               <button
                 onClick={() => setMuted((m) => !m)}
-                className={`h-9 w-9 rounded-lg flex items-center justify-center transition-colors ${
+                className={`h-8 w-8 sm:h-9 sm:w-9 rounded-lg flex items-center justify-center transition-colors ${
                   muted
                     ? "bg-destructive/10 text-destructive hover:bg-destructive/20"
                     : "hover:bg-secondary/60 text-muted-foreground hover:text-foreground"
@@ -286,13 +286,14 @@ export default function PublicQueueTV() {
               </button>
               <button
                 onClick={() => setIsDark(!isDark)}
-                className="h-9 px-3 rounded-lg flex items-center justify-center hover:bg-secondary/60 transition-colors text-muted-foreground hover:text-foreground text-xs gap-1.5"
+                className="h-8 sm:h-9 px-2 sm:px-3 rounded-lg flex items-center justify-center hover:bg-secondary/60 transition-colors text-muted-foreground hover:text-foreground text-xs gap-1.5"
               >
-                {isDark ? "☀️ Claro" : "🌙 Escuro"}
+                {isDark ? "☀️" : "🌙"}
+                <span className="hidden sm:inline">{isDark ? "Claro" : "Escuro"}</span>
               </button>
               <button
                 onClick={toggleFullscreen}
-                className="h-9 w-9 rounded-lg flex items-center justify-center hover:bg-secondary/60 transition-colors text-muted-foreground hover:text-foreground"
+                className="h-8 w-8 sm:h-9 sm:w-9 rounded-lg flex items-center justify-center hover:bg-secondary/60 transition-colors text-muted-foreground hover:text-foreground"
               >
                 {isFullscreen ? <Minimize2 className="h-4 w-4" /> : <Maximize2 className="h-4 w-4" />}
               </button>
