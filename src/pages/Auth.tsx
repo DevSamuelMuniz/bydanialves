@@ -109,7 +109,8 @@ export default function Auth() {
         <div className="w-full lg:w-1/2 flex items-center justify-center bg-background px-6 py-12 overflow-y-auto">
           <div className="w-full max-w-md space-y-6">
             <div className="text-center">
-              <img src={logo} alt="Salão Daniella Alves" className="mx-auto h-auto w-40 mb-4" />
+              <img src={logoBlack} alt="Dani Alves Esmalteria" className="mx-auto h-auto w-40 mb-4 dark:hidden" />
+              <img src={logoGold} alt="Dani Alves Esmalteria" className="mx-auto h-auto w-40 mb-4 hidden dark:block" />
               <h1 className="font-serif text-2xl font-bold tracking-tight">Recuperar Senha</h1>
               <p className="text-muted-foreground mt-1">Informe seu e-mail para redefinir</p>
             </div>
