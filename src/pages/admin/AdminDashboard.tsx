@@ -104,11 +104,11 @@ export default function AdminDashboard() {
   }, [isManagerOrCeo]);
 
   // ─── Resolve which branch ID is active ───────────────────────────────────
-  // For staff with fixed branch: always their branch
-  // For CEO/Manager: use dropdown filter (null = all)
-  const activeBranchId: string | null = adminBranchId
-    ? adminBranchId  // fixed staff
-    : (isManagerOrCeo && branchFilter !== "all" ? branchFilter : null);
+  // CEO/Manager: dropdown always wins (null = all branches aggregated)
+  // Other staff (attendant, etc.): locked to their own branch
+  const activeBranchId: string | null = isManagerOrCeo
+    ? (branchFilter !== "all" ? branchFilter : null)
+    : (adminBranchId || null);
 
   // ─── Fetch all dashboard data ─────────────────────────────────────────────
   const fetchData = useCallback(async (currentBranches: { id: string; name: string }[], currentActiveBranchId: string | null) => {
