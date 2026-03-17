@@ -256,6 +256,13 @@ export function AdminSidebar() {
     },
   ].filter((g) => g.items.length > 0 || g.showProfDropdown);
 
+  // Logo com alternância dark/light
+  function AdminLogoImg({ collapsed }: { collapsed: boolean }) {
+    const { resolvedTheme } = useTheme();
+    const logo = resolvedTheme === "dark" ? logoGold : logoBlack;
+    return <img src={logo} alt="Dani Alves Esmalteria" className={collapsed ? "w-8 h-8 object-contain" : "w-28 h-auto object-contain"} />;
+  }
+
   const renderItem = (item: NavItemDef) => (
     <SidebarMenuItem key={item.title}>
       <SidebarMenuButton asChild tooltip={item.title}>
