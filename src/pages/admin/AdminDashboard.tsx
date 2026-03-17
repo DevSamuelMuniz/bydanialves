@@ -191,21 +191,18 @@ export default function AdminDashboard() {
     ]);
 
     // ── Financial records ──
-    // financial_records has a text "branch" column (branch name, not ID)
-    // We need to map branch ID → name to filter
+    // financial_records.branch stores the branch name as text (not ID)
+    // We match using ilike (case-insensitive) to avoid casing mismatches
     let finQuery = supabase
       .from("financial_records")
       .select("amount, created_at, branch")
       .eq("type", "income")
       .gte("created_at", monthStart);
 
-    // If branch filter is active, we need branch name
-    let activeBranchName: string | null = null;
     if (activeBranchId) {
       const found = branches.find((b) => b.id === activeBranchId);
       if (found) {
-        activeBranchName = found.name;
-        finQuery = finQuery.eq("branch", found.name);
+        finQuery = finQuery.ilike("branch", found.name);
       }
     }
 
@@ -319,9 +316,10 @@ export default function AdminDashboard() {
       }
     }
 
-    // financial_records.branch = branch name (text)
+    // financial_records.branch = branch name (text) — match case-insensitive
     for (const r of (branchFinRes.data || [])) {
-      const entry = Object.values(branchMap).find((b) => b.name === r.branch);
+      const rBranch = (r.branch || "").toLowerCase().trim();
+      const entry = Object.values(branchMap).find((b) => b.name.toLowerCase().trim() === rBranch);
       if (entry) entry.revenue += Number(r.amount);
     }
 
