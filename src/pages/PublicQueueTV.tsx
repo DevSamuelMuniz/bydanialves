@@ -79,10 +79,10 @@ function LiveClock() {
   }, []);
   return (
     <div className="text-right">
-      <p className="text-4xl font-mono font-bold tabular-nums tracking-tight text-foreground">
+      <p className="text-xl sm:text-3xl md:text-4xl font-mono font-bold tabular-nums tracking-tight text-foreground">
         {time.toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit", second: "2-digit" })}
       </p>
-      <p className="text-sm text-muted-foreground capitalize mt-0.5">
+      <p className="text-xs sm:text-sm text-muted-foreground capitalize mt-0.5 hidden sm:block">
         {time.toLocaleDateString("pt-BR", { weekday: "long", day: "2-digit", month: "long", year: "numeric" })}
       </p>
     </div>
