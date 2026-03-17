@@ -288,10 +288,7 @@ export function AdminSidebar() {
   return (
     <Sidebar collapsible="icon" className="border-r border-sidebar-border/60">
       <SidebarHeader className={`border-b border-sidebar-border/40 transition-all duration-200 ${collapsed ? "items-center p-3" : "items-center p-4 pb-3"}`}>
-        {collapsed
-          ? <img src={logoIcon} alt="DA" className="w-8 h-8 object-contain" />
-          : <img src={logoVertical} alt="Dani Alves Beauty Express" className="w-28 h-auto object-contain" />
-        }
+        <AdminLogoImg collapsed={collapsed} />
         {levelLabel && !collapsed && (
           <div className="w-full pt-1">
             <Badge variant="outline" className={`text-xs w-full justify-center py-1 ${levelColor}`}>

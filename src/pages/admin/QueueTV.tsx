@@ -382,7 +382,7 @@ export default function QueueTV() {
         {/* Header */}
         <header className="flex items-center justify-between px-3 sm:px-6 md:px-8 py-3 sm:py-5 border-b border-border/40 bg-card/60 backdrop-blur shrink-0 gap-2">
           <div className="flex items-center gap-2 sm:gap-4 min-w-0">
-            <img src={logoHorizontal} alt="Dani Alves Beauty Express" className="h-7 sm:h-10 object-contain shrink-0" />
+            <img src={isDark ? logoGold : logoBlack} alt="Dani Alves Esmalteria" className="h-7 sm:h-10 object-contain shrink-0" />
             <div className="w-px h-7 sm:h-10 bg-border/40 shrink-0" />
             <div className="min-w-0">
               <h1 className="text-base sm:text-2xl font-serif font-bold tracking-tight truncate">TV de Fila</h1>
