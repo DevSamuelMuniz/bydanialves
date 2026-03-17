@@ -1,4 +1,4 @@
-import { useEffect, useState, useCallback, useRef } from "react";
+import { useEffect, useState, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAdminPermissions } from "@/hooks/use-admin-permissions";
 import { useAuth } from "@/contexts/AuthContext";
