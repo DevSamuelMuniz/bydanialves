@@ -449,7 +449,8 @@ export default function LandingPage() {
         <header className={`fixed top-0 left-0 right-0 z-50 border-b transition-all duration-300 ${scrolled ? "bg-background/95 backdrop-blur-md shadow-md border-border/60" : "glass border-border/40"}`}>
           <div className="max-w-6xl mx-auto px-6 h-16 flex items-center justify-between">
             <button onClick={() => window.scrollTo({ top: 0, behavior: "smooth" })} className="focus:outline-none">
-              <img alt="Dani Alves Beauty Express" className="h-10 object-contain cursor-pointer" src={logoHorizontal} />
+              <img alt="Dani Alves Esmalteria" className="h-10 object-contain cursor-pointer dark:hidden" src={logoBlack} />
+              <img alt="Dani Alves Esmalteria" className="h-10 object-contain cursor-pointer hidden dark:block" src={logoGold} />
             </button>
             <nav className="hidden md:flex items-center gap-8 text-sm font-medium text-muted-foreground">
               <button onClick={() => scrollTo("beneficios")} className="hover:text-foreground transition-colors">Benefícios</button>
