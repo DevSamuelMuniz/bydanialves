@@ -25,7 +25,7 @@ interface UserInfo {
 
 const LEVEL_OPTIONS: { value: NonNullable<AdminLevel>; label: string }[] = [
   { value: "attendant", label: "Atendente" },
-  { value: "professional", label: "Profissional" },
+  { value: "professional", label: "Cabeleireiro(a)" },
   { value: "manager", label: "Gerente" },
   { value: "ceo", label: "CEO" },
 ];

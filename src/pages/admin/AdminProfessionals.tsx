@@ -58,7 +58,7 @@ const HOURS = Array.from({ length: 10 }, (_, i) => {
 
 const LEVEL_OPTIONS: { value: NonNullable<AdminLevel>; label: string }[] = [
   { value: "attendant",    label: "Atendente" },
-  { value: "professional", label: "Profissional" },
+  { value: "professional", label: "Cabeleireiro(a)" },
 ];
 
 interface Branch { id: string; name: string; }

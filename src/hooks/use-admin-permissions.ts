@@ -83,7 +83,7 @@ export function useAdminPermissions() {
 
 export const ADMIN_LEVEL_LABELS: Record<NonNullable<AdminLevel>, string> = {
   attendant: "Atendente",
-  professional: "Profissional",
+  professional: "Cabeleireiro(a)",
   manager: "Gerente",
   ceo: "CEO",
 };
