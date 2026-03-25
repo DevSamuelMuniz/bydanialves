@@ -367,17 +367,49 @@ export default function AdminMyAppointments() {
   const ProfHeader = ({ prof }: { prof: { user_id: string; full_name: string; avatar_url: string | null } }) => {
     const initials = prof.full_name.split(" ").map((n) => n[0]).slice(0, 2).join("").toUpperCase();
     const apptCount = appointments.filter((a) => a.professional_id === prof.user_id).length;
+    const isBlocked = dayBlocks[prof.user_id] ?? false;
     return (
-      <div className="flex flex-col items-center gap-1 py-2 px-1 min-w-[120px]">
-        <Avatar className="w-10 h-10 border-2 border-border">
-          <AvatarImage src={prof.avatar_url ?? undefined} />
-          <AvatarFallback className="text-xs font-bold bg-primary/10 text-primary">{initials}</AvatarFallback>
-        </Avatar>
-        <p className="text-xs font-semibold text-center leading-tight line-clamp-2">{prof.full_name}</p>
-        {apptCount > 0 && (
-          <Badge variant="secondary" className="text-[10px] px-1.5 py-0 h-4">{apptCount}</Badge>
+      <button
+        className={cn(
+          "flex flex-col items-center gap-1 py-2 px-1 min-w-[120px] w-full transition-all rounded-md group",
+          isBlocked
+            ? "bg-destructive/8 hover:bg-destructive/15"
+            : "hover:bg-muted/60"
         )}
-      </div>
+        title={isBlocked ? `Desbloquear agenda de ${prof.full_name}` : `Fechar agenda de ${prof.full_name} hoje`}
+        onClick={() => {
+          if (isBlocked) {
+            handleUnblockDay(prof.user_id, prof.full_name);
+          } else {
+            setBlockTarget(prof);
+            setBlockReason("");
+          }
+        }}
+      >
+        <div className="relative">
+          <Avatar className={cn("w-10 h-10 border-2", isBlocked ? "border-destructive/50 opacity-60" : "border-border")}>
+            <AvatarImage src={prof.avatar_url ?? undefined} />
+            <AvatarFallback className="text-xs font-bold bg-primary/10 text-primary">{initials}</AvatarFallback>
+          </Avatar>
+          {isBlocked && (
+            <div className="absolute -bottom-1 -right-1 w-5 h-5 rounded-full bg-destructive flex items-center justify-center">
+              <LockKeyhole className="w-2.5 h-2.5 text-destructive-foreground" />
+            </div>
+          )}
+        </div>
+        <p className={cn("text-xs font-semibold text-center leading-tight line-clamp-2", isBlocked && "text-muted-foreground line-through")}>{prof.full_name}</p>
+        {isBlocked ? (
+          <Badge variant="destructive" className="text-[10px] px-1.5 py-0 h-4 gap-0.5">
+            <LockKeyhole className="w-2 h-2" /> Bloqueado
+          </Badge>
+        ) : apptCount > 0 ? (
+          <Badge variant="secondary" className="text-[10px] px-1.5 py-0 h-4">{apptCount}</Badge>
+        ) : (
+          <span className="text-[10px] text-muted-foreground opacity-0 group-hover:opacity-100 transition-opacity flex items-center gap-0.5">
+            <LockKeyhole className="w-2.5 h-2.5" /> Bloquear
+          </span>
+        )}
+      </button>
     );
   };
 
