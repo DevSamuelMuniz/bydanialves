@@ -718,7 +718,7 @@ export default function LandingPage() {
                     <div className="h-48 overflow-hidden"><img src="https://vugesuaephjbygtpyese.supabase.co/storage/v1/object/public/branch-images/branch-1772306240857.jpeg" alt="Filial Principal" className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" /></div>
                     <div className="absolute bottom-0 left-0 right-0 p-4 bg-gradient-to-t from-black/80 to-transparent">
                       <div className="flex items-center gap-2 mb-0.5"><MapPin className="h-4 w-4 text-primary shrink-0" /><span className="text-white font-bold text-sm">Filial Principal</span></div>
-                      <p className="text-white/70 text-xs pl-6">Av. Domingos Ferreira, 2215 — Sala 308</p>
+                      <p className="text-white/70 text-xs pl-6">Av. Domingos Ferreira, 2215 — Sala 307</p>
                     </div>
                   </a>
                   <div className="rounded-2xl overflow-hidden border border-border/60 shadow-elegant">
