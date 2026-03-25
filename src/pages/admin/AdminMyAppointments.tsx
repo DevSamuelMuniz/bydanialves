@@ -95,6 +95,12 @@ export default function AdminMyAppointments() {
   // Appointment detail popover
   const [detailAppt, setDetailAppt] = useState<any | null>(null);
 
+  // Block day modal
+  const [blockTarget, setBlockTarget] = useState<{ user_id: string; full_name: string; avatar_url: string | null } | null>(null);
+  const [blockReason, setBlockReason] = useState("");
+  const [blocking, setBlocking] = useState(false);
+  const [dayBlocks, setDayBlocks] = useState<Record<string, boolean>>({}); // professional_id -> blocked for selectedDate
+
   // ─── Data fetching ──────────────────────────────────────────────────────────
 
   const fetchData = useCallback(async () => {
