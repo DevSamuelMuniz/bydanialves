@@ -9,7 +9,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { Separator } from "@/components/ui/separator";
 import { Calendar } from "@/components/ui/calendar";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogDescription } from "@/components/ui/dialog";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Input } from "@/components/ui/input";
@@ -21,7 +21,7 @@ import { cn } from "@/lib/utils";
 import {
   Clock, DollarSign, User, Scissors, CheckCircle2, XCircle,
   CalendarIcon, RotateCcw, Plus, Search, CalendarDays, ListChecks,
-  ChevronDown, ChevronUp, PlayCircle,
+  ChevronDown, ChevronUp, PlayCircle, LockKeyhole, UnlockKeyhole,
 } from "lucide-react";
 import {
   AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
