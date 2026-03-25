@@ -240,15 +240,15 @@ export default function AdminServices() {
                     </AlertDialogTrigger>
                     <AlertDialogContent>
                       <AlertDialogHeader>
-                        <AlertDialogTitle>Desativar serviço?</AlertDialogTitle>
+                        <AlertDialogTitle>Excluir serviço?</AlertDialogTitle>
                         <AlertDialogDescription>
-                          O serviço <strong>{s.name}</strong> será desativado e não aparecerá em novos agendamentos. Os dados históricos serão preservados.
+                          O serviço <strong>{s.name}</strong> será removido permanentemente. Esta ação não pode ser desfeita.
                         </AlertDialogDescription>
                       </AlertDialogHeader>
                       <AlertDialogFooter>
                         <AlertDialogCancel>Cancelar</AlertDialogCancel>
                         <AlertDialogAction onClick={() => handleDelete(s.id, s.name)} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">
-                          Desativar
+                          Excluir
                         </AlertDialogAction>
                       </AlertDialogFooter>
                     </AlertDialogContent>
