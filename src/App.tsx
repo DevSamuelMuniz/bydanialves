@@ -100,6 +100,7 @@ const App = () => (
               <Route path="professionals/history" element={<AdminProfessionalHistory />} />
               <Route path="work-calendar" element={<AdminWorkCalendar />} />
               <Route path="my-schedule" element={<AdminMySchedule />} />
+              <Route path="whatsapp" element={<AdminWhatsApp />} />
             </Route>
 
             <Route path="*" element={<NotFound />} />
