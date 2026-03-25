@@ -119,6 +119,7 @@ export default function NewBooking() {
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
   const [escovasDisponiveis, setEscovasDisponiveis] = useState(0);
+  const [temPlanoAtivo, setTemPlanoAtivo] = useState(false);
   const [blocked, setBlocked] = useState(false);
   const [blockedModalOpen, setBlockedModalOpen] = useState(false);
   const [workCalendarMap, setWorkCalendarMap] = useState<Record<string, boolean>>({});
@@ -376,6 +377,7 @@ export default function NewBooking() {
 
       if (sub && (sub as any).plans) {
         const plan = (sub as any).plans;
+        setTemPlanoAtivo(true);
         const totalEscovas = parseEscovasFromIncludes(plan.includes);
         const now = new Date();
         const startOfMonth = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}-01`;
@@ -449,8 +451,8 @@ export default function NewBooking() {
   }, [selectedDate, selectedBranch]);
 
   const toggleService = (s: ServiceItem) => {
-    // If client tries to add a system service (escova) but has no credits left, show modal
-    if (s.is_system && escovasDisponiveis === 0) {
+    // Só bloqueia serviço de sistema se o cliente TEM plano mas os créditos acabaram
+    if (s.is_system && temPlanoAtivo && escovasDisponiveis === 0) {
       const alreadySelected = selectedServices.find((x) => x.id === s.id);
       if (!alreadySelected) {
         setPlanEsgotadoOpen(true);
