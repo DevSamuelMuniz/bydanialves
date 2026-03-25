@@ -234,6 +234,7 @@ export type Database = {
           image_url: string | null
           name: string
           updated_at: string
+          whatsapp: string | null
         }
         Insert: {
           active?: boolean
@@ -243,6 +244,7 @@ export type Database = {
           image_url?: string | null
           name: string
           updated_at?: string
+          whatsapp?: string | null
         }
         Update: {
           active?: boolean
@@ -252,6 +254,7 @@ export type Database = {
           image_url?: string | null
           name?: string
           updated_at?: string
+          whatsapp?: string | null
         }
         Relationships: []
       }
