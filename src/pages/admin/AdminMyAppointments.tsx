@@ -267,6 +267,45 @@ export default function AdminMyAppointments() {
     if (error) toast({ title: "Erro", description: error.message, variant: "destructive" });
     else { toast({ title: "Atendimento cancelado." }); fetchData(); }
   };
+  // ─── Block/Unblock helpers ───────────────────────────────────────────────────
+
+  const handleBlockDay = async () => {
+    if (!blockTarget || !user) return;
+    setBlocking(true);
+    const dateStr = format(selectedDate, "yyyy-MM-dd");
+    const { error } = await (supabase as any)
+      .from("professional_day_blocks")
+      .insert({
+        professional_id: blockTarget.user_id,
+        blocked_date: dateStr,
+        blocked_by: user.id,
+        reason: blockReason || null,
+      });
+    setBlocking(false);
+    if (error) {
+      toast({ title: "Erro ao bloquear agenda", description: error.message, variant: "destructive" });
+    } else {
+      toast({ title: "🔒 Agenda bloqueada!", description: `${blockTarget.full_name} não receberá novos agendamentos hoje.` });
+      setBlockTarget(null);
+      setBlockReason("");
+      fetchData();
+    }
+  };
+
+  const handleUnblockDay = async (professionalId: string, profName: string) => {
+    const dateStr = format(selectedDate, "yyyy-MM-dd");
+    const { error } = await (supabase as any)
+      .from("professional_day_blocks")
+      .delete()
+      .eq("professional_id", professionalId)
+      .eq("blocked_date", dateStr);
+    if (error) {
+      toast({ title: "Erro ao desbloquear", description: error.message, variant: "destructive" });
+    } else {
+      toast({ title: "🔓 Agenda desbloqueada!", description: `${profName} voltará a receber agendamentos.` });
+      fetchData();
+    }
+  };
 
   // ─── Computed ───────────────────────────────────────────────────────────────
 
