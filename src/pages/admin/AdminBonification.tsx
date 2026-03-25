@@ -571,7 +571,7 @@ export default function AdminBonification() {
               <Button
                 onClick={handlePayAll}
                 disabled={paying || pendingPayments.length === 0}
-                className="gap-2 h-9 bg-green-600 hover:bg-green-700 text-white"
+                className="gap-2 h-9"
               >
                 <CheckCircle2 className="w-4 h-4" />
                 Pagar
