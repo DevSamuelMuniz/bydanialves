@@ -131,6 +131,8 @@ import gallery3 from "@/assets/gallery-3.png";
 import gallery4 from "@/assets/gallery-4.jpeg";
 import gallery5 from "@/assets/gallery-5.png";
 import gallery6 from "@/assets/gallery-6.jpg";
+import brandLogo1 from "@/assets/brand-logo-1.png";
+import brandLogo2 from "@/assets/brand-logo-2.png";
 
 // ─── Constants ───────────────────────────────────────────────────────────────
 
@@ -145,6 +147,14 @@ const galleryUniqueImages = [gallery1, gallery2, gallery3, gallery4, gallery5, g
 
 // Doubled for infinite marquee
 const galleryImages = [gallery1, gallery2, gallery3, gallery4, gallery5, gallery6, gallery1, gallery3, gallery5, gallery6, gallery2, gallery4];
+
+const brandLogos = [
+  { src: brandLogo1, alt: "L'Oréal, Kérastase, Redken, Wella" },
+  { src: brandLogo2, alt: "Olaplex, Schwarzkopf, Joico, Matrix" },
+];
+
+// Replicate 5 times for infinite scroll
+const brandCarouselItems = Array.from({ length: 5 }, () => brandLogos).flat();
 
 const storyChapters = [
   { title: "O Começo", text: "Daniella Alves começou sua jornada há mais de 8 anos, quando ainda era uma jovem apaixonada por beleza e cuidado. Com muita determinação e um sonho grande, abriu seu primeiro salão em um pequeno espaço, mas com um coração enorme." },
@@ -563,6 +573,38 @@ export default function LandingPage() {
                   </div>
                 </div>
               )}
+            </div>
+          </div>
+        </section>
+
+        {/* ═══ CARROSSEL DE MARCAS ═══ */}
+        <section className="py-10 overflow-hidden gradient-gold">
+          <div className="text-center mb-6">
+            <p className="text-xs uppercase tracking-widest text-primary-foreground/80 font-medium">Marcas que trabalhamos</p>
+          </div>
+          <div className="relative">
+            {/* Gradient fade edges matching gold */}
+            <div className="absolute left-0 top-0 bottom-0 w-20 z-10 pointer-events-none" style={{ background: "linear-gradient(to right, hsl(var(--primary)), transparent)" }} />
+            <div className="absolute right-0 top-0 bottom-0 w-20 z-10 pointer-events-none" style={{ background: "linear-gradient(to left, hsl(var(--primary)), transparent)" }} />
+            <div
+              className="flex gap-8 items-center animate-[brand-marquee_25s_linear_infinite]"
+              style={{ width: "max-content", willChange: "transform" }}
+            >
+              {brandCarouselItems.map((brand, i) => (
+                <div
+                  key={i}
+                  className="flex-shrink-0 rounded-xl overflow-hidden bg-white shadow-md"
+                  style={{ width: 280, height: 100, flexShrink: 0 }}
+                >
+                  <img
+                    src={brand.src}
+                    alt={brand.alt}
+                    className="w-full h-full object-contain p-2"
+                    loading="lazy"
+                    draggable={false}
+                  />
+                </div>
+              ))}
             </div>
           </div>
         </section>
