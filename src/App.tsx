@@ -38,6 +38,7 @@ import AdminReviews from "./pages/admin/AdminReviews";
 import AdminWorkCalendar from "./pages/admin/AdminWorkCalendar";
 import AdminMySchedule from "./pages/admin/AdminMySchedule";
 import QueueTV from "./pages/admin/QueueTV";
+import AdminWhatsApp from "./pages/admin/AdminWhatsApp";
 import TermosDeServico from "./pages/TermosDeServico";
 import PoliticaDePrivacidade from "./pages/PoliticaDePrivacidade";
 import PoliticaETermos from "./pages/PoliticaETermos";
@@ -99,6 +100,7 @@ const App = () => (
               <Route path="professionals/history" element={<AdminProfessionalHistory />} />
               <Route path="work-calendar" element={<AdminWorkCalendar />} />
               <Route path="my-schedule" element={<AdminMySchedule />} />
+              <Route path="whatsapp" element={<AdminWhatsApp />} />
             </Route>
 
             <Route path="*" element={<NotFound />} />

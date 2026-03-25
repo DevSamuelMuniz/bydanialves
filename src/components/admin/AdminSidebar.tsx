@@ -17,7 +17,7 @@ import {
 import {
   LayoutDashboard, Users, Calendar, Scissors, DollarSign,
   Crown, Activity, ClipboardList, Building2, Tag, Star, Tv2, UserCheck,
-  ChevronDown, BarChart2, LogOut, CalendarDays, TableProperties, Award,
+  ChevronDown, BarChart2, LogOut, CalendarDays, TableProperties, Award, MessageCircle,
 } from "lucide-react";
 import { useLocation } from "react-router-dom";
 import logoBlack from "@/assets/logo-black.png";
@@ -220,6 +220,7 @@ export function AdminSidebar() {
 
   const sistemaItems: NavItemDef[] = [
     perms.canViewLogs && { title: "Logs", url: "/admin/logs", icon: Activity, tourId: "sidebar-admin-logs" },
+    perms.canManageSystemSettings && { title: "WhatsApp por Filial", url: "/admin/whatsapp", icon: MessageCircle },
   ].filter(Boolean) as NavItemDef[];
 
   const groups: NavGroupDef[] = [
@@ -251,7 +252,7 @@ export function AdminSidebar() {
     },
     {
       label: "Sistema",
-      urls: ["/admin/logs"],
+      urls: ["/admin/logs", "/admin/whatsapp"],
       items: sistemaItems,
     },
   ].filter((g) => g.items.length > 0 || g.showProfDropdown);
