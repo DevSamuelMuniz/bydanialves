@@ -717,17 +717,17 @@ export default function AdminBonification() {
                         {/* Status */}
                         <TableCell className="text-center">
                           {row.payment_status === "paid" ? (
-                            <Badge className="bg-green-500/20 text-green-700 border-green-500/30 text-xs">
+                            <Badge className="bg-primary/20 text-primary border-primary/30 text-xs">
                               Pago
                             </Badge>
                           ) : row.payment_status === "pending" ? (
                             <div className="flex flex-col items-center gap-1">
-                              <Badge className="bg-yellow-500/20 text-yellow-700 border-yellow-500/30 text-xs">
+                              <Badge variant="secondary" className="text-xs">
                                 Pendente
                               </Badge>
                               <button
                                 onClick={() => row.payment_id && markOnePaid(row.payment_id)}
-                                className="text-xs text-green-600 hover:underline"
+                                className="text-xs text-primary hover:underline"
                               >
                                 Marcar pago
                               </button>
