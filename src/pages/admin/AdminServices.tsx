@@ -173,26 +173,12 @@ export default function AdminServices() {
   };
 
   const handleDelete = async (id: string, name: string) => {
-    const { error } = await supabase.from("services").delete().eq("id", id);
+    const { error } = await supabase.from("services").update({ active: false }).eq("id", id);
     if (error) {
-      // FK violation: service has appointments — deactivate instead
-      if (error.code === "23503") {
-        const { error: deactErr } = await supabase.from("services").update({ active: false }).eq("id", id);
-        if (deactErr) {
-          toast({ title: "Erro ao desativar", description: deactErr.message, variant: "destructive" });
-        } else {
-          toast({
-            title: "Serviço desativado",
-            description: `"${name}" possui agendamentos e não pode ser excluído. Foi desativado para não aparecer em novos agendamentos.`,
-          });
-          fetchServices();
-        }
-        return;
-      }
-      toast({ title: "Erro ao excluir", description: error.message, variant: "destructive" });
+      toast({ title: "Erro ao desativar", description: error.message, variant: "destructive" });
       return;
     }
-    toast({ title: "Serviço excluído!" });
+    toast({ title: "Serviço desativado", description: `"${name}" foi desativado e não aparecerá em novos agendamentos.` });
     fetchServices();
   };
 
@@ -246,15 +232,15 @@ export default function AdminServices() {
                     </AlertDialogTrigger>
                     <AlertDialogContent>
                       <AlertDialogHeader>
-                        <AlertDialogTitle>Excluir serviço?</AlertDialogTitle>
+                        <AlertDialogTitle>Desativar serviço?</AlertDialogTitle>
                         <AlertDialogDescription>
-                          O serviço <strong>{s.name}</strong> será removido permanentemente. Esta ação não pode ser desfeita.
+                          O serviço <strong>{s.name}</strong> será desativado e não aparecerá em novos agendamentos. Os dados históricos serão preservados.
                         </AlertDialogDescription>
                       </AlertDialogHeader>
                       <AlertDialogFooter>
                         <AlertDialogCancel>Cancelar</AlertDialogCancel>
                         <AlertDialogAction onClick={() => handleDelete(s.id, s.name)} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">
-                          Excluir
+                          Desativar
                         </AlertDialogAction>
                       </AlertDialogFooter>
                     </AlertDialogContent>
