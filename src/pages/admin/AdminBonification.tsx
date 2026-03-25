@@ -594,7 +594,7 @@ export default function AdminBonification() {
         </Card>
         <Card className="border-border/60">
           <CardContent className="p-3 flex items-center gap-3">
-            <Clock className="w-4 h-4 text-yellow-500 shrink-0" />
+            <Clock className="w-4 h-4 text-warning shrink-0" />
             <div>
               <p className="text-xs text-muted-foreground">Pendente</p>
               <p className="text-base font-bold text-foreground">{fmt(kpis.pending)}</p>
@@ -603,7 +603,7 @@ export default function AdminBonification() {
         </Card>
         <Card className="border-border/60">
           <CardContent className="p-3 flex items-center gap-3">
-            <CheckCircle2 className="w-4 h-4 text-green-500 shrink-0" />
+            <CheckCircle2 className="w-4 h-4 text-success shrink-0" />
             <div>
               <p className="text-xs text-muted-foreground">Pago</p>
               <p className="text-base font-bold text-foreground">{fmt(kpis.paid)}</p>
