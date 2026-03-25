@@ -244,7 +244,188 @@ export default function AdminProfessionalReport() {
   );
 }
 
-function ProfCard({ prof }: { prof: ProfessionalSummary }) {
+function downloadProfPDF(prof: ProfessionalSummary, dateFrom: string, dateTo: string) {
+  const doc = new jsPDF({ unit: "pt", format: "a4" });
+  const W = doc.internal.pageSize.getWidth();
+  const margin = 40;
+  let y = margin;
+
+  const completionRate = prof.total > 0 ? Math.round((prof.completed / prof.total) * 100) : 0;
+
+  // ── Header bar ──────────────────────────────────────────
+  doc.setFillColor(30, 30, 40);
+  doc.rect(0, 0, W, 70, "F");
+
+  doc.setTextColor(255, 255, 255);
+  doc.setFontSize(20);
+  doc.setFont("helvetica", "bold");
+  doc.text("Relatório de Desempenho", margin, 30);
+
+  doc.setFontSize(11);
+  doc.setFont("helvetica", "normal");
+  doc.text(`Período: ${dateFrom} a ${dateTo}`, margin, 50);
+
+  const geradoEm = new Date().toLocaleDateString("pt-BR", { day: "2-digit", month: "2-digit", year: "numeric", hour: "2-digit", minute: "2-digit" });
+  doc.text(`Gerado em: ${geradoEm}`, W - margin - 160, 50);
+
+  y = 95;
+
+  // ── Professional name & info ─────────────────────────────
+  doc.setTextColor(20, 20, 30);
+  doc.setFontSize(18);
+  doc.setFont("helvetica", "bold");
+  doc.text(prof.full_name, margin, y);
+  y += 20;
+
+  doc.setFontSize(11);
+  doc.setFont("helvetica", "normal");
+  doc.setTextColor(100, 100, 120);
+  const levelLabel = LEVEL_LABELS[prof.admin_level] ?? prof.admin_level;
+  doc.text(`Cargo: ${levelLabel}${prof.branch_name ? "   |   Filial: " + prof.branch_name : ""}`, margin, y);
+  y += 30;
+
+  // ── Divider ──────────────────────────────────────────────
+  doc.setDrawColor(220, 220, 230);
+  doc.line(margin, y, W - margin, y);
+  y += 20;
+
+  // ── KPI cards (2x2 grid) ─────────────────────────────────
+  const kpis = [
+    { label: "Total de atendimentos", value: String(prof.total), color: [79, 70, 229] as [number,number,number] },
+    { label: "Concluídos",            value: String(prof.completed), color: [16, 185, 129] as [number,number,number] },
+    { label: "Horas trabalhadas",     value: fmtHours(prof.hours_worked), color: [59, 130, 246] as [number,number,number] },
+    { label: "Taxa de conclusão",     value: `${completionRate}%`, color: [139, 92, 246] as [number,number,number] },
+  ];
+
+  const cardW = (W - margin * 2 - 15) / 2;
+  const cardH = 60;
+  kpis.forEach((kpi, i) => {
+    const col = i % 2;
+    const row = Math.floor(i / 2);
+    const x = margin + col * (cardW + 15);
+    const cy = y + row * (cardH + 10);
+    doc.setFillColor(248, 248, 252);
+    doc.roundedRect(x, cy, cardW, cardH, 6, 6, "F");
+    doc.setDrawColor(...kpi.color);
+    doc.setLineWidth(2);
+    doc.roundedRect(x, cy, cardW, cardH, 6, 6, "S");
+    doc.setLineWidth(0.5);
+    doc.setTextColor(...kpi.color);
+    doc.setFontSize(9);
+    doc.setFont("helvetica", "normal");
+    doc.text(kpi.label.toUpperCase(), x + 12, cy + 20);
+    doc.setTextColor(20, 20, 30);
+    doc.setFontSize(20);
+    doc.setFont("helvetica", "bold");
+    doc.text(kpi.value, x + 12, cy + 45);
+  });
+
+  y += 2 * (cardH + 10) + 20;
+
+  // ── Status breakdown ─────────────────────────────────────
+  doc.setDrawColor(220, 220, 230);
+  doc.line(margin, y, W - margin, y);
+  y += 16;
+  doc.setFontSize(12);
+  doc.setFont("helvetica", "bold");
+  doc.setTextColor(20, 20, 30);
+  doc.text("Atendimentos por status", margin, y);
+  y += 14;
+
+  const statusItems = [
+    { label: "Concluídos",  value: prof.completed,  rgb: [16, 185, 129] as [number,number,number] },
+    { label: "Confirmados", value: prof.confirmed,   rgb: [59, 130, 246] as [number,number,number] },
+    { label: "Pendentes",   value: prof.pending,     rgb: [245, 158, 11] as [number,number,number] },
+    { label: "Cancelados",  value: prof.cancelled,   rgb: [239, 68, 68] as [number,number,number] },
+  ].filter((s) => s.value > 0);
+
+  const maxVal = Math.max(...statusItems.map((s) => s.value), 1);
+  const barMaxW = W - margin * 2 - 110;
+
+  statusItems.forEach((s) => {
+    const barW = Math.max(4, (s.value / maxVal) * barMaxW);
+    doc.setFillColor(...s.rgb);
+    doc.roundedRect(margin + 90, y - 10, barW, 14, 3, 3, "F");
+    doc.setFillColor(200, 200, 210);
+    doc.roundedRect(margin + 90 + barW, y - 10, barMaxW - barW, 14, 3, 3, "F");
+    doc.setFontSize(10);
+    doc.setFont("helvetica", "normal");
+    doc.setTextColor(80, 80, 100);
+    doc.text(s.label, margin, y + 2);
+    doc.setTextColor(...s.rgb);
+    doc.setFont("helvetica", "bold");
+    doc.text(String(s.value), margin + 90 + barW + barMaxW - barW + 6, y + 2);
+    y += 22;
+  });
+
+  y += 10;
+
+  // ── Top services ─────────────────────────────────────────
+  if (prof.top_services.length > 0) {
+    doc.setDrawColor(220, 220, 230);
+    doc.line(margin, y, W - margin, y);
+    y += 16;
+    doc.setFontSize(12);
+    doc.setFont("helvetica", "bold");
+    doc.setTextColor(20, 20, 30);
+    doc.text("Serviços mais realizados", margin, y);
+    y += 14;
+
+    const topMax = prof.top_services[0]?.count || 1;
+    const svcBarMaxW = W - margin * 2 - 140;
+    prof.top_services.forEach((svc, i) => {
+      const bw = Math.max(4, (svc.count / topMax) * svcBarMaxW);
+      doc.setFillColor(79, 70, 229);
+      doc.roundedRect(margin + 120, y - 10, bw, 13, 3, 3, "F");
+      doc.setFillColor(230, 230, 240);
+      doc.roundedRect(margin + 120 + bw, y - 10, svcBarMaxW - bw, 13, 3, 3, "F");
+      doc.setFontSize(10);
+      doc.setFont("helvetica", "normal");
+      doc.setTextColor(80, 80, 100);
+      doc.text(`${i + 1}. ${svc.name}`, margin, y + 1);
+      doc.setFontSize(9);
+      doc.setTextColor(79, 70, 229);
+      doc.setFont("helvetica", "bold");
+      doc.text(`${svc.count}x`, margin + 120 + bw + svcBarMaxW - bw + 6, y + 1);
+      y += 20;
+    });
+    y += 6;
+  }
+
+  // ── Average rating ───────────────────────────────────────
+  if (prof.avg_rating != null) {
+    doc.setDrawColor(220, 220, 230);
+    doc.line(margin, y, W - margin, y);
+    y += 16;
+    doc.setFontSize(12);
+    doc.setFont("helvetica", "bold");
+    doc.setTextColor(20, 20, 30);
+    doc.text("Avaliação média", margin, y);
+    y += 14;
+    doc.setFontSize(28);
+    doc.setTextColor(245, 158, 11);
+    doc.text(`${prof.avg_rating.toFixed(1)} / 5.0`, margin, y + 8);
+    doc.setFontSize(10);
+    doc.setFont("helvetica", "normal");
+    doc.setTextColor(100, 100, 120);
+    doc.text(`Baseado em ${prof.review_count} avaliações`, margin + 100, y + 8);
+    y += 30;
+  }
+
+  // ── Footer ───────────────────────────────────────────────
+  const pageH = doc.internal.pageSize.getHeight();
+  doc.setFillColor(240, 240, 245);
+  doc.rect(0, pageH - 30, W, 30, "F");
+  doc.setFontSize(8);
+  doc.setFont("helvetica", "normal");
+  doc.setTextColor(130, 130, 150);
+  doc.text("Gerado automaticamente pelo sistema de gestão", margin, pageH - 12);
+
+  const safeName = prof.full_name.replace(/\s+/g, "_").replace(/[^a-zA-Z0-9_]/g, "");
+  doc.save(`relatorio_${safeName}.pdf`);
+}
+
+function ProfCard({ prof, dateFrom, dateTo }: { prof: ProfessionalSummary; dateFrom: string; dateTo: string }) {
   const initials = prof.full_name.split(" ").map((n) => n[0]).join("").slice(0, 2).toUpperCase();
   const completionRate = prof.total > 0 ? Math.round((prof.completed / prof.total) * 100) : 0;
 
@@ -271,17 +452,28 @@ function ProfCard({ prof }: { prof: ProfessionalSummary }) {
               {prof.branch_name && <Badge variant="outline" className="text-xs">{prof.branch_name}</Badge>}
             </div>
           </div>
-          {prof.avg_rating != null && (
-            <div className="flex flex-col items-center shrink-0">
-              <span className="text-2xl font-bold text-amber-500">{prof.avg_rating.toFixed(1)}</span>
-              <div className="flex gap-0.5">
-                {[1,2,3,4,5].map((s) => (
-                  <Star key={s} className={`h-3 w-3 ${s <= Math.round(prof.avg_rating!) ? "text-amber-400 fill-amber-400" : "text-muted-foreground"}`} />
-                ))}
+          <div className="flex flex-col items-end gap-2 shrink-0">
+            <Button
+              size="sm"
+              variant="outline"
+              className="gap-1.5 text-xs"
+              onClick={() => downloadProfPDF(prof, dateFrom, dateTo)}
+            >
+              <Download className="h-3.5 w-3.5" />
+              Baixar PDF
+            </Button>
+            {prof.avg_rating != null && (
+              <div className="flex flex-col items-center">
+                <span className="text-2xl font-bold text-amber-500">{prof.avg_rating.toFixed(1)}</span>
+                <div className="flex gap-0.5">
+                  {[1,2,3,4,5].map((s) => (
+                    <Star key={s} className={`h-3 w-3 ${s <= Math.round(prof.avg_rating!) ? "text-amber-400 fill-amber-400" : "text-muted-foreground"}`} />
+                  ))}
+                </div>
+                <span className="text-xs text-muted-foreground">{prof.review_count} avaliações</span>
               </div>
-              <span className="text-xs text-muted-foreground">{prof.review_count} avaliações</span>
-            </div>
-          )}
+            )}
+          </div>
         </div>
       </CardHeader>
 
