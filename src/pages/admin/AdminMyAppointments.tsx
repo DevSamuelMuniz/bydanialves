@@ -647,6 +647,67 @@ export default function AdminMyAppointments() {
         )
       )}
 
+      {/* ── Block Day Modal ───────────────────────────────────────────────────── */}
+      <Dialog open={!!blockTarget} onOpenChange={(o) => { if (!o) { setBlockTarget(null); setBlockReason(""); } }}>
+        <DialogContent className="max-w-sm">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2 text-base">
+              <LockKeyhole className="h-4 w-4 text-destructive" />
+              Fechar Agenda do Dia
+            </DialogTitle>
+            <DialogDescription>
+              Nenhum cliente poderá agendar com este profissional no dia selecionado.
+            </DialogDescription>
+          </DialogHeader>
+          {blockTarget && (
+            <div className="space-y-4">
+              <div className="flex items-center gap-3 rounded-lg border border-border bg-muted/40 p-3">
+                <Avatar className="w-10 h-10 border-2 border-border">
+                  <AvatarImage src={blockTarget.avatar_url ?? undefined} />
+                  <AvatarFallback className="text-xs font-bold bg-primary/10 text-primary">
+                    {blockTarget.full_name.split(" ").map((n) => n[0]).slice(0, 2).join("").toUpperCase()}
+                  </AvatarFallback>
+                </Avatar>
+                <div>
+                  <p className="font-semibold text-sm">{blockTarget.full_name}</p>
+                  <p className="text-xs text-muted-foreground">
+                    {format(selectedDate, "EEEE, dd 'de' MMMM 'de' yyyy", { locale: ptBR })}
+                  </p>
+                </div>
+              </div>
+              <div className="space-y-2">
+                <Label>Motivo (opcional)</Label>
+                <Textarea
+                  placeholder="Ex: Folga, treinamento, afastamento..."
+                  value={blockReason}
+                  onChange={(e) => setBlockReason(e.target.value)}
+                  rows={2}
+                  className="text-sm"
+                />
+              </div>
+              <div className="rounded-lg border border-destructive/30 bg-destructive/5 p-3">
+                <p className="text-xs text-destructive font-medium flex items-center gap-1.5">
+                  <XCircle className="w-3.5 h-3.5" />
+                  Clientes não conseguirão fazer novos agendamentos com {blockTarget.full_name} neste dia. Agendamentos já existentes não serão cancelados automaticamente.
+                </p>
+              </div>
+            </div>
+          )}
+          <DialogFooter className="gap-2">
+            <Button variant="outline" onClick={() => { setBlockTarget(null); setBlockReason(""); }}>Cancelar</Button>
+            <Button
+              variant="destructive"
+              onClick={handleBlockDay}
+              disabled={blocking}
+              className="gap-2"
+            >
+              <LockKeyhole className="w-4 h-4" />
+              {blocking ? "Bloqueando..." : "Fechar Agenda"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
       {/* ── Appointment Detail Modal ─────────────────────────────────────────── */}
       <Dialog open={!!detailAppt} onOpenChange={(o) => !o && setDetailAppt(null)}>
         <DialogContent className="max-w-sm">
