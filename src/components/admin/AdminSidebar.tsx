@@ -252,7 +252,7 @@ export function AdminSidebar() {
     },
     {
       label: "Sistema",
-      urls: ["/admin/logs"],
+      urls: ["/admin/logs", "/admin/whatsapp"],
       items: sistemaItems,
     },
   ].filter((g) => g.items.length > 0 || g.showProfDropdown);
