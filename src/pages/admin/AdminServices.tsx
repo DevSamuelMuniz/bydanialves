@@ -173,26 +173,12 @@ export default function AdminServices() {
   };
 
   const handleDelete = async (id: string, name: string) => {
-    const { error } = await supabase.from("services").delete().eq("id", id);
+    const { error } = await supabase.from("services").update({ active: false }).eq("id", id);
     if (error) {
-      // FK violation: service has appointments — deactivate instead
-      if (error.code === "23503") {
-        const { error: deactErr } = await supabase.from("services").update({ active: false }).eq("id", id);
-        if (deactErr) {
-          toast({ title: "Erro ao desativar", description: deactErr.message, variant: "destructive" });
-        } else {
-          toast({
-            title: "Serviço desativado",
-            description: `"${name}" possui agendamentos e não pode ser excluído. Foi desativado para não aparecer em novos agendamentos.`,
-          });
-          fetchServices();
-        }
-        return;
-      }
-      toast({ title: "Erro ao excluir", description: error.message, variant: "destructive" });
+      toast({ title: "Erro ao desativar", description: error.message, variant: "destructive" });
       return;
     }
-    toast({ title: "Serviço excluído!" });
+    toast({ title: "Serviço desativado", description: `"${name}" foi desativado e não aparecerá em novos agendamentos.` });
     fetchServices();
   };
 
