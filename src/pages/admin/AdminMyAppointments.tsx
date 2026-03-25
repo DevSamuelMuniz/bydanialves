@@ -103,6 +103,16 @@ export default function AdminMyAppointments() {
 
   // ─── Data fetching ──────────────────────────────────────────────────────────
 
+  const fetchDayBlocks = useCallback(async (dateStr: string) => {
+    const { data } = await (supabase as any)
+      .from("professional_day_blocks")
+      .select("professional_id")
+      .eq("blocked_date", dateStr);
+    const map: Record<string, boolean> = {};
+    (data || []).forEach((b: any) => { map[b.professional_id] = true; });
+    setDayBlocks(map);
+  }, []);
+
   const fetchData = useCallback(async () => {
     if (!user) return;
     setLoading(true);
@@ -118,17 +128,13 @@ export default function AdminMyAppointments() {
         .order("appointment_time", { ascending: true });
       if (adminBranchId) q = q.eq("branch_id", adminBranchId);
 
-      const { data: appts } = await q;
-      setAppointments(appts || []);
+      const [apptResult, rolesResult] = await Promise.all([
+        q,
+        supabase.from("user_roles").select("user_id").eq("role", "admin").in("admin_level", ["professional", "attendant", "manager", "ceo"]),
+      ]);
+      setAppointments(apptResult.data || []);
 
-      // Fetch professionals for the branch
-      const { data: roles } = await supabase
-        .from("user_roles")
-        .select("user_id")
-        .eq("role", "admin")
-        .in("admin_level", ["professional", "attendant", "manager", "ceo"]);
-
-      const profIds = (roles ?? []).map((r: any) => r.user_id);
+      const profIds = (rolesResult.data ?? []).map((r: any) => r.user_id);
       if (profIds.length > 0) {
         const { data: profProfiles } = await supabase
           .from("profiles")
@@ -139,6 +145,8 @@ export default function AdminMyAppointments() {
       } else {
         setProfessionals([]);
       }
+
+      await fetchDayBlocks(dateStr);
     } else {
       // Professional: only own appointments
       let q = (supabase as any)
@@ -153,7 +161,7 @@ export default function AdminMyAppointments() {
     }
 
     setLoading(false);
-  }, [user, selectedDate, isAttendant, adminBranchId]);
+  }, [user, selectedDate, isAttendant, adminBranchId, fetchDayBlocks]);
 
   useEffect(() => { fetchData(); }, [fetchData]);
 
@@ -161,6 +169,7 @@ export default function AdminMyAppointments() {
     const channel = supabase
       .channel("my-appointments-realtime")
       .on("postgres_changes", { event: "*", schema: "public", table: "appointments" }, () => fetchData())
+      .on("postgres_changes", { event: "*", schema: "public", table: "professional_day_blocks" }, () => fetchData())
       .subscribe();
     return () => { supabase.removeChannel(channel); };
   }, [fetchData]);
