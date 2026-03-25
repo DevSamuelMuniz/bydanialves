@@ -220,6 +220,7 @@ export function AdminSidebar() {
 
   const sistemaItems: NavItemDef[] = [
     perms.canViewLogs && { title: "Logs", url: "/admin/logs", icon: Activity, tourId: "sidebar-admin-logs" },
+    perms.canManageSystemSettings && { title: "WhatsApp por Filial", url: "/admin/whatsapp", icon: MessageCircle },
   ].filter(Boolean) as NavItemDef[];
 
   const groups: NavGroupDef[] = [
