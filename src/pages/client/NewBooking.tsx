@@ -306,24 +306,40 @@ export default function NewBooking() {
   // When date or selected services change, filter professionals:
   // 1. Must have an ACTIVE schedule on that day of week
   // 2. Only restrict to plan professionals if the service is FREE (is_system AND escovasDisponiveis > 0)
+  // 3. Exclude professionals whose day is blocked by admin
   const hasFreeSystemService = selectedServices.some((s) => s.is_system && escovasDisponiveis > 0);
 
   useEffect(() => {
     if (!selectedDate || allBranchProfessionals.length === 0) return;
     const dayOfWeek = selectedDate.getDay();
-    let availableProfs = allBranchProfessionals.filter((p) => {
-      // No schedules configured → exclude (not yet set up by admin)
-      if (p.schedules.length === 0) return false;
-      // Has at least one active entry matching this day of week
-      return p.schedules.some((s) => s.day_of_week === dayOfWeek && s.active);
-    });
+    const dateStr = selectedDate.toISOString().split("T")[0];
 
-    // Restrict to plan professionals ONLY when the service is covered for free by the plan
-    if (hasFreeSystemService && planProfessionalIds.length > 0) {
-      availableProfs = availableProfs.filter((p) => planProfessionalIds.includes(p.user_id));
-    }
+    const applyFilters = async () => {
+      // Fetch day blocks for this date
+      const { data: blocks } = await (supabase as any)
+        .from("professional_day_blocks")
+        .select("professional_id")
+        .eq("blocked_date", dateStr);
+      const blockedIds = new Set((blocks || []).map((b: any) => b.professional_id));
 
-    setProfessionals(availableProfs);
+      let availableProfs = allBranchProfessionals.filter((p) => {
+        // Blocked by admin for this day → exclude
+        if (blockedIds.has(p.user_id)) return false;
+        // No schedules configured → exclude (not yet set up by admin)
+        if (p.schedules.length === 0) return false;
+        // Has at least one active entry matching this day of week
+        return p.schedules.some((s) => s.day_of_week === dayOfWeek && s.active);
+      });
+
+      // Restrict to plan professionals ONLY when the service is covered for free by the plan
+      if (hasFreeSystemService && planProfessionalIds.length > 0) {
+        availableProfs = availableProfs.filter((p) => planProfessionalIds.includes(p.user_id));
+      }
+
+      setProfessionals(availableProfs);
+    };
+
+    applyFilters();
   }, [selectedDate, allBranchProfessionals, hasFreeSystemService, planProfessionalIds]);
 
   useEffect(() => {

@@ -9,7 +9,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { Separator } from "@/components/ui/separator";
 import { Calendar } from "@/components/ui/calendar";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogDescription } from "@/components/ui/dialog";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Input } from "@/components/ui/input";
@@ -21,7 +21,7 @@ import { cn } from "@/lib/utils";
 import {
   Clock, DollarSign, User, Scissors, CheckCircle2, XCircle,
   CalendarIcon, RotateCcw, Plus, Search, CalendarDays, ListChecks,
-  ChevronDown, ChevronUp, PlayCircle,
+  ChevronDown, ChevronUp, PlayCircle, LockKeyhole, UnlockKeyhole,
 } from "lucide-react";
 import {
   AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
@@ -95,7 +95,23 @@ export default function AdminMyAppointments() {
   // Appointment detail popover
   const [detailAppt, setDetailAppt] = useState<any | null>(null);
 
+  // Block day modal
+  const [blockTarget, setBlockTarget] = useState<{ user_id: string; full_name: string; avatar_url: string | null } | null>(null);
+  const [blockReason, setBlockReason] = useState("");
+  const [blocking, setBlocking] = useState(false);
+  const [dayBlocks, setDayBlocks] = useState<Record<string, boolean>>({}); // professional_id -> blocked for selectedDate
+
   // ─── Data fetching ──────────────────────────────────────────────────────────
+
+  const fetchDayBlocks = useCallback(async (dateStr: string) => {
+    const { data } = await (supabase as any)
+      .from("professional_day_blocks")
+      .select("professional_id")
+      .eq("blocked_date", dateStr);
+    const map: Record<string, boolean> = {};
+    (data || []).forEach((b: any) => { map[b.professional_id] = true; });
+    setDayBlocks(map);
+  }, []);
 
   const fetchData = useCallback(async () => {
     if (!user) return;
@@ -112,17 +128,13 @@ export default function AdminMyAppointments() {
         .order("appointment_time", { ascending: true });
       if (adminBranchId) q = q.eq("branch_id", adminBranchId);
 
-      const { data: appts } = await q;
-      setAppointments(appts || []);
+      const [apptResult, rolesResult] = await Promise.all([
+        q,
+        supabase.from("user_roles").select("user_id").eq("role", "admin").in("admin_level", ["professional", "attendant", "manager", "ceo"]),
+      ]);
+      setAppointments(apptResult.data || []);
 
-      // Fetch professionals for the branch
-      const { data: roles } = await supabase
-        .from("user_roles")
-        .select("user_id")
-        .eq("role", "admin")
-        .in("admin_level", ["professional", "attendant", "manager", "ceo"]);
-
-      const profIds = (roles ?? []).map((r: any) => r.user_id);
+      const profIds = (rolesResult.data ?? []).map((r: any) => r.user_id);
       if (profIds.length > 0) {
         const { data: profProfiles } = await supabase
           .from("profiles")
@@ -133,6 +145,8 @@ export default function AdminMyAppointments() {
       } else {
         setProfessionals([]);
       }
+
+      await fetchDayBlocks(dateStr);
     } else {
       // Professional: only own appointments
       let q = (supabase as any)
@@ -147,7 +161,7 @@ export default function AdminMyAppointments() {
     }
 
     setLoading(false);
-  }, [user, selectedDate, isAttendant, adminBranchId]);
+  }, [user, selectedDate, isAttendant, adminBranchId, fetchDayBlocks]);
 
   useEffect(() => { fetchData(); }, [fetchData]);
 
@@ -155,6 +169,7 @@ export default function AdminMyAppointments() {
     const channel = supabase
       .channel("my-appointments-realtime")
       .on("postgres_changes", { event: "*", schema: "public", table: "appointments" }, () => fetchData())
+      .on("postgres_changes", { event: "*", schema: "public", table: "professional_day_blocks" }, () => fetchData())
       .subscribe();
     return () => { supabase.removeChannel(channel); };
   }, [fetchData]);
@@ -252,6 +267,45 @@ export default function AdminMyAppointments() {
     if (error) toast({ title: "Erro", description: error.message, variant: "destructive" });
     else { toast({ title: "Atendimento cancelado." }); fetchData(); }
   };
+  // ─── Block/Unblock helpers ───────────────────────────────────────────────────
+
+  const handleBlockDay = async () => {
+    if (!blockTarget || !user) return;
+    setBlocking(true);
+    const dateStr = format(selectedDate, "yyyy-MM-dd");
+    const { error } = await (supabase as any)
+      .from("professional_day_blocks")
+      .insert({
+        professional_id: blockTarget.user_id,
+        blocked_date: dateStr,
+        blocked_by: user.id,
+        reason: blockReason || null,
+      });
+    setBlocking(false);
+    if (error) {
+      toast({ title: "Erro ao bloquear agenda", description: error.message, variant: "destructive" });
+    } else {
+      toast({ title: "🔒 Agenda bloqueada!", description: `${blockTarget.full_name} não receberá novos agendamentos hoje.` });
+      setBlockTarget(null);
+      setBlockReason("");
+      fetchData();
+    }
+  };
+
+  const handleUnblockDay = async (professionalId: string, profName: string) => {
+    const dateStr = format(selectedDate, "yyyy-MM-dd");
+    const { error } = await (supabase as any)
+      .from("professional_day_blocks")
+      .delete()
+      .eq("professional_id", professionalId)
+      .eq("blocked_date", dateStr);
+    if (error) {
+      toast({ title: "Erro ao desbloquear", description: error.message, variant: "destructive" });
+    } else {
+      toast({ title: "🔓 Agenda desbloqueada!", description: `${profName} voltará a receber agendamentos.` });
+      fetchData();
+    }
+  };
 
   // ─── Computed ───────────────────────────────────────────────────────────────
 
@@ -313,17 +367,49 @@ export default function AdminMyAppointments() {
   const ProfHeader = ({ prof }: { prof: { user_id: string; full_name: string; avatar_url: string | null } }) => {
     const initials = prof.full_name.split(" ").map((n) => n[0]).slice(0, 2).join("").toUpperCase();
     const apptCount = appointments.filter((a) => a.professional_id === prof.user_id).length;
+    const isBlocked = dayBlocks[prof.user_id] ?? false;
     return (
-      <div className="flex flex-col items-center gap-1 py-2 px-1 min-w-[120px]">
-        <Avatar className="w-10 h-10 border-2 border-border">
-          <AvatarImage src={prof.avatar_url ?? undefined} />
-          <AvatarFallback className="text-xs font-bold bg-primary/10 text-primary">{initials}</AvatarFallback>
-        </Avatar>
-        <p className="text-xs font-semibold text-center leading-tight line-clamp-2">{prof.full_name}</p>
-        {apptCount > 0 && (
-          <Badge variant="secondary" className="text-[10px] px-1.5 py-0 h-4">{apptCount}</Badge>
+      <button
+        className={cn(
+          "flex flex-col items-center gap-1 py-2 px-1 min-w-[120px] w-full transition-all rounded-md group",
+          isBlocked
+            ? "bg-destructive/8 hover:bg-destructive/15"
+            : "hover:bg-muted/60"
         )}
-      </div>
+        title={isBlocked ? `Desbloquear agenda de ${prof.full_name}` : `Fechar agenda de ${prof.full_name} hoje`}
+        onClick={() => {
+          if (isBlocked) {
+            handleUnblockDay(prof.user_id, prof.full_name);
+          } else {
+            setBlockTarget(prof);
+            setBlockReason("");
+          }
+        }}
+      >
+        <div className="relative">
+          <Avatar className={cn("w-10 h-10 border-2", isBlocked ? "border-destructive/50 opacity-60" : "border-border")}>
+            <AvatarImage src={prof.avatar_url ?? undefined} />
+            <AvatarFallback className="text-xs font-bold bg-primary/10 text-primary">{initials}</AvatarFallback>
+          </Avatar>
+          {isBlocked && (
+            <div className="absolute -bottom-1 -right-1 w-5 h-5 rounded-full bg-destructive flex items-center justify-center">
+              <LockKeyhole className="w-2.5 h-2.5 text-destructive-foreground" />
+            </div>
+          )}
+        </div>
+        <p className={cn("text-xs font-semibold text-center leading-tight line-clamp-2", isBlocked && "text-muted-foreground line-through")}>{prof.full_name}</p>
+        {isBlocked ? (
+          <Badge variant="destructive" className="text-[10px] px-1.5 py-0 h-4 gap-0.5">
+            <LockKeyhole className="w-2 h-2" /> Bloqueado
+          </Badge>
+        ) : apptCount > 0 ? (
+          <Badge variant="secondary" className="text-[10px] px-1.5 py-0 h-4">{apptCount}</Badge>
+        ) : (
+          <span className="text-[10px] text-muted-foreground opacity-0 group-hover:opacity-100 transition-opacity flex items-center gap-0.5">
+            <LockKeyhole className="w-2.5 h-2.5" /> Bloquear
+          </span>
+        )}
+      </button>
     );
   };
 
@@ -469,13 +555,21 @@ export default function AdminMyAppointments() {
                         {/* Professional cells */}
                         {visibleProfessionals.map((prof) => {
                           const cellAppts = slotMap[slot]?.[prof.user_id] ?? [];
+                          const isProfBlocked = dayBlocks[prof.user_id] ?? false;
                           return (
                             <td
                               key={prof.user_id}
-                              className="border-r border-border last:border-r-0 p-1.5 align-top min-h-[52px]"
+                              className={cn(
+                                "border-r border-border last:border-r-0 p-1.5 align-top min-h-[52px]",
+                                isProfBlocked && "bg-destructive/5"
+                              )}
                               style={{ minHeight: "52px" }}
                             >
-                              {cellAppts.length > 0 ? (
+                              {isProfBlocked && cellAppts.length === 0 ? (
+                                <div className="w-full h-10 rounded border border-dashed border-destructive/20 flex items-center justify-center">
+                                  <LockKeyhole className="h-3 w-3 text-destructive/30" />
+                                </div>
+                              ) : cellAppts.length > 0 ? (
                                 <div className="space-y-1">
                                   {cellAppts.map((a) => <ApptChip key={a.id} a={a} />)}
                                 </div>
@@ -560,6 +654,67 @@ export default function AdminMyAppointments() {
           </div>
         )
       )}
+
+      {/* ── Block Day Modal ───────────────────────────────────────────────────── */}
+      <Dialog open={!!blockTarget} onOpenChange={(o) => { if (!o) { setBlockTarget(null); setBlockReason(""); } }}>
+        <DialogContent className="max-w-sm">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2 text-base">
+              <LockKeyhole className="h-4 w-4 text-destructive" />
+              Fechar Agenda do Dia
+            </DialogTitle>
+            <DialogDescription>
+              Nenhum cliente poderá agendar com este profissional no dia selecionado.
+            </DialogDescription>
+          </DialogHeader>
+          {blockTarget && (
+            <div className="space-y-4">
+              <div className="flex items-center gap-3 rounded-lg border border-border bg-muted/40 p-3">
+                <Avatar className="w-10 h-10 border-2 border-border">
+                  <AvatarImage src={blockTarget.avatar_url ?? undefined} />
+                  <AvatarFallback className="text-xs font-bold bg-primary/10 text-primary">
+                    {blockTarget.full_name.split(" ").map((n) => n[0]).slice(0, 2).join("").toUpperCase()}
+                  </AvatarFallback>
+                </Avatar>
+                <div>
+                  <p className="font-semibold text-sm">{blockTarget.full_name}</p>
+                  <p className="text-xs text-muted-foreground">
+                    {format(selectedDate, "EEEE, dd 'de' MMMM 'de' yyyy", { locale: ptBR })}
+                  </p>
+                </div>
+              </div>
+              <div className="space-y-2">
+                <Label>Motivo (opcional)</Label>
+                <Textarea
+                  placeholder="Ex: Folga, treinamento, afastamento..."
+                  value={blockReason}
+                  onChange={(e) => setBlockReason(e.target.value)}
+                  rows={2}
+                  className="text-sm"
+                />
+              </div>
+              <div className="rounded-lg border border-destructive/30 bg-destructive/5 p-3">
+                <p className="text-xs text-destructive font-medium flex items-center gap-1.5">
+                  <XCircle className="w-3.5 h-3.5" />
+                  Clientes não conseguirão fazer novos agendamentos com {blockTarget.full_name} neste dia. Agendamentos já existentes não serão cancelados automaticamente.
+                </p>
+              </div>
+            </div>
+          )}
+          <DialogFooter className="gap-2">
+            <Button variant="outline" onClick={() => { setBlockTarget(null); setBlockReason(""); }}>Cancelar</Button>
+            <Button
+              variant="destructive"
+              onClick={handleBlockDay}
+              disabled={blocking}
+              className="gap-2"
+            >
+              <LockKeyhole className="w-4 h-4" />
+              {blocking ? "Bloqueando..." : "Fechar Agenda"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
 
       {/* ── Appointment Detail Modal ─────────────────────────────────────────── */}
       <Dialog open={!!detailAppt} onOpenChange={(o) => !o && setDetailAppt(null)}>
