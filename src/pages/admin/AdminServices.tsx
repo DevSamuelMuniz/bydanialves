@@ -173,12 +173,20 @@ export default function AdminServices() {
   };
 
   const handleDelete = async (id: string, name: string) => {
-    const { error } = await supabase.from("services").update({ active: false }).eq("id", id);
+    const { error } = await supabase.from("services").delete().eq("id", id);
     if (error) {
-      toast({ title: "Erro ao desativar", description: error.message, variant: "destructive" });
+      if (error.code === "23503") {
+        toast({
+          title: "Não foi possível excluir",
+          description: `"${name}" possui agendamentos vinculados. Desative-o para que não apareça em novos agendamentos.`,
+          variant: "destructive",
+        });
+      } else {
+        toast({ title: "Erro ao excluir", description: error.message, variant: "destructive" });
+      }
       return;
     }
-    toast({ title: "Serviço desativado", description: `"${name}" foi desativado e não aparecerá em novos agendamentos.` });
+    toast({ title: "Serviço excluído!" });
     fetchServices();
   };
 
@@ -232,15 +240,15 @@ export default function AdminServices() {
                     </AlertDialogTrigger>
                     <AlertDialogContent>
                       <AlertDialogHeader>
-                        <AlertDialogTitle>Desativar serviço?</AlertDialogTitle>
+                        <AlertDialogTitle>Excluir serviço?</AlertDialogTitle>
                         <AlertDialogDescription>
-                          O serviço <strong>{s.name}</strong> será desativado e não aparecerá em novos agendamentos. Os dados históricos serão preservados.
+                          O serviço <strong>{s.name}</strong> será removido permanentemente. Esta ação não pode ser desfeita.
                         </AlertDialogDescription>
                       </AlertDialogHeader>
                       <AlertDialogFooter>
                         <AlertDialogCancel>Cancelar</AlertDialogCancel>
                         <AlertDialogAction onClick={() => handleDelete(s.id, s.name)} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">
-                          Desativar
+                          Excluir
                         </AlertDialogAction>
                       </AlertDialogFooter>
                     </AlertDialogContent>
