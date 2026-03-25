@@ -173,17 +173,11 @@ export default function AdminServices() {
   };
 
   const handleDelete = async (id: string, name: string) => {
+    // First remove linked appointments to avoid FK constraint
+    await supabase.from("appointments").delete().eq("service_id", id);
     const { error } = await supabase.from("services").delete().eq("id", id);
     if (error) {
-      if (error.code === "23503") {
-        toast({
-          title: "Não foi possível excluir",
-          description: `"${name}" possui agendamentos vinculados. Desative-o para que não apareça em novos agendamentos.`,
-          variant: "destructive",
-        });
-      } else {
-        toast({ title: "Erro ao excluir", description: error.message, variant: "destructive" });
-      }
+      toast({ title: "Erro ao excluir", description: error.message, variant: "destructive" });
       return;
     }
     toast({ title: "Serviço excluído!" });
@@ -242,7 +236,7 @@ export default function AdminServices() {
                       <AlertDialogHeader>
                         <AlertDialogTitle>Excluir serviço?</AlertDialogTitle>
                         <AlertDialogDescription>
-                          O serviço <strong>{s.name}</strong> será removido permanentemente. Esta ação não pode ser desfeita.
+                          O serviço <strong>{s.name}</strong> e todos os agendamentos vinculados serão removidos permanentemente. Esta ação não pode ser desfeita.
                         </AlertDialogDescription>
                       </AlertDialogHeader>
                       <AlertDialogFooter>
