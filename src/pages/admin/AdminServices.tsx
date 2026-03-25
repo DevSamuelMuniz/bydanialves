@@ -253,7 +253,7 @@ export default function AdminServices() {
                       </AlertDialogHeader>
                       <AlertDialogFooter>
                         <AlertDialogCancel>Cancelar</AlertDialogCancel>
-                        <AlertDialogAction onClick={() => handleDelete(s.id)} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">
+                        <AlertDialogAction onClick={() => handleDelete(s.id, s.name)} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">
                           Excluir
                         </AlertDialogAction>
                       </AlertDialogFooter>
