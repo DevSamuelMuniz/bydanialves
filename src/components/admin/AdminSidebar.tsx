@@ -17,7 +17,7 @@ import {
 import {
   LayoutDashboard, Users, Calendar, Scissors, DollarSign,
   Crown, Activity, ClipboardList, Building2, Tag, Star, Tv2, UserCheck,
-  ChevronDown, BarChart2, LogOut, CalendarDays, TableProperties, Award,
+  ChevronDown, BarChart2, LogOut, CalendarDays, TableProperties, Award, MessageCircle,
 } from "lucide-react";
 import { useLocation } from "react-router-dom";
 import logoBlack from "@/assets/logo-black.png";
