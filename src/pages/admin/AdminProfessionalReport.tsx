@@ -9,12 +9,14 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Button } from "@/components/ui/button";
 import {
   BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Cell,
 } from "recharts";
 import {
-  Users, Clock, Scissors, Star, TrendingUp, CheckCircle2, XCircle, Calendar,
+  Users, Clock, Scissors, Star, TrendingUp, CheckCircle2, XCircle, Calendar, Download,
 } from "lucide-react";
+import jsPDF from "jspdf";
 
 interface ProfessionalSummary {
   user_id: string;
