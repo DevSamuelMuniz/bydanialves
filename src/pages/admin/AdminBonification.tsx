@@ -806,7 +806,7 @@ export default function AdminBonification() {
               )}
               {detailPro.payment_status === "pending" && detailPro.payment_id && (
                 <Button
-                  className="w-full gap-2 bg-green-600 hover:bg-green-700 text-white"
+                  className="w-full gap-2"
                   onClick={() => {
                     markOnePaid(detailPro.payment_id!);
                     setDetailPro(null);
