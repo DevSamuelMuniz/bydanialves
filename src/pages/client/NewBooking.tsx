@@ -449,6 +449,14 @@ export default function NewBooking() {
   }, [selectedDate, selectedBranch]);
 
   const toggleService = (s: ServiceItem) => {
+    // If client tries to add a system service (escova) but has no credits left, show modal
+    if (s.is_system && escovasDisponiveis === 0) {
+      const alreadySelected = selectedServices.find((x) => x.id === s.id);
+      if (!alreadySelected) {
+        setPlanEsgotadoOpen(true);
+        return;
+      }
+    }
     setSelectedServices((prev) => {
       const exists = prev.find((x) => x.id === s.id);
       if (exists) return prev.filter((x) => x.id !== s.id);
