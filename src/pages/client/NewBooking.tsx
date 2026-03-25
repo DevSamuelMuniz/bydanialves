@@ -377,6 +377,7 @@ export default function NewBooking() {
 
       if (sub && (sub as any).plans) {
         const plan = (sub as any).plans;
+        setTemPlanoAtivo(true);
         const totalEscovas = parseEscovasFromIncludes(plan.includes);
         const now = new Date();
         const startOfMonth = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}-01`;
