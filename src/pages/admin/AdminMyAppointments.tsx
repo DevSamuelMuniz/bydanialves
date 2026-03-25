@@ -555,13 +555,21 @@ export default function AdminMyAppointments() {
                         {/* Professional cells */}
                         {visibleProfessionals.map((prof) => {
                           const cellAppts = slotMap[slot]?.[prof.user_id] ?? [];
+                          const isProfBlocked = dayBlocks[prof.user_id] ?? false;
                           return (
                             <td
                               key={prof.user_id}
-                              className="border-r border-border last:border-r-0 p-1.5 align-top min-h-[52px]"
+                              className={cn(
+                                "border-r border-border last:border-r-0 p-1.5 align-top min-h-[52px]",
+                                isProfBlocked && "bg-destructive/5"
+                              )}
                               style={{ minHeight: "52px" }}
                             >
-                              {cellAppts.length > 0 ? (
+                              {isProfBlocked && cellAppts.length === 0 ? (
+                                <div className="w-full h-10 rounded border border-dashed border-destructive/20 flex items-center justify-center">
+                                  <LockKeyhole className="h-3 w-3 text-destructive/30" />
+                                </div>
+                              ) : cellAppts.length > 0 ? (
                                 <div className="space-y-1">
                                   {cellAppts.map((a) => <ApptChip key={a.id} a={a} />)}
                                 </div>
