@@ -119,6 +119,7 @@ export default function NewBooking() {
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
   const [escovasDisponiveis, setEscovasDisponiveis] = useState(0);
+  const [temPlanoAtivo, setTemPlanoAtivo] = useState(false);
   const [blocked, setBlocked] = useState(false);
   const [blockedModalOpen, setBlockedModalOpen] = useState(false);
   const [workCalendarMap, setWorkCalendarMap] = useState<Record<string, boolean>>({});
