@@ -1135,6 +1135,36 @@ export default function NewBooking() {
           </Button>
         </div>
       )}
+      {/* Modal: créditos de escova esgotados */}
+      <Dialog open={planEsgotadoOpen} onOpenChange={setPlanEsgotadoOpen}>
+        <DialogContent className="max-w-sm text-center">
+          <DialogHeader className="items-center">
+            <div className="h-16 w-16 rounded-2xl bg-amber-500/10 flex items-center justify-center mx-auto mb-2">
+              <Sparkles className="h-8 w-8 text-amber-500" />
+            </div>
+            <DialogTitle className="font-serif text-xl">Escovas do plano esgotadas</DialogTitle>
+            <DialogDescription className="text-base mt-1">
+              Você já utilizou todas as escovas disponíveis neste ciclo do seu plano. Seus créditos renovam no início do próximo mês.
+              <br /><br />
+              Caso queira adicionar mais escovas ou tirar dúvidas, entre em contato conosco pelo WhatsApp.
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter className="flex-col gap-2 sm:flex-col">
+            <Button
+              className="w-full gap-2 bg-[#25D366] hover:bg-[#1ebe5d] text-white"
+              onClick={() => {
+                const waNumber = selectedBranch?.whatsapp || WHATSAPP_NUMBER;
+                const msg = encodeURIComponent("Olá! As escovas do meu plano acabaram e gostaria de mais informações ou de adicionar créditos extras.");
+                window.open(`https://wa.me/${waNumber}?text=${msg}`, "_blank");
+              }}
+            >
+              <MessageCircle className="h-4 w-4" />
+              Falar no WhatsApp
+            </Button>
+            <Button variant="ghost" className="w-full" onClick={() => setPlanEsgotadoOpen(false)}>Fechar</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
