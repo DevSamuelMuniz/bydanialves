@@ -236,7 +236,7 @@ export default function AdminServices() {
                       <AlertDialogHeader>
                         <AlertDialogTitle>Excluir serviço?</AlertDialogTitle>
                         <AlertDialogDescription>
-                          O serviço <strong>{s.name}</strong> será removido permanentemente. Esta ação não pode ser desfeita.
+                          O serviço <strong>{s.name}</strong> e todos os agendamentos vinculados serão removidos permanentemente. Esta ação não pode ser desfeita.
                         </AlertDialogDescription>
                       </AlertDialogHeader>
                       <AlertDialogFooter>
