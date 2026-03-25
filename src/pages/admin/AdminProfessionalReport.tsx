@@ -236,7 +236,7 @@ export default function AdminProfessionalReport() {
       ) : (
         <div className="space-y-8">
           {displayList.map((prof) => (
-            <ProfCard key={prof.user_id} prof={prof} />
+            <ProfCard key={prof.user_id} prof={prof} dateFrom={dateFrom} dateTo={dateTo} />
           ))}
         </div>
       )}
