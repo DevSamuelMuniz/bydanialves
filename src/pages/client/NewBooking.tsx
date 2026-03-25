@@ -575,11 +575,11 @@ export default function NewBooking() {
             </DialogHeader>
             <DialogFooter className="flex-col gap-2 sm:flex-col">
               <Button
-                className="w-full gap-2"
-                style={{ backgroundColor: "#25D366" }}
+                className="w-full gap-2 bg-[#25D366] hover:bg-[#1ebe5d] text-white"
                 onClick={() => {
+                  const waNumber = selectedBranch?.whatsapp || WHATSAPP_NUMBER;
                   const msg = encodeURIComponent("Olá! As escovas do meu plano acabaram e gostaria de mais informações ou de adicionar créditos extras.");
-                  window.open(`https://wa.me/${WHATSAPP_NUMBER}?text=${msg}`, "_blank");
+                  window.open(`https://wa.me/${waNumber}?text=${msg}`, "_blank");
                 }}
               >
                 <MessageCircle className="h-4 w-4" />
