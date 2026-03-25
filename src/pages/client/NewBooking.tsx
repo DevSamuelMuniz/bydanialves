@@ -17,7 +17,7 @@ import { ptBR } from "date-fns/locale";
 import { format } from "date-fns";
 import { useSearchParams } from "react-router-dom";
 
-interface Branch { id: string; name: string; address: string | null; image_url: string | null; }
+interface Branch { id: string; name: string; address: string | null; image_url: string | null; whatsapp: string | null; }
 
 interface ServiceItem {
   id: string;
