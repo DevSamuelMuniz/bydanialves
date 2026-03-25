@@ -172,9 +172,26 @@ export default function AdminServices() {
     fetchServices();
   };
 
-  const handleDelete = async (id: string) => {
+  const handleDelete = async (id: string, name: string) => {
     const { error } = await supabase.from("services").delete().eq("id", id);
-    if (error) { toast({ title: "Erro ao excluir", description: error.message, variant: "destructive" }); return; }
+    if (error) {
+      // FK violation: service has appointments — deactivate instead
+      if (error.code === "23503") {
+        const { error: deactErr } = await supabase.from("services").update({ active: false }).eq("id", id);
+        if (deactErr) {
+          toast({ title: "Erro ao desativar", description: deactErr.message, variant: "destructive" });
+        } else {
+          toast({
+            title: "Serviço desativado",
+            description: `"${name}" possui agendamentos e não pode ser excluído. Foi desativado para não aparecer em novos agendamentos.`,
+          });
+          fetchServices();
+        }
+        return;
+      }
+      toast({ title: "Erro ao excluir", description: error.message, variant: "destructive" });
+      return;
+    }
     toast({ title: "Serviço excluído!" });
     fetchServices();
   };
@@ -236,7 +253,7 @@ export default function AdminServices() {
                       </AlertDialogHeader>
                       <AlertDialogFooter>
                         <AlertDialogCancel>Cancelar</AlertDialogCancel>
-                        <AlertDialogAction onClick={() => handleDelete(s.id)} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">
+                        <AlertDialogAction onClick={() => handleDelete(s.id, s.name)} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">
                           Excluir
                         </AlertDialogAction>
                       </AlertDialogFooter>
