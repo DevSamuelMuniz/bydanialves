@@ -447,6 +447,33 @@ export type Database = {
         }
         Relationships: []
       }
+      professional_day_blocks: {
+        Row: {
+          blocked_by: string
+          blocked_date: string
+          created_at: string
+          id: string
+          professional_id: string
+          reason: string | null
+        }
+        Insert: {
+          blocked_by: string
+          blocked_date: string
+          created_at?: string
+          id?: string
+          professional_id: string
+          reason?: string | null
+        }
+        Update: {
+          blocked_by?: string
+          blocked_date?: string
+          created_at?: string
+          id?: string
+          professional_id?: string
+          reason?: string | null
+        }
+        Relationships: []
+      }
       professional_hours: {
         Row: {
           created_at: string
