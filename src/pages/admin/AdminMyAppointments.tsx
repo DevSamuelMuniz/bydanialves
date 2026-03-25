@@ -128,10 +128,15 @@ export default function AdminMyAppointments() {
         .order("appointment_time", { ascending: true });
       if (adminBranchId) q = q.eq("branch_id", adminBranchId);
 
-      const [apptResult, rolesResult] = await Promise.all([
-        q,
-        supabase.from("user_roles").select("user_id").eq("role", "admin").in("admin_level", ["professional", "attendant", "manager", "ceo"]),
-      ]);
+      // Fetch only professionals (admin_level = "professional") scoped to attendant's branch
+      let rolesQ = supabase
+        .from("user_roles")
+        .select("user_id")
+        .eq("role", "admin")
+        .eq("admin_level", "professional");
+      if (adminBranchId) rolesQ = (rolesQ as any).eq("branch_id", adminBranchId);
+
+      const [apptResult, rolesResult] = await Promise.all([q, rolesQ]);
       setAppointments(apptResult.data || []);
 
       const profIds = (rolesResult.data ?? []).map((r: any) => r.user_id);
