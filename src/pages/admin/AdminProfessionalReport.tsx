@@ -10,13 +10,13 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Button } from "@/components/ui/button";
 import {
   BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Cell,
 } from "recharts";
 import {
-  Users, Clock, Scissors, Star, TrendingUp, CheckCircle2, XCircle, Calendar,
+  Users, Clock, Scissors, Star, TrendingUp, CheckCircle2, XCircle, Calendar, Printer, DollarSign,
 } from "lucide-react";
+import { Button } from "@/components/ui/button";
 
 interface ProfessionalSummary {
   user_id: string;
@@ -321,29 +321,185 @@ export default function AdminProfessionalReport() {
           </CardContent>
         </Card>
 
-      {loading ? (
-        <div className="grid grid-cols-1 gap-6">
-          {[1, 2].map((i) => <Skeleton key={i} className="h-64 w-full rounded-xl" />)}
-        </div>
-      ) : displayList.length === 0 ? (
-        <Card>
-          <CardContent className="py-16 text-center text-muted-foreground">
-            <Users className="h-10 w-10 mx-auto mb-3 opacity-30" />
-            <p>Nenhum profissional encontrado no período selecionado.</p>
-          </CardContent>
-        </Card>
-      ) : (
-        <div className="space-y-8">
-          {displayList.map((prof) => (
-            <ProfCard key={prof.user_id} prof={prof} />
-          ))}
-        </div>
+        {loading ? (
+          <div className="grid grid-cols-1 gap-6">
+            {[1, 2].map((i) => <Skeleton key={i} className="h-64 w-full rounded-xl" />)}
+          </div>
+        ) : displayList.length === 0 ? (
+          <Card>
+            <CardContent className="py-16 text-center text-muted-foreground">
+              <Users className="h-10 w-10 mx-auto mb-3 opacity-30" />
+              <p>Nenhum profissional encontrado no período selecionado.</p>
+            </CardContent>
+          </Card>
+        ) : (
+          <div className="space-y-8">
+            {displayList.map((prof) => (
+              <div 
+                key={prof.user_id} 
+                className="prof-card"
+              >
+                <ProfCard 
+                  prof={prof} 
+                  onExportPDF={() => handleExport(prof.user_id)}
+                />
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
+
+      {/* Printable Report (shown only in @media print) */}
+      {!loading && (
+        <PrintableProfessionalReport 
+          professionals={printingId ? professionals.filter(p => p.user_id === printingId) : displayList}
+          dateFrom={new Date(dateFrom).toLocaleDateString('pt-BR')}
+          dateTo={new Date(dateTo).toLocaleDateString('pt-BR')}
+        />
       )}
     </div>
   );
 }
 
-function ProfCard({ prof }: { prof: ProfessionalSummary }) {
+/**
+ * HIGH-FIDELITY PRINTABLE REPORT
+ * Matches the user's provided design (dark header, formal boxes, horizontal charts)
+ */
+function PrintableProfessionalReport({ 
+  professionals, 
+  dateFrom, 
+  dateTo 
+}: { 
+  professionals: ProfessionalSummary[], 
+  dateFrom: string, 
+  dateTo: string 
+}) {
+  const generationDate = new Date().toLocaleString('pt-BR', { dateStyle: 'short', timeStyle: 'short' });
+
+  return (
+    <div className="printable-report w-full mx-auto text-gray-900 bg-white">
+      {professionals.map((prof, idx) => (
+        <div key={prof.user_id} className={cn("space-y-8", idx > 0 && "page-break-before")}>
+          {/* Header Section */}
+          <div className="bg-[#1a1b1e] text-white p-8 rounded-t-lg flex justify-between items-end border-b-4 border-primary">
+            <div>
+              <h1 className="text-3xl font-extrabold tracking-tight">Relatório de Desempenho</h1>
+              <p className="text-gray-400 mt-2 font-medium">Período: {dateFrom} a {dateTo}</p>
+            </div>
+            <div className="text-right">
+              <p className="text-sm text-gray-400">Gerado em: {generationDate}</p>
+            </div>
+          </div>
+
+          {/* Professional Header */}
+          <div className="px-4 py-6 border-b border-gray-100">
+            <h2 className="text-4xl font-black text-slate-800">{prof.full_name}</h2>
+            <p className="text-lg text-slate-500 mt-1 font-medium italic">
+              Cargo: {LEVEL_LABELS[prof.admin_level] || prof.admin_level} | Filial: {prof.branch_name || '—'}
+            </p>
+          </div>
+
+          {/* KPI Boxes Grid */}
+          <div className="grid grid-cols-2 gap-4 px-4">
+            <PrintKpiBox label="TOTAL DE ATENDIMENTOS" value={String(prof.total)} color="border-indigo-500 text-indigo-600" />
+            <PrintKpiBox label="CONCLUÍDOS" value={String(prof.completed)} color="border-emerald-500 text-emerald-600" />
+            <PrintKpiBox label="HORAS TRABALHADAS" value={fmtHours(prof.hours_worked)} color="border-blue-500 text-blue-600" />
+            <PrintKpiBox label="TAXA DE CONCLUSÃO" value={`${prof.total > 0 ? Math.round((prof.completed / prof.total) * 100) : 0}%`} color="border-violet-500 text-violet-600" />
+            
+            {/* ADDED BONIFICATION KPI */}
+            <div className="col-span-2">
+              <PrintKpiBox 
+                label="TOTAL DE BONIFICAÇÃO / COMISSÃO" 
+                value={new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(prof.total_bonification)} 
+                color="border-amber-500 text-amber-600 bg-amber-50/20" 
+              />
+            </div>
+          </div>
+
+          {/* Status Breakdown Section */}
+          <div className="px-4 pt-4 page-break-inside-avoid">
+            <h3 className="text-xl font-bold text-slate-800 mb-6 flex items-center gap-2 border-b-2 border-slate-100 pb-2">
+              Atendimentos por status
+            </h3>
+            <div className="space-y-5">
+              <PrintProgressRow label="Concluídos" value={prof.completed} total={prof.total} color="bg-emerald-500" />
+              <PrintProgressRow label="Confirmados" value={prof.confirmed} total={prof.total} color="bg-blue-500" />
+              <PrintProgressRow label="Cancelados" value={prof.cancelled} total={prof.total} color="bg-red-500" />
+            </div>
+          </div>
+
+          {/* Top Services Section */}
+          <div className="px-4 pt-8 page-break-inside-avoid">
+            <h3 className="text-xl font-bold text-slate-800 mb-6 flex items-center gap-2 border-b-2 border-slate-100 pb-2">
+              Serviços mais realizados
+            </h3>
+            <div className="space-y-4">
+              {prof.top_services.length > 0 ? (
+                prof.top_services.map((svc, sIdx) => (
+                  <PrintServiceRow 
+                    key={sIdx} 
+                    idx={sIdx + 1} 
+                    name={svc.name} 
+                    count={svc.count} 
+                    max={prof.top_services[0]?.count || 1} 
+                  />
+                ))
+              ) : (
+                <p className="text-gray-400 italic">Sem registros no período.</p>
+              )}
+            </div>
+          </div>
+        </div>
+      ))}
+    </div>
+  );
+}
+
+function PrintKpiBox({ label, value, color }: { label: string, value: string, color: string }) {
+  return (
+    <div className={cn("p-4 rounded-xl border-2 shadow-sm flex flex-col gap-1", color)}>
+      <span className="text-[10px] font-bold uppercase tracking-widest opacity-80">{label}</span>
+      <span className="text-3xl font-black">{value}</span>
+    </div>
+  );
+}
+
+function PrintProgressRow({ label, value, total, color }: { label: string, value: number, total: number, color: string }) {
+  const percentage = total > 0 ? (value / total) * 100 : 0;
+  return (
+    <div className="flex items-center gap-4 break-inside-avoid">
+      <span className="w-32 text-sm font-semibold text-slate-600">{label}</span>
+      <div className="flex-1 h-8 bg-slate-100 rounded-lg overflow-hidden flex items-center pr-2">
+        <div className={cn("h-full", color)} style={{ width: `${percentage}%` }} />
+        <span className="ml-auto text-sm font-bold text-slate-400">{value}</span>
+      </div>
+    </div>
+  );
+}
+
+function PrintServiceRow({ idx, name, count, max }: { idx: number, name: string, count: number, max: number }) {
+  const percentage = max > 0 ? (count / max) * 100 : 0;
+  return (
+    <div className="flex items-center gap-4 break-inside-avoid">
+      <div className="flex items-center gap-3 w-48 shrink-0">
+        <span className="text-sm font-mono text-slate-400">{idx}.</span>
+        <span className="text-sm font-bold text-slate-700 truncate">{name}</span>
+      </div>
+      <div className="flex-1 h-5 bg-slate-100 rounded-full overflow-hidden">
+        <div className="h-full bg-primary/80" style={{ width: `${percentage}%` }} />
+      </div>
+      <span className="w-10 text-right text-sm font-black text-primary">{count}x</span>
+    </div>
+  );
+}
+
+function ProfCard({ 
+  prof, 
+  onExportPDF 
+}: { 
+  prof: ProfessionalSummary; 
+  onExportPDF: () => void;
+}) {
   const initials = prof.full_name.split(" ").map((n) => n[0]).join("").slice(0, 2).toUpperCase();
   const completionRate = prof.total > 0 ? Math.round((prof.completed / prof.total) * 100) : 0;
 
@@ -370,28 +526,17 @@ function ProfCard({ prof }: { prof: ProfessionalSummary }) {
               {prof.branch_name && <Badge variant="outline" className="text-xs">{prof.branch_name}</Badge>}
             </div>
           </div>
-          <div className="flex flex-col items-end gap-2 shrink-0">
-            <Button
-              size="sm"
-              variant="outline"
-              className="gap-1.5 text-xs"
-              onClick={() => downloadProfPDF(prof, dateFrom, dateTo)}
-            >
-              <Download className="h-3.5 w-3.5" />
-              Baixar PDF
-            </Button>
-            {prof.avg_rating != null && (
-              <div className="flex flex-col items-center">
-                <span className="text-2xl font-bold text-amber-500">{prof.avg_rating.toFixed(1)}</span>
-                <div className="flex gap-0.5">
-                  {[1,2,3,4,5].map((s) => (
-                    <Star key={s} className={`h-3 w-3 ${s <= Math.round(prof.avg_rating!) ? "text-amber-400 fill-amber-400" : "text-muted-foreground"}`} />
-                  ))}
-                </div>
-                <span className="text-xs text-muted-foreground">{prof.review_count} avaliações</span>
+          {prof.avg_rating != null && (
+            <div className="flex flex-col items-center shrink-0">
+              <span className="text-2xl font-bold text-amber-500">{prof.avg_rating.toFixed(1)}</span>
+              <div className="flex gap-0.5">
+                {[1,2,3,4,5].map((s) => (
+                  <Star key={s} className={`h-3 w-3 ${s <= Math.round(prof.avg_rating!) ? "text-amber-400 fill-amber-400" : "text-muted-foreground"}`} />
+                ))}
               </div>
-            )}
-          </div>
+              <span className="text-xs text-muted-foreground">{prof.review_count} avaliações</span>
+            </div>
+          )}
         </div>
 
         <Button 
