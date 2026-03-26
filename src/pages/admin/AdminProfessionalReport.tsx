@@ -220,10 +220,10 @@ export default function AdminProfessionalReport() {
         <Button 
           variant="outline" 
           className="gap-2"
-          onClick={() => window.print()}
+          onClick={handleExportAll}
         >
-          <Printer className="h-4 w-4" />
-          Exportar PDF
+          <Download className="h-4 w-4" />
+          Exportar Todos em PDF
         </Button>
       </div>
 
@@ -343,7 +343,7 @@ export default function AdminProfessionalReport() {
               >
                 <ProfCard 
                   prof={prof} 
-                  onExportPDF={() => handleExport(prof.user_id)}
+                  onExportPDF={() => handleExportOne(prof.user_id)}
                 />
               </div>
             ))}
@@ -547,7 +547,7 @@ function ProfCard({
           className="gap-2 print:hidden ml-4"
           onClick={onExportPDF}
         >
-          <Printer className="h-4 w-4" />
+          <Download className="h-4 w-4" />
           Exportar PDF
         </Button>
       </CardHeader>
