@@ -196,12 +196,13 @@ export default function AdminProfessionalReport() {
 
   useEffect(() => { fetchData(); }, [fetchData]);
 
-  const handleExport = (userId: string) => {
-    setPrintingId(userId);
-    setTimeout(() => {
-      window.print();
-      setPrintingId(null);
-    }, 150);
+  const handleExportAll = () => {
+    displayList.forEach((prof) => downloadProfPDF(prof, dateFrom, dateTo));
+  };
+
+  const handleExportOne = (userId: string) => {
+    const prof = professionals.find((p) => p.user_id === userId);
+    if (prof) downloadProfPDF(prof, dateFrom, dateTo);
   };
 
   if (!perms.canViewProfessionals) return <AccessDenied />;
