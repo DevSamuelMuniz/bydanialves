@@ -227,72 +227,8 @@ export default function AdminProfessionalReport() {
         </Button>
       </div>
 
-      <style dangerouslySetInnerHTML={{ __html: `
-        @media print {
-          /* Reset layout for print */
-          .print\\:hidden, .dashboard-ui, header, aside, .sidebar-trigger, [data-sidebar], button { 
-            display: none !important; 
-          }
-          
-          /* Forced Reset on all parent containers to avoid scrollbars/clipping */
-          html, body, #root, [data-sidebar-wrapper], main, .flex-1.overflow-auto {
-            overflow: visible !important;
-            height: auto !important;
-            min-height: 0 !important;
-            max-height: none !important;
-            padding: 0 !important;
-            margin: 0 !important;
-            display: block !important;
-          }
-
-          body { 
-            background: white !important; 
-            -webkit-print-color-adjust: exact !important;
-            print-color-adjust: exact !important;
-          }
-
-          /* Reset root container padding and spacing */
-          .p-6.space-y-6 { 
-            padding: 0 !important; 
-            margin: 0 !important; 
-            display: block !important;
-            overflow: visible !important;
-            height: auto !important;
-          }
-          .p-6.space-y-6 > * { 
-            margin-top: 0 !important; 
-          }
-
-          /* Show and style the printable report */
-          .printable-report { 
-            display: block !important; 
-            visibility: visible !important;
-            position: static !important;
-            width: 100% !important;
-            max-width: none !important;
-          }
-          
-          @page {
-            margin: 1.5cm;
-            size: A4;
-          }
-
-          .page-break-before { 
-            page-break-before: always !important; 
-            break-before: page !important;
-          }
-          .page-break-inside-avoid { 
-            page-break-inside: avoid !important; 
-            break-inside: avoid !important;
-          }
-        }
-
-        /* Hide printable report in UI */
-        .printable-report { display: none; }
-      `}} />
-
-      {/* Dashboard UI Wrapper to hide during print */}
-      <div className="dashboard-ui space-y-6">
+      {/* Dashboard UI */}
+      <div className="space-y-6">
         {/* Filters */}
         <Card>
           <CardContent className="pt-5">
@@ -337,10 +273,7 @@ export default function AdminProfessionalReport() {
         ) : (
           <div className="space-y-8">
             {displayList.map((prof) => (
-              <div 
-                key={prof.user_id} 
-                className="prof-card"
-              >
+              <div key={prof.user_id} className="prof-card">
                 <ProfCard 
                   prof={prof} 
                   onExportPDF={() => handleExportOne(prof.user_id)}
@@ -349,16 +282,6 @@ export default function AdminProfessionalReport() {
             ))}
           </div>
         )}
-      </div>
-
-      {/* Printable Report (shown only in @media print) */}
-      {!loading && (
-        <PrintableProfessionalReport 
-          professionals={printingId ? professionals.filter(p => p.user_id === printingId) : displayList}
-          dateFrom={new Date(dateFrom).toLocaleDateString('pt-BR')}
-          dateTo={new Date(dateTo).toLocaleDateString('pt-BR')}
-        />
-      )}
     </div>
   );
 }
