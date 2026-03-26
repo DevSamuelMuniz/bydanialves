@@ -2,6 +2,7 @@ import { useEffect, useState, useCallback } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAdminPermissions } from "@/hooks/use-admin-permissions";
 import { AccessDenied } from "@/components/admin/AccessDenied";
+import { cn } from "@/lib/utils";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Badge } from "@/components/ui/badge";
@@ -13,8 +14,9 @@ import {
   BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Cell,
 } from "recharts";
 import {
-  Users, Clock, Scissors, Star, TrendingUp, CheckCircle2, XCircle, Calendar,
+  Users, Clock, Scissors, Star, TrendingUp, CheckCircle2, XCircle, Calendar, Printer, DollarSign,
 } from "lucide-react";
+import { Button } from "@/components/ui/button";
 
 interface ProfessionalSummary {
   user_id: string;
@@ -32,6 +34,7 @@ interface ProfessionalSummary {
   review_count: number;
   top_services: { name: string; count: number }[];
   by_month: { month: string; count: number }[];
+  total_bonification: number;
 }
 
 const LEVEL_LABELS: Record<string, string> = {
@@ -60,6 +63,7 @@ export default function AdminProfessionalReport() {
   const perms = useAdminPermissions();
   const [loading, setLoading] = useState(true);
   const [professionals, setProfessionals] = useState<ProfessionalSummary[]>([]);
+  const [printingId, setPrintingId] = useState<string | null>(null);
   const [selected, setSelected] = useState<string>("all");
   const [dateFrom, setDateFrom] = useState(() => {
     const d = new Date();
@@ -111,7 +115,15 @@ export default function AdminProfessionalReport() {
       const ratingMap: Record<string, number> = {};
       (reviews || []).forEach((r) => { ratingMap[r.appointment_id] = r.rating; });
 
-      // 6. Build summaries per professional
+      // 6. Fetch bonification payments in range
+      const { data: bonusPayments } = await supabase
+        .from("bonification_payments" as any)
+        .select("professional_id, bonus_amount, created_at")
+        .in("professional_id", userIds)
+        .gte("created_at", dateFrom)
+        .lte("created_at", dateTo + "T23:59:59");
+
+      // 7. Build summaries per professional
       const summaries: ProfessionalSummary[] = roles.map((role) => {
         const profile = profiles?.find((p) => p.user_id === role.user_id);
         const branch = branches?.find((b) => b.id === role.branch_id);
@@ -151,6 +163,10 @@ export default function AdminProfessionalReport() {
         });
         const by_month = Object.entries(monthMap).map(([month, count]) => ({ month, count }));
 
+        // Bonification total
+        const myBonuses = (bonusPayments || []).filter((b: any) => b.professional_id === role.user_id);
+        const total_bonification = myBonuses.reduce((acc, b: any) => acc + (b.bonus_amount || 0), 0);
+
         return {
           user_id: role.user_id,
           full_name: profile?.full_name ?? "—",
@@ -167,6 +183,7 @@ export default function AdminProfessionalReport() {
           review_count: myRatings.length,
           top_services,
           by_month,
+          total_bonification,
         };
       });
 
@@ -178,6 +195,14 @@ export default function AdminProfessionalReport() {
 
   useEffect(() => { fetchData(); }, [fetchData]);
 
+  const handleExport = (userId: string) => {
+    setPrintingId(userId);
+    setTimeout(() => {
+      window.print();
+      setPrintingId(null);
+    }, 150);
+  };
+
   if (!perms.canViewProfessionals) return <AccessDenied />;
 
   const displayList = selected === "all" ? professionals : professionals.filter((p) => p.user_id === selected);
@@ -185,64 +210,296 @@ export default function AdminProfessionalReport() {
   return (
     <div className="p-6 space-y-6">
       {/* Header */}
-      <div>
-        <h1 className="text-2xl font-bold tracking-tight">Relatório de Profissionais</h1>
-        <p className="text-muted-foreground text-sm mt-1">Análise completa de desempenho por profissional</p>
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 print:hidden">
+        <div>
+          <h1 className="text-2xl font-bold tracking-tight">Relatório de Profissionais</h1>
+          <p className="text-muted-foreground text-sm mt-1">Análise completa de desempenho por profissional</p>
+        </div>
+        <Button 
+          variant="outline" 
+          className="gap-2"
+          onClick={() => window.print()}
+        >
+          <Printer className="h-4 w-4" />
+          Exportar PDF
+        </Button>
       </div>
 
-      {/* Filters */}
-      <Card>
-        <CardContent className="pt-5">
-          <div className="flex flex-wrap gap-4 items-end">
-            <div className="flex-1 min-w-[160px]">
-              <Label className="text-xs mb-1 block">Profissional</Label>
-              <Select value={selected} onValueChange={setSelected}>
-                <SelectTrigger>
-                  <SelectValue placeholder="Todos" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">Todos os profissionais</SelectItem>
-                  {professionals.map((p) => (
-                    <SelectItem key={p.user_id} value={p.user_id}>{p.full_name}</SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-            <div className="flex-1 min-w-[140px]">
-              <Label className="text-xs mb-1 block">De</Label>
-              <Input type="date" value={dateFrom} onChange={(e) => setDateFrom(e.target.value)} />
-            </div>
-            <div className="flex-1 min-w-[140px]">
-              <Label className="text-xs mb-1 block">Até</Label>
-              <Input type="date" value={dateTo} onChange={(e) => setDateTo(e.target.value)} />
-            </div>
-          </div>
-        </CardContent>
-      </Card>
+      <style dangerouslySetInnerHTML={{ __html: `
+        @media print {
+          /* Reset layout for print */
+          .print\\:hidden, .dashboard-ui, header, aside, .sidebar-trigger, [data-sidebar], button { 
+            display: none !important; 
+          }
+          
+          /* Forced Reset on all parent containers to avoid scrollbars/clipping */
+          html, body, #root, [data-sidebar-wrapper], main, .flex-1.overflow-auto {
+            overflow: visible !important;
+            height: auto !important;
+            min-height: 0 !important;
+            max-height: none !important;
+            padding: 0 !important;
+            margin: 0 !important;
+            display: block !important;
+          }
 
-      {loading ? (
-        <div className="grid grid-cols-1 gap-6">
-          {[1, 2].map((i) => <Skeleton key={i} className="h-64 w-full rounded-xl" />)}
-        </div>
-      ) : displayList.length === 0 ? (
+          body { 
+            background: white !important; 
+            -webkit-print-color-adjust: exact !important;
+            print-color-adjust: exact !important;
+          }
+
+          /* Reset root container padding and spacing */
+          .p-6.space-y-6 { 
+            padding: 0 !important; 
+            margin: 0 !important; 
+            display: block !important;
+            overflow: visible !important;
+            height: auto !important;
+          }
+          .p-6.space-y-6 > * { 
+            margin-top: 0 !important; 
+          }
+
+          /* Show and style the printable report */
+          .printable-report { 
+            display: block !important; 
+            visibility: visible !important;
+            position: static !important;
+            width: 100% !important;
+            max-width: none !important;
+          }
+          
+          @page {
+            margin: 1.5cm;
+            size: A4;
+          }
+
+          .page-break-before { 
+            page-break-before: always !important; 
+            break-before: page !important;
+          }
+          .page-break-inside-avoid { 
+            page-break-inside: avoid !important; 
+            break-inside: avoid !important;
+          }
+        }
+
+        /* Hide printable report in UI */
+        .printable-report { display: none; }
+      `}} />
+
+      {/* Dashboard UI Wrapper to hide during print */}
+      <div className="dashboard-ui space-y-6">
+        {/* Filters */}
         <Card>
-          <CardContent className="py-16 text-center text-muted-foreground">
-            <Users className="h-10 w-10 mx-auto mb-3 opacity-30" />
-            <p>Nenhum profissional encontrado no período selecionado.</p>
+          <CardContent className="pt-5">
+            <div className="flex flex-wrap gap-4 items-end">
+              <div className="flex-1 min-w-[160px]">
+                <Label className="text-xs mb-1 block">Profissional</Label>
+                <Select value={selected} onValueChange={setSelected}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Todos" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">Todos os profissionais</SelectItem>
+                    {professionals.map((p) => (
+                      <SelectItem key={p.user_id} value={p.user_id}>{p.full_name}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="flex-1 min-w-[140px]">
+                <Label className="text-xs mb-1 block">De</Label>
+                <Input type="date" value={dateFrom} onChange={(e) => setDateFrom(e.target.value)} />
+              </div>
+              <div className="flex-1 min-w-[140px]">
+                <Label className="text-xs mb-1 block">Até</Label>
+                <Input type="date" value={dateTo} onChange={(e) => setDateTo(e.target.value)} />
+              </div>
+            </div>
           </CardContent>
         </Card>
-      ) : (
-        <div className="space-y-8">
-          {displayList.map((prof) => (
-            <ProfCard key={prof.user_id} prof={prof} />
-          ))}
-        </div>
+
+        {loading ? (
+          <div className="grid grid-cols-1 gap-6">
+            {[1, 2].map((i) => <Skeleton key={i} className="h-64 w-full rounded-xl" />)}
+          </div>
+        ) : displayList.length === 0 ? (
+          <Card>
+            <CardContent className="py-16 text-center text-muted-foreground">
+              <Users className="h-10 w-10 mx-auto mb-3 opacity-30" />
+              <p>Nenhum profissional encontrado no período selecionado.</p>
+            </CardContent>
+          </Card>
+        ) : (
+          <div className="space-y-8">
+            {displayList.map((prof) => (
+              <div 
+                key={prof.user_id} 
+                className="prof-card"
+              >
+                <ProfCard 
+                  prof={prof} 
+                  onExportPDF={() => handleExport(prof.user_id)}
+                />
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
+
+      {/* Printable Report (shown only in @media print) */}
+      {!loading && (
+        <PrintableProfessionalReport 
+          professionals={printingId ? professionals.filter(p => p.user_id === printingId) : displayList}
+          dateFrom={new Date(dateFrom).toLocaleDateString('pt-BR')}
+          dateTo={new Date(dateTo).toLocaleDateString('pt-BR')}
+        />
       )}
     </div>
   );
 }
 
-function ProfCard({ prof }: { prof: ProfessionalSummary }) {
+/**
+ * HIGH-FIDELITY PRINTABLE REPORT
+ * Matches the user's provided design (dark header, formal boxes, horizontal charts)
+ */
+function PrintableProfessionalReport({ 
+  professionals, 
+  dateFrom, 
+  dateTo 
+}: { 
+  professionals: ProfessionalSummary[], 
+  dateFrom: string, 
+  dateTo: string 
+}) {
+  const generationDate = new Date().toLocaleString('pt-BR', { dateStyle: 'short', timeStyle: 'short' });
+
+  return (
+    <div className="printable-report w-full mx-auto text-gray-900 bg-white">
+      {professionals.map((prof, idx) => (
+        <div key={prof.user_id} className={cn("space-y-8", idx > 0 && "page-break-before")}>
+          {/* Header Section */}
+          <div className="bg-[#1a1b1e] text-white p-8 rounded-t-lg flex justify-between items-end border-b-4 border-primary">
+            <div>
+              <h1 className="text-3xl font-extrabold tracking-tight">Relatório de Desempenho</h1>
+              <p className="text-gray-400 mt-2 font-medium">Período: {dateFrom} a {dateTo}</p>
+            </div>
+            <div className="text-right">
+              <p className="text-sm text-gray-400">Gerado em: {generationDate}</p>
+            </div>
+          </div>
+
+          {/* Professional Header */}
+          <div className="px-4 py-6 border-b border-gray-100">
+            <h2 className="text-4xl font-black text-slate-800">{prof.full_name}</h2>
+            <p className="text-lg text-slate-500 mt-1 font-medium italic">
+              Cargo: {LEVEL_LABELS[prof.admin_level] || prof.admin_level} | Filial: {prof.branch_name || '—'}
+            </p>
+          </div>
+
+          {/* KPI Boxes Grid */}
+          <div className="grid grid-cols-2 gap-4 px-4">
+            <PrintKpiBox label="TOTAL DE ATENDIMENTOS" value={String(prof.total)} color="border-indigo-500 text-indigo-600" />
+            <PrintKpiBox label="CONCLUÍDOS" value={String(prof.completed)} color="border-emerald-500 text-emerald-600" />
+            <PrintKpiBox label="HORAS TRABALHADAS" value={fmtHours(prof.hours_worked)} color="border-blue-500 text-blue-600" />
+            <PrintKpiBox label="TAXA DE CONCLUSÃO" value={`${prof.total > 0 ? Math.round((prof.completed / prof.total) * 100) : 0}%`} color="border-violet-500 text-violet-600" />
+            
+            {/* ADDED BONIFICATION KPI */}
+            <div className="col-span-2">
+              <PrintKpiBox 
+                label="TOTAL DE BONIFICAÇÃO / COMISSÃO" 
+                value={new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(prof.total_bonification)} 
+                color="border-amber-500 text-amber-600 bg-amber-50/20" 
+              />
+            </div>
+          </div>
+
+          {/* Status Breakdown Section */}
+          <div className="px-4 pt-4 page-break-inside-avoid">
+            <h3 className="text-xl font-bold text-slate-800 mb-6 flex items-center gap-2 border-b-2 border-slate-100 pb-2">
+              Atendimentos por status
+            </h3>
+            <div className="space-y-5">
+              <PrintProgressRow label="Concluídos" value={prof.completed} total={prof.total} color="bg-emerald-500" />
+              <PrintProgressRow label="Confirmados" value={prof.confirmed} total={prof.total} color="bg-blue-500" />
+              <PrintProgressRow label="Cancelados" value={prof.cancelled} total={prof.total} color="bg-red-500" />
+            </div>
+          </div>
+
+          {/* Top Services Section */}
+          <div className="px-4 pt-8 page-break-inside-avoid">
+            <h3 className="text-xl font-bold text-slate-800 mb-6 flex items-center gap-2 border-b-2 border-slate-100 pb-2">
+              Serviços mais realizados
+            </h3>
+            <div className="space-y-4">
+              {prof.top_services.length > 0 ? (
+                prof.top_services.map((svc, sIdx) => (
+                  <PrintServiceRow 
+                    key={sIdx} 
+                    idx={sIdx + 1} 
+                    name={svc.name} 
+                    count={svc.count} 
+                    max={prof.top_services[0]?.count || 1} 
+                  />
+                ))
+              ) : (
+                <p className="text-gray-400 italic">Sem registros no período.</p>
+              )}
+            </div>
+          </div>
+        </div>
+      ))}
+    </div>
+  );
+}
+
+function PrintKpiBox({ label, value, color }: { label: string, value: string, color: string }) {
+  return (
+    <div className={cn("p-4 rounded-xl border-2 shadow-sm flex flex-col gap-1", color)}>
+      <span className="text-[10px] font-bold uppercase tracking-widest opacity-80">{label}</span>
+      <span className="text-3xl font-black">{value}</span>
+    </div>
+  );
+}
+
+function PrintProgressRow({ label, value, total, color }: { label: string, value: number, total: number, color: string }) {
+  const percentage = total > 0 ? (value / total) * 100 : 0;
+  return (
+    <div className="flex items-center gap-4 break-inside-avoid">
+      <span className="w-32 text-sm font-semibold text-slate-600">{label}</span>
+      <div className="flex-1 h-8 bg-slate-100 rounded-lg overflow-hidden flex items-center pr-2">
+        <div className={cn("h-full", color)} style={{ width: `${percentage}%` }} />
+        <span className="ml-auto text-sm font-bold text-slate-400">{value}</span>
+      </div>
+    </div>
+  );
+}
+
+function PrintServiceRow({ idx, name, count, max }: { idx: number, name: string, count: number, max: number }) {
+  const percentage = max > 0 ? (count / max) * 100 : 0;
+  return (
+    <div className="flex items-center gap-4 break-inside-avoid">
+      <div className="flex items-center gap-3 w-48 shrink-0">
+        <span className="text-sm font-mono text-slate-400">{idx}.</span>
+        <span className="text-sm font-bold text-slate-700 truncate">{name}</span>
+      </div>
+      <div className="flex-1 h-5 bg-slate-100 rounded-full overflow-hidden">
+        <div className="h-full bg-primary/80" style={{ width: `${percentage}%` }} />
+      </div>
+      <span className="w-10 text-right text-sm font-black text-primary">{count}x</span>
+    </div>
+  );
+}
+
+function ProfCard({ 
+  prof, 
+  onExportPDF 
+}: { 
+  prof: ProfessionalSummary; 
+  onExportPDF: () => void;
+}) {
   const initials = prof.full_name.split(" ").map((n) => n[0]).join("").slice(0, 2).toUpperCase();
   const completionRate = prof.total > 0 ? Math.round((prof.completed / prof.total) * 100) : 0;
 
@@ -256,7 +513,7 @@ function ProfCard({ prof }: { prof: ProfessionalSummary }) {
   return (
     <Card className="overflow-hidden border shadow-sm">
       {/* Prof header */}
-      <CardHeader className="bg-muted/30 pb-4">
+      <CardHeader className="bg-muted/30 pb-4 flex flex-row items-center justify-between">
         <div className="flex items-center gap-4">
           <Avatar className="h-14 w-14 border-2 border-primary/20">
             <AvatarImage src={prof.avatar_url ?? undefined} />
@@ -281,15 +538,26 @@ function ProfCard({ prof }: { prof: ProfessionalSummary }) {
             </div>
           )}
         </div>
+
+        <Button 
+          variant="outline" 
+          size="sm" 
+          className="gap-2 print:hidden ml-4"
+          onClick={onExportPDF}
+        >
+          <Printer className="h-4 w-4" />
+          Exportar PDF
+        </Button>
       </CardHeader>
 
       <CardContent className="pt-5 space-y-6">
         {/* KPI row */}
-        <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+        <div className="grid grid-cols-2 sm:grid-cols-5 gap-3">
           <KpiMini icon={<Calendar className="h-4 w-4" />} label="Total" value={String(prof.total)} color="text-primary" />
           <KpiMini icon={<CheckCircle2 className="h-4 w-4" />} label="Concluídos" value={String(prof.completed)} color="text-emerald-600" />
-          <KpiMini icon={<Clock className="h-4 w-4" />} label="Horas trabalhadas" value={fmtHours(prof.hours_worked)} color="text-blue-600" />
+          <KpiMini icon={<Clock className="h-4 w-4" />} label="Horas" value={fmtHours(prof.hours_worked)} color="text-blue-600" />
           <KpiMini icon={<TrendingUp className="h-4 w-4" />} label="Conclusão" value={`${completionRate}%`} color="text-violet-600" />
+          <BonificationKpi value={prof.total_bonification} />
         </div>
 
         {/* Status breakdown + Top services */}
@@ -382,6 +650,20 @@ function KpiMini({ icon, label, value, color }: { icon: React.ReactNode; label: 
     <div className="rounded-lg border bg-card p-3 flex flex-col gap-1">
       <div className={`flex items-center gap-1.5 ${color}`}>{icon}<span className="text-xs font-medium">{label}</span></div>
       <span className="text-xl font-bold">{value}</span>
+    </div>
+  );
+}
+
+function BonificationKpi({ value }: { value: number }) {
+  const formatted = new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(value);
+  
+  return (
+    <div className="rounded-lg border border-amber-200 bg-amber-50/50 p-3 flex flex-col gap-1 shadow-sm print:bg-amber-50 print:border-amber-400">
+      <div className="flex items-center gap-1.5 text-amber-600">
+        <DollarSign className="h-4 w-4" />
+        <span className="text-xs font-semibold uppercase tracking-wider">Bonificação</span>
+      </div>
+      <span className="text-xl font-bold text-amber-700">{formatted}</span>
     </div>
   );
 }

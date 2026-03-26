@@ -125,6 +125,7 @@ export default function NewBooking() {
   const [workCalendarMap, setWorkCalendarMap] = useState<Record<string, boolean>>({});
   const [planProfessionalIds, setPlanProfessionalIds] = useState<string[]>([]);
   const [planEsgotadoOpen, setPlanEsgotadoOpen] = useState(false);
+  const [blockedSlotsMap, setBlockedSlotsMap] = useState<Record<string, string[]>>({}); // professional_id -> blocked slot times
 
   const totalDuration = selectedServices.reduce((acc, s) => acc + s.duration_minutes, 0);
   const totalPrice = selectedServices.reduce((acc, s) => {
@@ -161,6 +162,9 @@ export default function NewBooking() {
       );
       return generateTimeSlots(totalDuration, workStart, workEnd).filter((slot) => {
         if (isToday && toMin(slot) <= currentMinutes) return false;
+        // Check if this slot is blocked for this professional
+        const profBlockedSlots = blockedSlotsMap[selectedProfessional.user_id] ?? [];
+        if (profBlockedSlots.includes(slot)) return false;
         return isSlotAvailable(slot, totalDuration, relevantRanges, 1);
       });
     }
@@ -219,7 +223,11 @@ export default function NewBooking() {
 
         // Check if prof is free at this slot
         const profBooked = bookedRanges.filter((r) => r.professionalId === prof.user_id);
-        return isSlotAvailable(slot, totalDuration, profBooked, 1);
+        if (!isSlotAvailable(slot, totalDuration, profBooked, 1)) return false;
+        // Check if this slot is blocked for this professional
+        const profBlockedSlots = blockedSlotsMap[prof.user_id] ?? [];
+        if (profBlockedSlots.includes(slot)) return false;
+        return true;
       });
     });
   })();
@@ -320,13 +328,34 @@ export default function NewBooking() {
       // Fetch day blocks for this date
       const { data: blocks } = await (supabase as any)
         .from("professional_day_blocks")
-        .select("professional_id")
+        .select("professional_id, reason")
         .eq("blocked_date", dateStr);
-      const blockedIds = new Set((blocks || []).map((b: any) => b.professional_id));
+
+      // Parse blocks: separate full-day blocks from slot-level blocks
+      const fullDayBlockedIds = new Set<string>();
+      const slotBlocksMap: Record<string, string[]> = {};
+      (blocks || []).forEach((b: any) => {
+        const reason: string = b.reason || "";
+        if (reason.startsWith("SLOTS:")) {
+          // New format: SLOTS:HH:MM,HH:MM|reason
+          const slotsPart = reason.split("|")[0].replace("SLOTS:", "");
+          const times = slotsPart.split(",").filter(Boolean);
+          if (!slotBlocksMap[b.professional_id]) slotBlocksMap[b.professional_id] = [];
+          slotBlocksMap[b.professional_id].push(...times);
+        } else if (reason.startsWith("SLOT:")) {
+          // Legacy/Fallback
+          const slotTime = reason.split("|")[0].replace("SLOT:", "");
+          if (!slotBlocksMap[b.professional_id]) slotBlocksMap[b.professional_id] = [];
+          slotBlocksMap[b.professional_id].push(slotTime);
+        } else {
+          fullDayBlockedIds.add(b.professional_id);
+        }
+      });
+      setBlockedSlotsMap(slotBlocksMap);
 
       let availableProfs = allBranchProfessionals.filter((p) => {
-        // Blocked by admin for this day → exclude
-        if (blockedIds.has(p.user_id)) return false;
+        // Blocked by admin for full day → exclude
+        if (fullDayBlockedIds.has(p.user_id)) return false;
         // No schedules configured → exclude (not yet set up by admin)
         if (p.schedules.length === 0) return false;
         // Has at least one active entry matching this day of week
@@ -379,16 +408,15 @@ export default function NewBooking() {
         const plan = (sub as any).plans;
         setTemPlanoAtivo(true);
         const totalEscovas = parseEscovasFromIncludes(plan.includes);
-        const now = new Date();
-        const startOfMonth = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}-01`;
-        const endOfMonth = new Date(now.getFullYear(), now.getMonth() + 1, 0);
-        const endStr = `${endOfMonth.getFullYear()}-${String(endOfMonth.getMonth() + 1).padStart(2, "0")}-${String(endOfMonth.getDate()).padStart(2, "0")}`;
+        const subStart = sub.started_at ? sub.started_at.split('T')[0] : new Date().toISOString().split('T')[0];
+        const subEnd = sub.expires_at ? sub.expires_at.split('T')[0] : new Date().toISOString().split('T')[0];
+
         const { data: appointments } = await supabase
           .from("appointments")
           .select("*, services(name, is_system)")
           .eq("client_id", user.id)
-          .gte("appointment_date", startOfMonth)
-          .lte("appointment_date", endStr)
+          .gte("appointment_date", subStart)
+          .lte("appointment_date", subEnd)
           .neq("status", "cancelled");
         const escovasUsadas = (appointments || []).filter((a: any) => a.services?.is_system === true).length;
         setEscovasDisponiveis(Math.max(0, totalEscovas - escovasUsadas));

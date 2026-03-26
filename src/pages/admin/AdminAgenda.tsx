@@ -16,6 +16,8 @@ import { useToast } from "@/hooks/use-toast";
 import { Clock, CalendarDays, Filter, StickyNote, Trash2, DollarSign, Handshake, CheckCircle2, User, Scissors, RefreshCw, AlertCircle, XCircle, Building2 } from "lucide-react";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
+import { Checkbox } from "@/components/ui/checkbox";
+import { Label } from "@/components/ui/label";
 
 const PAGE_SIZE = 100; // load more for kanban view
 
@@ -38,6 +40,9 @@ export default function AdminAgenda() {
   const [serviceFilter, setServiceFilter] = useState<string>("all");
   // Branch filter — only for manager/ceo (no fixed adminBranchId)
   const [branchFilter, setBranchFilter] = useState<string>("all");
+  const [showCancelled, setShowCancelled] = useState(false);
+  const [onlyCancelled, setOnlyCancelled] = useState(false);
+  const [hasInitializedCancelled, setHasInitializedCancelled] = useState(false);
 
   // Notes
   const [editingNotes, setEditingNotes] = useState<string | null>(null);
@@ -59,7 +64,7 @@ export default function AdminAgenda() {
     let query = supabase
       .from("appointments")
       .select("*, services(name, price, duration_minutes), profiles!appointments_client_profile_fkey(full_name, phone)")
-      .in("status", ["pending", "confirmed", "cancelled"]);
+      .in("status", ["pending", "confirmed", "cancelled", "completed"]);
 
     // Staff with a fixed branch → use that; manager/ceo → use the branch filter dropdown
     if (adminBranchId) {
@@ -83,6 +88,16 @@ export default function AdminAgenda() {
 
   useEffect(() => { fetchServices(); fetchBranches(); }, []);
   useEffect(() => { fetchAppointments(); }, [fetchAppointments]);
+  
+  // Initialize showCancelled for non-attendants
+  useEffect(() => {
+    if (adminLevel && !hasInitializedCancelled) {
+      if (adminLevel !== "attendant") {
+        setShowCancelled(true);
+      }
+      setHasInitializedCancelled(true);
+    }
+  }, [adminLevel, hasInitializedCancelled]);
 
   useEffect(() => {
     const channel = supabase
@@ -144,12 +159,14 @@ export default function AdminAgenda() {
 
   const resetFilters = () => {
     setDateFrom(undefined); setDateTo(undefined); setServiceFilter("all"); setBranchFilter("all");
+    setOnlyCancelled(false);
   };
 
   // Split into columns
   const toConfirm  = appointments.filter((a) => a.status === "pending");
   const toTake     = appointments.filter((a) => a.status === "confirmed" && !hasAttendant(a));
   const toDo       = appointments.filter((a) => a.status === "confirmed" && hasAttendant(a));
+  const completed  = appointments.filter((a) => a.status === "completed");
   const cancelled  = appointments.filter((a) => a.status === "cancelled");
 
   function hasAttendant(a: any) {
@@ -180,12 +197,22 @@ export default function AdminAgenda() {
     {
       key: "complete",
       title: "A Concluir",
-      icon: <CheckCircle2 className="h-4 w-4" />,
+      icon: <Clock className="h-4 w-4" />,
       color: "border-green-400",
       headerColor: "bg-green-50 dark:bg-green-950/30 text-green-700 dark:text-green-400",
       dot: "bg-green-400",
       items: toDo,
       emptyMsg: "Nenhum atendimento em andamento",
+    },
+    {
+      key: "completed",
+      title: "Concluídos",
+      icon: <CheckCircle2 className="h-4 w-4" />,
+      color: "border-primary",
+      headerColor: "bg-primary/10 text-primary",
+      dot: "bg-primary",
+      items: completed,
+      emptyMsg: "Nenhum agendamento concluído",
     },
     {
       key: "cancelled",
@@ -198,6 +225,12 @@ export default function AdminAgenda() {
       emptyMsg: "Nenhum agendamento cancelado",
     },
   ];
+
+  // Filter columns based on showCancelled and onlyCancelled
+  const visibleColumns = columns.filter(col => {
+    if (onlyCancelled) return col.key === "cancelled";
+    return col.key !== "cancelled" || showCancelled;
+  });
 
   const isAttendant = adminLevel === "attendant";
 
@@ -391,6 +424,31 @@ export default function AdminAgenda() {
                 {services.map((s) => <SelectItem key={s.id} value={s.id}>{s.name}</SelectItem>)}
               </SelectContent>
             </Select>
+
+            <div className="flex items-center space-x-2 border rounded-md px-3 h-10 border-input bg-background">
+              <Checkbox
+                id="show-cancelled"
+                checked={showCancelled}
+                onCheckedChange={(checked) => setShowCancelled(checked as boolean)}
+              />
+              <Label htmlFor="show-cancelled" className="text-sm font-medium cursor-pointer">
+                Ver cancelados
+              </Label>
+            </div>
+
+            <div className="flex items-center space-x-2 border rounded-md px-3 h-10 border-input bg-background shadow-sm hover:shadow-md transition-all">
+              <Checkbox
+                id="only-cancelled"
+                checked={onlyCancelled}
+                onCheckedChange={(checked) => {
+                  setOnlyCancelled(checked as boolean);
+                  if (checked) setShowCancelled(true);
+                }}
+              />
+              <Label htmlFor="only-cancelled" className="text-sm font-medium cursor-pointer text-destructive">
+                Apenas cancelados
+              </Label>
+            </div>
           </div>
           {(dateFrom || dateTo || serviceFilter !== "all" || branchFilter !== "all") && (
             <Button variant="ghost" size="sm" className="mt-2 text-xs" onClick={resetFilters}>Limpar filtros</Button>
@@ -400,8 +458,8 @@ export default function AdminAgenda() {
 
       {/* Kanban Columns */}
       {loading ? (
-        <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-4">
-          {[0,1,2,3].map(i => (
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-4">
+          {[0,1,2,3,4].map(i => (
             <div key={i} className="space-y-3">
               <Skeleton className="h-8 w-full" />
               <Skeleton className="h-40 w-full" />
@@ -410,8 +468,8 @@ export default function AdminAgenda() {
           ))}
         </div>
       ) : (
-        <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-4 items-start">
-          {columns.map((col) => (
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-4 items-start">
+          {visibleColumns.map((col) => (
             <div key={col.key} className="space-y-3">
               {/* Column header */}
               <div className={`flex items-center justify-between rounded-lg px-3 py-2 ${col.headerColor}`}>

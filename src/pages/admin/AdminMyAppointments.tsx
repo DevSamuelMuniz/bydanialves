@@ -14,6 +14,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Checkbox } from "@/components/ui/checkbox";
 import { Textarea } from "@/components/ui/textarea";
 import { Card, CardContent } from "@/components/ui/card";
 import { useToast } from "@/hooks/use-toast";
@@ -21,7 +22,7 @@ import { cn } from "@/lib/utils";
 import {
   Clock, DollarSign, User, Scissors, CheckCircle2, XCircle,
   CalendarIcon, RotateCcw, Plus, Search, CalendarDays, ListChecks,
-  ChevronDown, ChevronUp, PlayCircle, LockKeyhole, UnlockKeyhole,
+  ChevronDown, ChevronUp, PlayCircle, LockKeyhole, UnlockKeyhole, CalendarOff,
 } from "lucide-react";
 import {
   AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
@@ -76,6 +77,19 @@ export default function AdminMyAppointments() {
 
   // History toggle (non-attendant view)
   const [historyOpen, setHistoryOpen] = useState(true);
+  const [showCancelled, setShowCancelled] = useState(false);
+  const [onlyCancelled, setOnlyCancelled] = useState(false);
+  const [hasInitializedCancelled, setHasInitializedCancelled] = useState(false);
+
+  // Initialize showCancelled for non-attendants
+  useEffect(() => {
+    if (adminLevel && !hasInitializedCancelled) {
+      if (adminLevel !== "attendant") {
+        setShowCancelled(true);
+      }
+      setHasInitializedCancelled(true);
+    }
+  }, [adminLevel, hasInitializedCancelled]);
 
   // Complete modal
   const [completeTarget, setCompleteTarget] = useState<any | null>(null);
@@ -95,21 +109,40 @@ export default function AdminMyAppointments() {
   // Appointment detail popover
   const [detailAppt, setDetailAppt] = useState<any | null>(null);
 
-  // Block day modal
+  // Block day/slot modal
   const [blockTarget, setBlockTarget] = useState<{ user_id: string; full_name: string; avatar_url: string | null } | null>(null);
   const [blockReason, setBlockReason] = useState("");
   const [blocking, setBlocking] = useState(false);
-  const [dayBlocks, setDayBlocks] = useState<Record<string, boolean>>({}); // professional_id -> blocked for selectedDate
+  const [blockMode, setBlockMode] = useState<"day" | "slots">("day");
+  const [selectedBlockSlots, setSelectedBlockSlots] = useState<string[]>([]);
+  const [dayBlocks, setDayBlocks] = useState<Record<string, { isFullDay: boolean; blockedSlots: string[] }>>({}); // professional_id -> block info
 
   // ─── Data fetching ──────────────────────────────────────────────────────────
 
   const fetchDayBlocks = useCallback(async (dateStr: string) => {
     const { data } = await (supabase as any)
       .from("professional_day_blocks")
-      .select("professional_id")
+      .select("professional_id, reason")
       .eq("blocked_date", dateStr);
-    const map: Record<string, boolean> = {};
-    (data || []).forEach((b: any) => { map[b.professional_id] = true; });
+    const map: Record<string, { isFullDay: boolean; blockedSlots: string[] }> = {};
+    (data || []).forEach((b: any) => {
+      const pid = b.professional_id;
+      if (!map[pid]) map[pid] = { isFullDay: false, blockedSlots: [] };
+      const reason: string = b.reason || "";
+      
+      if (reason.startsWith("SLOTS:")) {
+        // New format: SLOTS:HH:MM,HH:MM|reason
+        const slotsPart = reason.split("|")[0].replace("SLOTS:", "");
+        const times = slotsPart.split(",").filter(Boolean);
+        map[pid].blockedSlots.push(...times);
+      } else if (reason.startsWith("SLOT:")) {
+        // Old/Fallback format
+        const slotTime = reason.split("|")[0].replace("SLOT:", "");
+        map[pid].blockedSlots.push(slotTime);
+      } else {
+        map[pid].isFullDay = true;
+      }
+    });
     setDayBlocks(map);
   }, []);
 
@@ -278,22 +311,58 @@ export default function AdminMyAppointments() {
     if (!blockTarget || !user) return;
     setBlocking(true);
     const dateStr = format(selectedDate, "yyyy-MM-dd");
-    const { error } = await (supabase as any)
-      .from("professional_day_blocks")
-      .insert({
-        professional_id: blockTarget.user_id,
-        blocked_date: dateStr,
-        blocked_by: user.id,
-        reason: blockReason || null,
-      });
-    setBlocking(false);
-    if (error) {
-      toast({ title: "Erro ao bloquear agenda", description: error.message, variant: "destructive" });
+
+    if (blockMode === "day") {
+      // Full day block — single row
+      const { error } = await (supabase as any)
+        .from("professional_day_blocks")
+        .insert({
+          professional_id: blockTarget.user_id,
+          blocked_date: dateStr,
+          blocked_by: user.id,
+          reason: blockReason || null,
+        });
+      setBlocking(false);
+      if (error) {
+        toast({ title: "Erro ao bloquear agenda", description: error.message, variant: "destructive" });
+      } else {
+        toast({ title: "🔒 Agenda bloqueada!", description: `${blockTarget.full_name} não receberá novos agendamentos hoje.` });
+        setBlockTarget(null);
+        setBlockReason("");
+        setBlockMode("day");
+        setSelectedBlockSlots([]);
+        fetchData();
+      }
     } else {
-      toast({ title: "🔒 Agenda bloqueada!", description: `${blockTarget.full_name} não receberá novos agendamentos hoje.` });
-      setBlockTarget(null);
-      setBlockReason("");
-      fetchData();
+      // Slot-level blocks — single row for all slots to avoid unique constraint error
+      if (selectedBlockSlots.length === 0) {
+        toast({ title: "Selecione ao menos um horário", variant: "destructive" });
+        setBlocking(true); // reset state
+        setBlocking(false);
+        return;
+      }
+      
+      const slotsString = selectedBlockSlots.sort().join(",");
+      const { error } = await (supabase as any)
+        .from("professional_day_blocks")
+        .insert({
+          professional_id: blockTarget.user_id,
+          blocked_date: dateStr,
+          blocked_by: user.id,
+          reason: `SLOTS:${slotsString}${blockReason ? "|" + blockReason : ""}`,
+        });
+        
+      setBlocking(false);
+      if (error) {
+        toast({ title: "Erro ao bloquear horários", description: error.message, variant: "destructive" });
+      } else {
+        toast({ title: "🔒 Horários bloqueados!", description: `${selectedBlockSlots.length} horário(s) bloqueado(s) para ${blockTarget.full_name}.` });
+        setBlockTarget(null);
+        setBlockReason("");
+        setBlockMode("day");
+        setSelectedBlockSlots([]);
+        fetchData();
+      }
     }
   };
 
@@ -321,6 +390,11 @@ export default function AdminMyAppointments() {
     const m: Record<string, Record<string, any[]>> = {};
     ALL_SLOTS.forEach((slot) => { m[slot] = {}; });
     appointments.forEach((a) => {
+      if (onlyCancelled) {
+        if (a.status !== "cancelled") return;
+      } else if (a.status === "cancelled" && !showCancelled) {
+        return;
+      }
       const slot = a.appointment_time?.slice(0, 5);
       if (!slot || !m[slot]) return;
       const pid = a.professional_id ?? "__none__";
@@ -328,7 +402,7 @@ export default function AdminMyAppointments() {
       m[slot][pid].push(a);
     });
     return m;
-  }, [appointments]);
+  }, [appointments, showCancelled, onlyCancelled]);
 
   // For professional view (non-attendant)
   const confirmed = useMemo(() =>
@@ -337,9 +411,13 @@ export default function AdminMyAppointments() {
   [appointments, selectedDate]);
 
   const history = useMemo(() =>
-    appointments.filter((a) => ["completed", "cancelled"].includes(a.status) &&
-      format(new Date(a.appointment_date + "T00:00:00"), "yyyy-MM-dd") === format(selectedDate, "yyyy-MM-dd")),
-  [appointments, selectedDate]);
+    appointments.filter((a) => {
+      const matchDate = format(new Date(a.appointment_date + "T00:00:00"), "yyyy-MM-dd") === format(selectedDate, "yyyy-MM-dd");
+      if (!matchDate) return false;
+      if (onlyCancelled) return a.status === "cancelled";
+      return (a.status === "completed" || (a.status === "cancelled" && showCancelled));
+    }),
+  [appointments, selectedDate, showCancelled, onlyCancelled]);
 
   // Professionals that actually have at least one appointment OR all if small list
   const visibleProfessionals = useMemo(() => {
@@ -372,14 +450,19 @@ export default function AdminMyAppointments() {
   const ProfHeader = ({ prof }: { prof: { user_id: string; full_name: string; avatar_url: string | null } }) => {
     const initials = prof.full_name.split(" ").map((n) => n[0]).slice(0, 2).join("").toUpperCase();
     const apptCount = appointments.filter((a) => a.professional_id === prof.user_id).length;
-    const isBlocked = dayBlocks[prof.user_id] ?? false;
+    const blockInfo = dayBlocks[prof.user_id];
+    const isFullDayBlocked = blockInfo?.isFullDay ?? false;
+    const hasSlotBlocks = (blockInfo?.blockedSlots?.length ?? 0) > 0;
+    const isBlocked = isFullDayBlocked || hasSlotBlocks;
     return (
       <button
         className={cn(
           "flex flex-col items-center gap-1 py-2 px-1 min-w-[120px] w-full transition-all rounded-md group",
-          isBlocked
+          isFullDayBlocked
             ? "bg-destructive/8 hover:bg-destructive/15"
-            : "hover:bg-muted/60"
+            : hasSlotBlocks
+              ? "bg-destructive/5 hover:bg-destructive/10"
+              : "hover:bg-muted/60"
         )}
         title={isBlocked ? `Desbloquear agenda de ${prof.full_name}` : `Fechar agenda de ${prof.full_name} hoje`}
         onClick={() => {
@@ -388,24 +471,35 @@ export default function AdminMyAppointments() {
           } else {
             setBlockTarget(prof);
             setBlockReason("");
+            setBlockMode("day");
+            setSelectedBlockSlots([]);
           }
         }}
       >
         <div className="relative">
-          <Avatar className={cn("w-10 h-10 border-2", isBlocked ? "border-destructive/50 opacity-60" : "border-border")}>
+          <Avatar className={cn("w-10 h-10 border-2", isFullDayBlocked ? "border-destructive/50 opacity-60" : hasSlotBlocks ? "border-destructive/30" : "border-border")}>
             <AvatarImage src={prof.avatar_url ?? undefined} />
             <AvatarFallback className="text-xs font-bold bg-primary/10 text-primary">{initials}</AvatarFallback>
           </Avatar>
-          {isBlocked && (
+          {isFullDayBlocked && (
             <div className="absolute -bottom-1 -right-1 w-5 h-5 rounded-full bg-destructive flex items-center justify-center">
               <LockKeyhole className="w-2.5 h-2.5 text-destructive-foreground" />
             </div>
           )}
+          {!isFullDayBlocked && hasSlotBlocks && (
+            <div className="absolute -bottom-1 -right-1 w-5 h-5 rounded-full bg-destructive/80 flex items-center justify-center">
+              <CalendarOff className="w-2.5 h-2.5 text-white" />
+            </div>
+          )}
         </div>
-        <p className={cn("text-xs font-semibold text-center leading-tight line-clamp-2", isBlocked && "text-muted-foreground line-through")}>{prof.full_name}</p>
-        {isBlocked ? (
+        <p className={cn("text-xs font-semibold text-center leading-tight line-clamp-2", isFullDayBlocked && "text-muted-foreground line-through")}>{prof.full_name}</p>
+        {isFullDayBlocked ? (
           <Badge variant="destructive" className="text-[10px] px-1.5 py-0 h-4 gap-0.5">
             <LockKeyhole className="w-2 h-2" /> Bloqueado
+          </Badge>
+        ) : hasSlotBlocks ? (
+          <Badge variant="outline" className="text-[10px] px-1.5 py-0 h-4 gap-0.5 border-destructive/40 text-destructive/80">
+            <CalendarOff className="w-2 h-2" /> {blockInfo!.blockedSlots.length} horário(s)
           </Badge>
         ) : apptCount > 0 ? (
           <Badge variant="secondary" className="text-[10px] px-1.5 py-0 h-4">{apptCount}</Badge>
@@ -474,8 +568,8 @@ export default function AdminMyAppointments() {
               <Button
                 variant="outline"
                 className={cn(
-                  "w-48 justify-start text-left font-normal gap-2",
-                  isToday && "border-primary/40 text-primary"
+                  "w-48 justify-start text-left font-normal gap-2 transition-all hover:bg-muted/60",
+                  isToday && "border-primary/40 text-primary bg-primary/5"
                 )}
               >
                 <CalendarIcon className="h-4 w-4 shrink-0" />
@@ -493,6 +587,32 @@ export default function AdminMyAppointments() {
               />
             </PopoverContent>
           </Popover>
+
+          <div className="flex items-center space-x-2 border rounded-md px-3 h-9 border-input bg-card shadow-sm transition-all hover:bg-muted/20">
+            <Checkbox
+              id="show-cancelled-my"
+              checked={showCancelled}
+              onCheckedChange={(checked) => setShowCancelled(checked as boolean)}
+            />
+            <Label htmlFor="show-cancelled-my" className="text-xs font-medium cursor-pointer select-none">
+              Ver cancelados
+            </Label>
+          </div>
+
+          <div className="flex items-center space-x-2 border rounded-md px-3 h-9 border-input bg-card shadow-sm transition-all hover:bg-muted/20">
+            <Checkbox
+              id="only-cancelled-my"
+              checked={onlyCancelled}
+              onCheckedChange={(checked) => {
+                setOnlyCancelled(checked as boolean);
+                if (checked) setShowCancelled(true);
+              }}
+            />
+            <Label htmlFor="only-cancelled-my" className="text-xs font-medium cursor-pointer select-none text-destructive">
+              Apenas cancelados
+            </Label>
+          </div>
+
           {!isToday && (
             <Button variant="ghost" size="icon" className="h-9 w-9" onClick={() => setSelectedDate(today)} title="Voltar para hoje">
               <RotateCcw className="h-4 w-4" />
@@ -560,19 +680,25 @@ export default function AdminMyAppointments() {
                         {/* Professional cells */}
                         {visibleProfessionals.map((prof) => {
                           const cellAppts = slotMap[slot]?.[prof.user_id] ?? [];
-                          const isProfBlocked = dayBlocks[prof.user_id] ?? false;
+                          const profBlockInfo = dayBlocks[prof.user_id];
+                          const isProfFullDayBlocked = profBlockInfo?.isFullDay ?? false;
+                          const isSlotBlocked = !isProfFullDayBlocked && (profBlockInfo?.blockedSlots?.includes(slot) ?? false);
+                          const isAnyBlocked = isProfFullDayBlocked || isSlotBlocked;
                           return (
                             <td
                               key={prof.user_id}
                               className={cn(
                                 "border-r border-border last:border-r-0 p-1.5 align-top min-h-[52px]",
-                                isProfBlocked && "bg-destructive/5"
+                                isProfFullDayBlocked && "bg-destructive/5",
+                                isSlotBlocked && "bg-destructive/5"
                               )}
                               style={{ minHeight: "52px" }}
                             >
-                              {isProfBlocked && cellAppts.length === 0 ? (
-                                <div className="w-full h-10 rounded border border-dashed border-destructive/20 flex items-center justify-center">
-                                  <LockKeyhole className="h-3 w-3 text-destructive/30" />
+                              {isAnyBlocked && cellAppts.length === 0 ? (
+                                <div className={cn(
+                                  "w-full h-10 rounded border border-dashed flex items-center justify-center border-destructive/20"
+                                )}>
+                                  <LockKeyhole className={cn("h-3 w-3 text-destructive/30")} />
                                 </div>
                               ) : cellAppts.length > 0 ? (
                                 <div className="space-y-1">
@@ -660,16 +786,16 @@ export default function AdminMyAppointments() {
         )
       )}
 
-      {/* ── Block Day Modal ───────────────────────────────────────────────────── */}
-      <Dialog open={!!blockTarget} onOpenChange={(o) => { if (!o) { setBlockTarget(null); setBlockReason(""); } }}>
-        <DialogContent className="max-w-sm">
+      {/* ── Block Day/Slots Modal ──────────────────────────────────────────────── */}
+      <Dialog open={!!blockTarget} onOpenChange={(o) => { if (!o) { setBlockTarget(null); setBlockReason(""); setBlockMode("day"); setSelectedBlockSlots([]); } }}>
+        <DialogContent className="max-w-md">
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2 text-base">
               <LockKeyhole className="h-4 w-4 text-destructive" />
-              Fechar Agenda do Dia
+              Fechar Agenda
             </DialogTitle>
             <DialogDescription>
-              Nenhum cliente poderá agendar com este profissional no dia selecionado.
+              Escolha fechar o dia inteiro ou apenas horários específicos.
             </DialogDescription>
           </DialogHeader>
           {blockTarget && (
@@ -688,6 +814,70 @@ export default function AdminMyAppointments() {
                   </p>
                 </div>
               </div>
+
+              {/* Mode toggle */}
+              <div className="grid grid-cols-2 gap-2">
+                <button
+                  className={cn(
+                    "rounded-lg border-2 p-3 text-center transition-all text-sm font-medium",
+                    blockMode === "day"
+                      ? "border-destructive bg-destructive/10 text-destructive"
+                      : "border-border hover:border-muted-foreground/40"
+                  )}
+                  onClick={() => setBlockMode("day")}
+                >
+                  <LockKeyhole className="h-5 w-5 mx-auto mb-1" />
+                  Dia Inteiro
+                </button>
+                <button
+                  className={cn(
+                    "rounded-lg border-2 p-3 text-center transition-all text-sm font-medium",
+                    blockMode === "slots"
+                      ? "border-destructive bg-destructive/10 text-destructive"
+                      : "border-border hover:border-muted-foreground/40"
+                  )}
+                  onClick={() => setBlockMode("slots")}
+                >
+                  <CalendarOff className="h-5 w-5 mx-auto mb-1" />
+                  Horários Específicos
+                </button>
+              </div>
+
+              {/* Slot selection grid */}
+              {blockMode === "slots" && (
+                <div className="space-y-2">
+                  <Label className="text-xs text-muted-foreground">Selecione os horários para fechar:</Label>
+                  <div className="grid grid-cols-5 gap-1.5">
+                    {ALL_SLOTS.map((slot) => {
+                      const isSelected = selectedBlockSlots.includes(slot);
+                      return (
+                        <button
+                          key={slot}
+                          onClick={() => {
+                            setSelectedBlockSlots((prev) =>
+                              isSelected ? prev.filter((s) => s !== slot) : [...prev, slot]
+                            );
+                          }}
+                          className={cn(
+                            "rounded-lg border text-xs py-2 font-mono font-semibold transition-all",
+                            isSelected
+                              ? "bg-destructive text-white border-destructive shadow-sm"
+                              : "border-border hover:border-destructive/60 hover:bg-destructive/5"
+                          )}
+                        >
+                          {slot}
+                        </button>
+                      );
+                    })}
+                  </div>
+                  {selectedBlockSlots.length > 0 && (
+                    <p className="text-xs text-destructive font-medium">
+                      {selectedBlockSlots.length} horário(s) selecionado(s)
+                    </p>
+                  )}
+                </div>
+              )}
+
               <div className="space-y-2">
                 <Label>Motivo (opcional)</Label>
                 <Textarea
@@ -698,24 +888,32 @@ export default function AdminMyAppointments() {
                   className="text-sm"
                 />
               </div>
-              <div className="rounded-lg border border-destructive/30 bg-destructive/5 p-3">
-                <p className="text-xs text-destructive font-medium flex items-center gap-1.5">
-                  <XCircle className="w-3.5 h-3.5" />
-                  Clientes não conseguirão fazer novos agendamentos com {blockTarget.full_name} neste dia. Agendamentos já existentes não serão cancelados automaticamente.
+
+              <div className={cn(
+                "rounded-lg border p-3 border-destructive/30 bg-destructive/5"
+              )}>
+                <p className={cn(
+                  "text-xs font-medium flex items-center gap-1.5 text-destructive"
+                )}>
+                  <XCircle className="w-3.5 h-3.5 shrink-0" />
+                  {blockMode === "day"
+                    ? `Clientes não conseguirão fazer novos agendamentos com ${blockTarget.full_name} neste dia. Agendamentos já existentes não serão cancelados automaticamente.`
+                    : `Os horários selecionados ficarão indisponíveis para novos agendamentos. Os demais horários continuam funcionando normalmente.`
+                  }
                 </p>
               </div>
             </div>
           )}
           <DialogFooter className="gap-2">
-            <Button variant="outline" onClick={() => { setBlockTarget(null); setBlockReason(""); }}>Cancelar</Button>
+            <Button variant="outline" onClick={() => { setBlockTarget(null); setBlockReason(""); setBlockMode("day"); setSelectedBlockSlots([]); }}>Cancelar</Button>
             <Button
               variant="destructive"
               onClick={handleBlockDay}
-              disabled={blocking}
+              disabled={blocking || (blockMode === "slots" && selectedBlockSlots.length === 0)}
               className="gap-2"
             >
-              <LockKeyhole className="w-4 h-4" />
-              {blocking ? "Bloqueando..." : "Fechar Agenda"}
+              {blockMode === "day" ? <LockKeyhole className="w-4 h-4" /> : <CalendarOff className="w-4 h-4" />}
+              {blocking ? "Bloqueando..." : blockMode === "day" ? "Fechar Dia Inteiro" : `Fechar ${selectedBlockSlots.length} Horário(s)`}
             </Button>
           </DialogFooter>
         </DialogContent>

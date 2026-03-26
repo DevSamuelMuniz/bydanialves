@@ -125,7 +125,10 @@ serve(async (req) => {
         if (existingSub) {
           await dbClient
             .from("subscriptions")
-            .update({ expires_at: subscriptionEnd })
+            .update({ 
+              started_at: startDate,
+              expires_at: subscriptionEnd 
+            })
             .eq("id", existingSub.id);
           logStep("Updated existing DB subscription");
         } else {
