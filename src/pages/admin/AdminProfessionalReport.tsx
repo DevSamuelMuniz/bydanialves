@@ -60,11 +60,276 @@ function fmtHours(mins: number) {
   return h > 0 ? `${h}h ${m > 0 ? m + "min" : ""}`.trim() : `${m}min`;
 }
 
+const fmtBRL = (n: number) => new Intl.NumberFormat("pt-BR", { style: "currency", currency: "BRL" }).format(n);
+
+/* ───── PDF GENERATION ───── */
+function downloadProfPDF(prof: ProfessionalSummary, dateFrom: string, dateTo: string) {
+  const doc = new jsPDF({ unit: "pt", format: "a4" });
+  const W = doc.internal.pageSize.getWidth();
+  const margin = 40;
+  const contentW = W - margin * 2;
+  let y = 0;
+
+  const fromStr = new Date(dateFrom + "T12:00:00").toLocaleDateString("pt-BR");
+  const toStr = new Date(dateTo + "T12:00:00").toLocaleDateString("pt-BR");
+  const genDate = new Date().toLocaleString("pt-BR", { dateStyle: "short", timeStyle: "short" });
+
+  // ── Dark header bar
+  doc.setFillColor(26, 27, 30);
+  doc.rect(0, 0, W, 90, "F");
+  // Gold accent line
+  doc.setFillColor(212, 175, 55);
+  doc.rect(0, 90, W, 4, "F");
+
+  doc.setTextColor(255, 255, 255);
+  doc.setFontSize(22);
+  doc.setFont("helvetica", "bold");
+  doc.text("Relatório de Desempenho", margin, 40);
+  doc.setFontSize(10);
+  doc.setFont("helvetica", "normal");
+  doc.setTextColor(180, 180, 180);
+  doc.text(`Período: ${fromStr} a ${toStr}`, margin, 60);
+  doc.text(`Gerado em: ${genDate}`, margin, 75);
+
+  y = 115;
+
+  // ── Professional info section
+  doc.setFillColor(245, 245, 248);
+  doc.roundedRect(margin, y, contentW, 55, 6, 6, "F");
+  doc.setTextColor(30, 30, 40);
+  doc.setFontSize(20);
+  doc.setFont("helvetica", "bold");
+  doc.text(prof.full_name, margin + 16, y + 25);
+  doc.setFontSize(10);
+  doc.setFont("helvetica", "normal");
+  doc.setTextColor(100, 100, 110);
+  const roleText = `${LEVEL_LABELS[prof.admin_level] || prof.admin_level}${prof.branch_name ? `  •  Filial: ${prof.branch_name}` : ""}`;
+  doc.text(roleText, margin + 16, y + 43);
+
+  // Rating badge on right
+  if (prof.avg_rating != null) {
+    const rx = W - margin - 70;
+    doc.setFillColor(255, 193, 7);
+    doc.roundedRect(rx, y + 8, 54, 38, 4, 4, "F");
+    doc.setTextColor(50, 30, 0);
+    doc.setFontSize(18);
+    doc.setFont("helvetica", "bold");
+    doc.text(prof.avg_rating.toFixed(1), rx + 10, y + 28);
+    doc.setFontSize(7);
+    doc.text(`${prof.review_count} aval.`, rx + 8, y + 40);
+  }
+
+  y += 75;
+
+  // ── Section title helper
+  const sectionTitle = (title: string) => {
+    doc.setFontSize(12);
+    doc.setFont("helvetica", "bold");
+    doc.setTextColor(30, 30, 40);
+    doc.text(title, margin, y);
+    y += 4;
+    doc.setDrawColor(212, 175, 55);
+    doc.setLineWidth(2);
+    doc.line(margin, y, margin + 80, y);
+    y += 16;
+  };
+
+  // ── KPI Grid (2x3)
+  sectionTitle("Indicadores de Desempenho");
+
+  const completionRate = prof.total > 0 ? Math.round((prof.completed / prof.total) * 100) : 0;
+  const kpis = [
+    { label: "Total Atendimentos", value: String(prof.total), color: [79, 70, 229] },
+    { label: "Concluídos", value: String(prof.completed), color: [16, 185, 129] },
+    { label: "Horas Trabalhadas", value: fmtHours(prof.hours_worked), color: [59, 130, 246] },
+    { label: "Taxa de Conclusão", value: `${completionRate}%`, color: [139, 92, 246] },
+    { label: "Cancelamentos", value: String(prof.cancelled), color: [239, 68, 68] },
+    { label: "Bonificação", value: fmtBRL(prof.total_bonification), color: [212, 175, 55] },
+  ];
+
+  const kpiW = (contentW - 20) / 3;
+  const kpiH = 52;
+  kpis.forEach((kpi, i) => {
+    const col = i % 3;
+    const row = Math.floor(i / 3);
+    const kx = margin + col * (kpiW + 10);
+    const ky = y + row * (kpiH + 10);
+
+    // Card bg
+    doc.setFillColor(250, 250, 252);
+    doc.roundedRect(kx, ky, kpiW, kpiH, 5, 5, "F");
+    // Left accent
+    doc.setFillColor(kpi.color[0], kpi.color[1], kpi.color[2]);
+    doc.roundedRect(kx, ky, 4, kpiH, 2, 2, "F");
+
+    doc.setFontSize(8);
+    doc.setFont("helvetica", "normal");
+    doc.setTextColor(120, 120, 130);
+    doc.text(kpi.label.toUpperCase(), kx + 14, ky + 18);
+
+    doc.setFontSize(18);
+    doc.setFont("helvetica", "bold");
+    doc.setTextColor(kpi.color[0], kpi.color[1], kpi.color[2]);
+    doc.text(kpi.value, kx + 14, ky + 40);
+  });
+
+  y += 2 * (kpiH + 10) + 20;
+
+  // ── Status Breakdown
+  sectionTitle("Distribuição por Status");
+
+  const statusItems = [
+    { label: "Concluídos", value: prof.completed, color: [16, 185, 129] },
+    { label: "Confirmados", value: prof.confirmed, color: [59, 130, 246] },
+    { label: "Pendentes", value: prof.pending, color: [245, 158, 11] },
+    { label: "Cancelados", value: prof.cancelled, color: [239, 68, 68] },
+  ];
+
+  const barMaxW = contentW - 120;
+  statusItems.forEach((item) => {
+    const pct = prof.total > 0 ? item.value / prof.total : 0;
+
+    doc.setFontSize(9);
+    doc.setFont("helvetica", "bold");
+    doc.setTextColor(80, 80, 90);
+    doc.text(item.label, margin, y + 10);
+
+    // Background bar
+    doc.setFillColor(235, 235, 240);
+    doc.roundedRect(margin + 80, y, barMaxW, 14, 3, 3, "F");
+    // Filled bar
+    if (pct > 0) {
+      doc.setFillColor(item.color[0], item.color[1], item.color[2]);
+      doc.roundedRect(margin + 80, y, Math.max(barMaxW * pct, 8), 14, 3, 3, "F");
+    }
+
+    // Count text
+    doc.setFontSize(9);
+    doc.setFont("helvetica", "bold");
+    doc.setTextColor(60, 60, 70);
+    doc.text(`${item.value} (${Math.round(pct * 100)}%)`, margin + 80 + barMaxW + 8, y + 10);
+
+    y += 22;
+  });
+
+  y += 14;
+
+  // ── Check if we need a new page
+  const checkPage = (needed: number) => {
+    const pageH = doc.internal.pageSize.getHeight();
+    if (y + needed > pageH - 40) {
+      doc.addPage();
+      y = 40;
+    }
+  };
+
+  // ── Top Services
+  checkPage(160);
+  sectionTitle("Serviços Mais Realizados");
+
+  if (prof.top_services.length === 0) {
+    doc.setFontSize(9);
+    doc.setFont("helvetica", "italic");
+    doc.setTextColor(150, 150, 160);
+    doc.text("Sem registros no período.", margin, y);
+    y += 20;
+  } else {
+    const maxCount = prof.top_services[0]?.count || 1;
+    prof.top_services.forEach((svc, i) => {
+      const pct = svc.count / maxCount;
+
+      doc.setFontSize(9);
+      doc.setFont("helvetica", "bold");
+      doc.setTextColor(80, 80, 90);
+      doc.text(`${i + 1}. ${svc.name}`, margin, y + 10);
+
+      const sBarX = margin + 160;
+      const sBarW = contentW - 200;
+      doc.setFillColor(235, 235, 240);
+      doc.roundedRect(sBarX, y, sBarW, 14, 3, 3, "F");
+      doc.setFillColor(79, 70, 229);
+      doc.roundedRect(sBarX, y, Math.max(sBarW * pct, 8), 14, 3, 3, "F");
+
+      doc.setFontSize(9);
+      doc.setFont("helvetica", "bold");
+      doc.setTextColor(79, 70, 229);
+      doc.text(`${svc.count}x`, sBarX + sBarW + 8, y + 10);
+
+      y += 22;
+    });
+  }
+
+  y += 10;
+
+  // ── Monthly Evolution
+  if (prof.by_month.length > 0) {
+    checkPage(140);
+    sectionTitle("Evolução Mensal");
+
+    const monthMaxCount = Math.max(...prof.by_month.map((m) => m.count), 1);
+    const mBarW = Math.min((contentW - 20) / prof.by_month.length - 8, 50);
+
+    prof.by_month.forEach((m, i) => {
+      const mx = margin + i * (mBarW + 8);
+      const barH = Math.max((m.count / monthMaxCount) * 80, 4);
+      const barY = y + 80 - barH;
+
+      doc.setFillColor(79, 70, 229);
+      doc.roundedRect(mx, barY, mBarW, barH, 3, 3, "F");
+
+      // Count on top
+      doc.setFontSize(8);
+      doc.setFont("helvetica", "bold");
+      doc.setTextColor(79, 70, 229);
+      doc.text(String(m.count), mx + mBarW / 2 - 4, barY - 4);
+
+      // Month label
+      doc.setFontSize(7);
+      doc.setTextColor(120, 120, 130);
+      doc.text(m.month, mx + 2, y + 92);
+    });
+
+    y += 108;
+  }
+
+  // ── Bonification highlight box
+  checkPage(70);
+  doc.setFillColor(255, 248, 230);
+  doc.roundedRect(margin, y, contentW, 50, 6, 6, "F");
+  doc.setDrawColor(212, 175, 55);
+  doc.setLineWidth(1.5);
+  doc.roundedRect(margin, y, contentW, 50, 6, 6, "S");
+
+  doc.setFontSize(9);
+  doc.setFont("helvetica", "bold");
+  doc.setTextColor(160, 130, 20);
+  doc.text("BONIFICAÇÃO / COMISSÃO NO PERÍODO", margin + 16, y + 20);
+  doc.setFontSize(20);
+  doc.setFont("helvetica", "bold");
+  doc.setTextColor(180, 140, 0);
+  doc.text(fmtBRL(prof.total_bonification), margin + 16, y + 42);
+
+  // ── Footer
+  const pageH = doc.internal.pageSize.getHeight();
+  doc.setDrawColor(200, 200, 200);
+  doc.setLineWidth(0.5);
+  doc.line(margin, pageH - 30, W - margin, pageH - 30);
+  doc.setFontSize(7);
+  doc.setFont("helvetica", "normal");
+  doc.setTextColor(160, 160, 170);
+  doc.text("Documento gerado automaticamente pelo sistema", margin, pageH - 18);
+  doc.text(genDate, W - margin - 60, pageH - 18);
+
+  // Save
+  const safeName = prof.full_name.replace(/[^a-zA-Z0-9]/g, "_").toLowerCase();
+  doc.save(`relatorio_${safeName}.pdf`);
+}
+
+/* ───── MAIN PAGE ───── */
 export default function AdminProfessionalReport() {
   const perms = useAdminPermissions();
   const [loading, setLoading] = useState(true);
   const [professionals, setProfessionals] = useState<ProfessionalSummary[]>([]);
-  const [_printingId, _setPrintingId] = useState<string | null>(null);
   const [selected, setSelected] = useState<string>("all");
   const [dateFrom, setDateFrom] = useState(() => {
     const d = new Date();
@@ -76,7 +341,6 @@ export default function AdminProfessionalReport() {
   const fetchData = useCallback(async () => {
     setLoading(true);
     try {
-      // 1. Fetch all admin roles with professional level only (no attendants)
       const { data: roles } = await supabase
         .from("user_roles")
         .select("user_id, admin_level, branch_id")
@@ -85,20 +349,17 @@ export default function AdminProfessionalReport() {
 
       if (!roles || roles.length === 0) { setProfessionals([]); setLoading(false); return; }
 
-      // 2. Fetch profiles for those users
       const userIds = roles.map((r) => r.user_id);
       const { data: profiles } = await supabase
         .from("profiles")
         .select("user_id, full_name, avatar_url")
         .in("user_id", userIds);
 
-      // 3. Fetch branches
       const branchIds = roles.map((r) => r.branch_id).filter(Boolean) as string[];
       const { data: branches } = branchIds.length
         ? await supabase.from("branches").select("id, name").in("id", branchIds)
         : { data: [] };
 
-      // 4. Fetch appointments with service data in range
       const { data: appointments } = await supabase
         .from("appointments")
         .select("id, professional_id, status, appointment_date, appointment_time, service_id, services(name, duration_minutes)")
@@ -106,17 +367,14 @@ export default function AdminProfessionalReport() {
         .gte("appointment_date", dateFrom)
         .lte("appointment_date", dateTo);
 
-      // 5. Fetch reviews for those appointments
       const apptIds = (appointments || []).map((a) => a.id);
       const { data: reviews } = apptIds.length
         ? await supabase.from("reviews").select("appointment_id, rating").in("appointment_id", apptIds)
         : { data: [] };
 
-      // Build map: appointment_id -> rating
       const ratingMap: Record<string, number> = {};
       (reviews || []).forEach((r) => { ratingMap[r.appointment_id] = r.rating; });
 
-      // 6. Fetch bonification payments in range
       const { data: bonusPayments } = await supabase
         .from("bonification_payments" as any)
         .select("professional_id, bonus_amount, created_at")
@@ -124,7 +382,6 @@ export default function AdminProfessionalReport() {
         .gte("created_at", dateFrom)
         .lte("created_at", dateTo + "T23:59:59");
 
-      // 7. Build summaries per professional
       const summaries: ProfessionalSummary[] = roles.map((role) => {
         const profile = profiles?.find((p) => p.user_id === role.user_id);
         const branch = branches?.find((b) => b.id === role.branch_id);
@@ -135,17 +392,14 @@ export default function AdminProfessionalReport() {
         const pending = myAppts.filter((a) => a.status === "pending");
         const confirmed = myAppts.filter((a) => a.status === "confirmed");
 
-        // Hours worked = sum of duration_minutes of completed appointments
         const hours_worked = completed.reduce((acc, a) => {
           const svc = a.services as any;
           return acc + (svc?.duration_minutes ?? 60);
         }, 0);
 
-        // Avg rating
         const myRatings = completed.map((a) => ratingMap[a.id]).filter((r) => r != null) as number[];
         const avg_rating = myRatings.length ? myRatings.reduce((a, b) => a + b, 0) / myRatings.length : null;
 
-        // Top services
         const svcCount: Record<string, { name: string; count: number }> = {};
         myAppts.forEach((a) => {
           const svc = a.services as any;
@@ -155,7 +409,6 @@ export default function AdminProfessionalReport() {
         });
         const top_services = Object.values(svcCount).sort((a, b) => b.count - a.count).slice(0, 5);
 
-        // By month (last 6 months)
         const monthMap: Record<string, number> = {};
         myAppts.forEach((a) => {
           const d = new Date(a.appointment_date);
@@ -164,7 +417,6 @@ export default function AdminProfessionalReport() {
         });
         const by_month = Object.entries(monthMap).map(([month, count]) => ({ month, count }));
 
-        // Bonification total
         const myBonuses = (bonusPayments || []).filter((b: any) => b.professional_id === role.user_id);
         const total_bonification = myBonuses.reduce((acc, b: any) => acc + (b.bonus_amount || 0), 0);
 
@@ -196,6 +448,10 @@ export default function AdminProfessionalReport() {
 
   useEffect(() => { fetchData(); }, [fetchData]);
 
+  if (!perms.canViewProfessionals) return <AccessDenied />;
+
+  const displayList = selected === "all" ? professionals : professionals.filter((p) => p.user_id === selected);
+
   const handleExportAll = () => {
     displayList.forEach((prof) => downloadProfPDF(prof, dateFrom, dateTo));
   };
@@ -205,239 +461,86 @@ export default function AdminProfessionalReport() {
     if (prof) downloadProfPDF(prof, dateFrom, dateTo);
   };
 
-  if (!perms.canViewProfessionals) return <AccessDenied />;
-
-  const displayList = selected === "all" ? professionals : professionals.filter((p) => p.user_id === selected);
-
   return (
     <div className="p-6 space-y-6">
       {/* Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 print:hidden">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
           <h1 className="text-2xl font-bold tracking-tight">Relatório de Profissionais</h1>
           <p className="text-muted-foreground text-sm mt-1">Análise completa de desempenho por profissional</p>
         </div>
-        <Button 
-          variant="outline" 
-          className="gap-2"
-          onClick={handleExportAll}
-        >
+        <Button variant="outline" className="gap-2" onClick={handleExportAll}>
           <Download className="h-4 w-4" />
           Exportar Todos em PDF
         </Button>
       </div>
 
-      {/* Dashboard UI */}
-      <div className="space-y-6">
-        {/* Filters */}
-        <Card>
-          <CardContent className="pt-5">
-            <div className="flex flex-wrap gap-4 items-end">
-              <div className="flex-1 min-w-[160px]">
-                <Label className="text-xs mb-1 block">Profissional</Label>
-                <Select value={selected} onValueChange={setSelected}>
-                  <SelectTrigger>
-                    <SelectValue placeholder="Todos" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="all">Todos os profissionais</SelectItem>
-                    {professionals.map((p) => (
-                      <SelectItem key={p.user_id} value={p.user_id}>{p.full_name}</SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-              <div className="flex-1 min-w-[140px]">
-                <Label className="text-xs mb-1 block">De</Label>
-                <Input type="date" value={dateFrom} onChange={(e) => setDateFrom(e.target.value)} />
-              </div>
-              <div className="flex-1 min-w-[140px]">
-                <Label className="text-xs mb-1 block">Até</Label>
-                <Input type="date" value={dateTo} onChange={(e) => setDateTo(e.target.value)} />
-              </div>
+      {/* Filters */}
+      <Card>
+        <CardContent className="pt-5">
+          <div className="flex flex-wrap gap-4 items-end">
+            <div className="flex-1 min-w-[160px]">
+              <Label className="text-xs mb-1 block">Profissional</Label>
+              <Select value={selected} onValueChange={setSelected}>
+                <SelectTrigger><SelectValue placeholder="Todos" /></SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">Todos os profissionais</SelectItem>
+                  {professionals.map((p) => (
+                    <SelectItem key={p.user_id} value={p.user_id}>{p.full_name}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
             </div>
+            <div className="flex-1 min-w-[140px]">
+              <Label className="text-xs mb-1 block">De</Label>
+              <Input type="date" value={dateFrom} onChange={(e) => setDateFrom(e.target.value)} />
+            </div>
+            <div className="flex-1 min-w-[140px]">
+              <Label className="text-xs mb-1 block">Até</Label>
+              <Input type="date" value={dateTo} onChange={(e) => setDateTo(e.target.value)} />
+            </div>
+          </div>
+        </CardContent>
+      </Card>
+
+      {loading ? (
+        <div className="grid grid-cols-1 gap-6">
+          {[1, 2].map((i) => <Skeleton key={i} className="h-64 w-full rounded-xl" />)}
+        </div>
+      ) : displayList.length === 0 ? (
+        <Card>
+          <CardContent className="py-16 text-center text-muted-foreground">
+            <Users className="h-10 w-10 mx-auto mb-3 opacity-30" />
+            <p>Nenhum profissional encontrado no período selecionado.</p>
           </CardContent>
         </Card>
-
-        {loading ? (
-          <div className="grid grid-cols-1 gap-6">
-            {[1, 2].map((i) => <Skeleton key={i} className="h-64 w-full rounded-xl" />)}
-          </div>
-        ) : displayList.length === 0 ? (
-          <Card>
-            <CardContent className="py-16 text-center text-muted-foreground">
-              <Users className="h-10 w-10 mx-auto mb-3 opacity-30" />
-              <p>Nenhum profissional encontrado no período selecionado.</p>
-            </CardContent>
-          </Card>
-        ) : (
-          <div className="space-y-8">
-            {displayList.map((prof) => (
-              <div key={prof.user_id} className="prof-card">
-                <ProfCard 
-                  prof={prof} 
-                  onExportPDF={() => handleExportOne(prof.user_id)}
-                />
-              </div>
-            ))}
-          </div>
-        )}
-    </div>
-  );
-}
-
-/**
- * HIGH-FIDELITY PRINTABLE REPORT
- * Matches the user's provided design (dark header, formal boxes, horizontal charts)
- */
-function PrintableProfessionalReport({ 
-  professionals, 
-  dateFrom, 
-  dateTo 
-}: { 
-  professionals: ProfessionalSummary[], 
-  dateFrom: string, 
-  dateTo: string 
-}) {
-  const generationDate = new Date().toLocaleString('pt-BR', { dateStyle: 'short', timeStyle: 'short' });
-
-  return (
-    <div className="printable-report w-full mx-auto text-gray-900 bg-white">
-      {professionals.map((prof, idx) => (
-        <div key={prof.user_id} className={cn("space-y-8", idx > 0 && "page-break-before")}>
-          {/* Header Section */}
-          <div className="bg-[#1a1b1e] text-white p-8 rounded-t-lg flex justify-between items-end border-b-4 border-primary">
-            <div>
-              <h1 className="text-3xl font-extrabold tracking-tight">Relatório de Desempenho</h1>
-              <p className="text-gray-400 mt-2 font-medium">Período: {dateFrom} a {dateTo}</p>
+      ) : (
+        <div className="space-y-8">
+          {displayList.map((prof) => (
+            <div key={prof.user_id}>
+              <ProfCard prof={prof} onExportPDF={() => handleExportOne(prof.user_id)} />
             </div>
-            <div className="text-right">
-              <p className="text-sm text-gray-400">Gerado em: {generationDate}</p>
-            </div>
-          </div>
-
-          {/* Professional Header */}
-          <div className="px-4 py-6 border-b border-gray-100">
-            <h2 className="text-4xl font-black text-slate-800">{prof.full_name}</h2>
-            <p className="text-lg text-slate-500 mt-1 font-medium italic">
-              Cargo: {LEVEL_LABELS[prof.admin_level] || prof.admin_level} | Filial: {prof.branch_name || '—'}
-            </p>
-          </div>
-
-          {/* KPI Boxes Grid */}
-          <div className="grid grid-cols-2 gap-4 px-4">
-            <PrintKpiBox label="TOTAL DE ATENDIMENTOS" value={String(prof.total)} color="border-indigo-500 text-indigo-600" />
-            <PrintKpiBox label="CONCLUÍDOS" value={String(prof.completed)} color="border-emerald-500 text-emerald-600" />
-            <PrintKpiBox label="HORAS TRABALHADAS" value={fmtHours(prof.hours_worked)} color="border-blue-500 text-blue-600" />
-            <PrintKpiBox label="TAXA DE CONCLUSÃO" value={`${prof.total > 0 ? Math.round((prof.completed / prof.total) * 100) : 0}%`} color="border-violet-500 text-violet-600" />
-            
-            {/* ADDED BONIFICATION KPI */}
-            <div className="col-span-2">
-              <PrintKpiBox 
-                label="TOTAL DE BONIFICAÇÃO / COMISSÃO" 
-                value={new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(prof.total_bonification)} 
-                color="border-amber-500 text-amber-600 bg-amber-50/20" 
-              />
-            </div>
-          </div>
-
-          {/* Status Breakdown Section */}
-          <div className="px-4 pt-4 page-break-inside-avoid">
-            <h3 className="text-xl font-bold text-slate-800 mb-6 flex items-center gap-2 border-b-2 border-slate-100 pb-2">
-              Atendimentos por status
-            </h3>
-            <div className="space-y-5">
-              <PrintProgressRow label="Concluídos" value={prof.completed} total={prof.total} color="bg-emerald-500" />
-              <PrintProgressRow label="Confirmados" value={prof.confirmed} total={prof.total} color="bg-blue-500" />
-              <PrintProgressRow label="Cancelados" value={prof.cancelled} total={prof.total} color="bg-red-500" />
-            </div>
-          </div>
-
-          {/* Top Services Section */}
-          <div className="px-4 pt-8 page-break-inside-avoid">
-            <h3 className="text-xl font-bold text-slate-800 mb-6 flex items-center gap-2 border-b-2 border-slate-100 pb-2">
-              Serviços mais realizados
-            </h3>
-            <div className="space-y-4">
-              {prof.top_services.length > 0 ? (
-                prof.top_services.map((svc, sIdx) => (
-                  <PrintServiceRow 
-                    key={sIdx} 
-                    idx={sIdx + 1} 
-                    name={svc.name} 
-                    count={svc.count} 
-                    max={prof.top_services[0]?.count || 1} 
-                  />
-                ))
-              ) : (
-                <p className="text-gray-400 italic">Sem registros no período.</p>
-              )}
-            </div>
-          </div>
+          ))}
         </div>
-      ))}
+      )}
     </div>
   );
 }
 
-function PrintKpiBox({ label, value, color }: { label: string, value: string, color: string }) {
-  return (
-    <div className={cn("p-4 rounded-xl border-2 shadow-sm flex flex-col gap-1", color)}>
-      <span className="text-[10px] font-bold uppercase tracking-widest opacity-80">{label}</span>
-      <span className="text-3xl font-black">{value}</span>
-    </div>
-  );
-}
-
-function PrintProgressRow({ label, value, total, color }: { label: string, value: number, total: number, color: string }) {
-  const percentage = total > 0 ? (value / total) * 100 : 0;
-  return (
-    <div className="flex items-center gap-4 break-inside-avoid">
-      <span className="w-32 text-sm font-semibold text-slate-600">{label}</span>
-      <div className="flex-1 h-8 bg-slate-100 rounded-lg overflow-hidden flex items-center pr-2">
-        <div className={cn("h-full", color)} style={{ width: `${percentage}%` }} />
-        <span className="ml-auto text-sm font-bold text-slate-400">{value}</span>
-      </div>
-    </div>
-  );
-}
-
-function PrintServiceRow({ idx, name, count, max }: { idx: number, name: string, count: number, max: number }) {
-  const percentage = max > 0 ? (count / max) * 100 : 0;
-  return (
-    <div className="flex items-center gap-4 break-inside-avoid">
-      <div className="flex items-center gap-3 w-48 shrink-0">
-        <span className="text-sm font-mono text-slate-400">{idx}.</span>
-        <span className="text-sm font-bold text-slate-700 truncate">{name}</span>
-      </div>
-      <div className="flex-1 h-5 bg-slate-100 rounded-full overflow-hidden">
-        <div className="h-full bg-primary/80" style={{ width: `${percentage}%` }} />
-      </div>
-      <span className="w-10 text-right text-sm font-black text-primary">{count}x</span>
-    </div>
-  );
-}
-
-function ProfCard({ 
-  prof, 
-  onExportPDF 
-}: { 
-  prof: ProfessionalSummary; 
-  onExportPDF: () => void;
-}) {
+/* ───── PROF CARD (UI) ───── */
+function ProfCard({ prof, onExportPDF }: { prof: ProfessionalSummary; onExportPDF: () => void }) {
   const initials = prof.full_name.split(" ").map((n) => n[0]).join("").slice(0, 2).toUpperCase();
   const completionRate = prof.total > 0 ? Math.round((prof.completed / prof.total) * 100) : 0;
 
   const statusData = [
     { name: "Concluídos", value: prof.completed, color: STATUS_COLORS.completed },
     { name: "Confirmados", value: prof.confirmed, color: STATUS_COLORS.confirmed },
-    { name: "Pendentes",  value: prof.pending,   color: STATUS_COLORS.pending },
-    { name: "Cancelados", value: prof.cancelled,  color: STATUS_COLORS.cancelled },
+    { name: "Pendentes", value: prof.pending, color: STATUS_COLORS.pending },
+    { name: "Cancelados", value: prof.cancelled, color: STATUS_COLORS.cancelled },
   ].filter((d) => d.value > 0);
 
   return (
     <Card className="overflow-hidden border shadow-sm">
-      {/* Prof header */}
       <CardHeader className="bg-muted/30 pb-4 flex flex-row items-center justify-between">
         <div className="flex items-center gap-4">
           <Avatar className="h-14 w-14 border-2 border-primary/20">
@@ -463,20 +566,13 @@ function ProfCard({
             </div>
           )}
         </div>
-
-        <Button 
-          variant="outline" 
-          size="sm" 
-          className="gap-2 print:hidden ml-4"
-          onClick={onExportPDF}
-        >
+        <Button variant="outline" size="sm" className="gap-2 ml-4" onClick={onExportPDF}>
           <Download className="h-4 w-4" />
           Exportar PDF
         </Button>
       </CardHeader>
 
       <CardContent className="pt-5 space-y-6">
-        {/* KPI row */}
         <div className="grid grid-cols-2 sm:grid-cols-5 gap-3">
           <KpiMini icon={<Calendar className="h-4 w-4" />} label="Total" value={String(prof.total)} color="text-primary" />
           <KpiMini icon={<CheckCircle2 className="h-4 w-4" />} label="Concluídos" value={String(prof.completed)} color="text-emerald-600" />
@@ -485,9 +581,7 @@ function ProfCard({
           <BonificationKpi value={prof.total_bonification} />
         </div>
 
-        {/* Status breakdown + Top services */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-          {/* Status bar chart */}
           <div>
             <p className="text-sm font-semibold mb-3 flex items-center gap-2">
               <Scissors className="h-4 w-4 text-muted-foreground" /> Atendimentos por status
@@ -509,7 +603,6 @@ function ProfCard({
             )}
           </div>
 
-          {/* Top services */}
           <div>
             <p className="text-sm font-semibold mb-3 flex items-center gap-2">
               <Scissors className="h-4 w-4 text-muted-foreground" /> Serviços mais realizados
@@ -525,10 +618,7 @@ function ProfCard({
                         <span className="shrink-0 ml-2 text-muted-foreground">{svc.count}x</span>
                       </div>
                       <div className="h-1.5 rounded-full bg-muted overflow-hidden">
-                        <div
-                          className="h-full bg-primary rounded-full"
-                          style={{ width: `${Math.min(100, (svc.count / (prof.top_services[0]?.count || 1)) * 100)}%` }}
-                        />
+                        <div className="h-full bg-primary rounded-full" style={{ width: `${Math.min(100, (svc.count / (prof.top_services[0]?.count || 1)) * 100)}%` }} />
                       </div>
                     </div>
                   </div>
@@ -540,7 +630,6 @@ function ProfCard({
           </div>
         </div>
 
-        {/* Monthly evolution */}
         {prof.by_month.length > 0 && (
           <div>
             <p className="text-sm font-semibold mb-3 flex items-center gap-2">
@@ -558,7 +647,6 @@ function ProfCard({
           </div>
         )}
 
-        {/* Cancelled warning */}
         {prof.cancelled > 0 && (
           <div className="flex items-center gap-2 rounded-lg border border-destructive/20 bg-destructive/5 px-3 py-2 text-sm text-destructive">
             <XCircle className="h-4 w-4 shrink-0" />
@@ -580,10 +668,9 @@ function KpiMini({ icon, label, value, color }: { icon: React.ReactNode; label: 
 }
 
 function BonificationKpi({ value }: { value: number }) {
-  const formatted = new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(value);
-  
+  const formatted = fmtBRL(value);
   return (
-    <div className="rounded-lg border border-amber-200 bg-amber-50/50 p-3 flex flex-col gap-1 shadow-sm print:bg-amber-50 print:border-amber-400">
+    <div className="rounded-lg border border-amber-200 bg-amber-50/50 p-3 flex flex-col gap-1 shadow-sm">
       <div className="flex items-center gap-1.5 text-amber-600">
         <DollarSign className="h-4 w-4" />
         <span className="text-xs font-semibold uppercase tracking-wider">Bonificação</span>
