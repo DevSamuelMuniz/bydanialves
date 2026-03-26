@@ -64,7 +64,7 @@ export default function AdminProfessionalReport() {
   const perms = useAdminPermissions();
   const [loading, setLoading] = useState(true);
   const [professionals, setProfessionals] = useState<ProfessionalSummary[]>([]);
-  const [printingId, setPrintingId] = useState<string | null>(null);
+  const [_printingId, _setPrintingId] = useState<string | null>(null);
   const [selected, setSelected] = useState<string>("all");
   const [dateFrom, setDateFrom] = useState(() => {
     const d = new Date();
