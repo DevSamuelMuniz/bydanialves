@@ -14,9 +14,10 @@ import {
   BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Cell,
 } from "recharts";
 import {
-  Users, Clock, Scissors, Star, TrendingUp, CheckCircle2, XCircle, Calendar, Printer, DollarSign,
+  Users, Clock, Scissors, Star, TrendingUp, CheckCircle2, XCircle, Calendar, Download, DollarSign,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import jsPDF from "jspdf";
 
 interface ProfessionalSummary {
   user_id: string;
