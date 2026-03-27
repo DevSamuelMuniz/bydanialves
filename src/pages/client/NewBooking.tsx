@@ -103,6 +103,8 @@ export default function NewBooking() {
   const [searchParams] = useSearchParams();
   const preselectedServiceId = searchParams.get("serviceId");
 
+  const isPlanBrushService = (service: ServiceItem) => service.is_system || /escova/i.test(service.name);
+
   // Steps: 1=Filial 2=Serviços 3=Data 4=Profissional 5=Horário 6=Confirmação
   const [step, setStep] = useState(1);
   const [branches, setBranches] = useState<Branch[]>([]);
@@ -129,7 +131,7 @@ export default function NewBooking() {
 
   const totalDuration = selectedServices.reduce((acc, s) => acc + s.duration_minutes, 0);
   const totalPrice = selectedServices.reduce((acc, s) => {
-    const free = s.is_system && escovasDisponiveis > 0;
+    const free = temPlanoAtivo && isPlanBrushService(s) && escovasDisponiveis > 0;
     return acc + (free ? 0 : Number(s.price));
   }, 0);
 
@@ -317,7 +319,9 @@ export default function NewBooking() {
   // 1. Must have an ACTIVE schedule on that day of week
   // 2. Only restrict to plan professionals if the service is FREE (is_system AND escovasDisponiveis > 0)
   // 3. Exclude professionals whose day is blocked by admin
-  const hasFreeSystemService = selectedServices.some((s) => s.is_system && escovasDisponiveis > 0);
+  const hasFreeSystemService = selectedServices.some(
+    (s) => temPlanoAtivo && isPlanBrushService(s) && escovasDisponiveis > 0,
+  );
 
   useEffect(() => {
     if (!selectedDate || allBranchProfessionals.length === 0) return;
@@ -438,10 +442,14 @@ export default function NewBooking() {
     if (!preselectedServiceId || services.length === 0) return;
     const found = services.find((s) => s.id === preselectedServiceId);
     if (found) {
+      if (temPlanoAtivo && isPlanBrushService(found) && escovasDisponiveis === 0) {
+        setPlanEsgotadoOpen(true);
+        return;
+      }
       setSelectedServices([found]);
       setStep(2);
     }
-  }, [preselectedServiceId, services]);
+  }, [preselectedServiceId, services, temPlanoAtivo, escovasDisponiveis]);
 
   // Load booked ranges when date + branch changes (include professional_id for precise filtering)
   // Group appointments by (professional_id, appointment_time) to sum durations of multiple services
@@ -479,14 +487,11 @@ export default function NewBooking() {
   }, [selectedDate, selectedBranch]);
 
   const toggleService = (s: ServiceItem) => {
-    // Só bloqueia serviço de sistema se o cliente TEM plano mas os créditos acabaram
-    if (s.is_system && temPlanoAtivo && escovasDisponiveis === 0) {
-      const alreadySelected = selectedServices.find((x) => x.id === s.id);
-      if (!alreadySelected) {
-        setPlanEsgotadoOpen(true);
-        return;
-      }
+    if (temPlanoAtivo && isPlanBrushService(s) && escovasDisponiveis === 0) {
+      setPlanEsgotadoOpen(true);
+      return;
     }
+
     setSelectedServices((prev) => {
       const exists = prev.find((x) => x.id === s.id);
       if (exists) return prev.filter((x) => x.id !== s.id);
@@ -698,7 +703,7 @@ export default function NewBooking() {
 
           <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-2.5">
             {services.map((s) => {
-              const free = s.is_system && escovasDisponiveis > 0;
+                const free = temPlanoAtivo && isPlanBrushService(s) && escovasDisponiveis > 0;
               const isSelected = selectedServices.some((x) => x.id === s.id);
               const imgUrl = s.image_url ||
                 `https://images.unsplash.com/photo-1522337360788-8b13dee7a37e?w=800&q=60&auto=format&fit=crop`;
@@ -1111,7 +1116,7 @@ export default function NewBooking() {
                   <p className="text-sm font-medium">Serviços</p>
                 </div>
                 {selectedServices.map((s) => {
-                  const free = s.is_system && escovasDisponiveis > 0;
+                  const free = temPlanoAtivo && isPlanBrushService(s) && escovasDisponiveis > 0;
                   return (
                     <div key={s.id} className="flex items-center justify-between">
                       <div className="flex items-center gap-2">
