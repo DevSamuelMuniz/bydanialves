@@ -117,10 +117,11 @@ export default function AdminPlans() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    const includesText = selectedServices
+    const serviceNames = selectedServices
       .map((id) => services.find((s) => s.id === id)?.name)
-      .filter(Boolean)
-      .join("\n");
+      .filter(Boolean);
+    const escovasLine = form.escovas ? `${String(form.escovas).padStart(2, "0")} escovas por mês` : "";
+    const includesText = [escovasLine, ...serviceNames].filter(Boolean).join("\n");
     const payload = {
       name: form.name,
       description: form.description || null,
