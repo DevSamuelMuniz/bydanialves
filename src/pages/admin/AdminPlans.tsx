@@ -102,7 +102,9 @@ export default function AdminPlans() {
 
   const openEdit = async (p: any) => {
     setEditing(p);
-    setForm({ name: p.name, description: p.description || "", restriction: p.restriction || "", price: String(p.price), active: p.active });
+    // Extract escovas count from includes
+    const escovasMatch = (p.includes || "").match(/(\d+)\s*escova/i);
+    setForm({ name: p.name, description: p.description || "", restriction: p.restriction || "", price: String(p.price), active: p.active, escovas: escovasMatch ? escovasMatch[1] : "" });
     // Pre-select services whose names appear in includes
     const existingLines = (p.includes || "").split("\n").map((s: string) => s.trim()).filter(Boolean);
     const matched = services.filter((s) => existingLines.includes(s.name)).map((s) => s.id);
