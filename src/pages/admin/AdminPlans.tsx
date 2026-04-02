@@ -476,6 +476,11 @@ export default function AdminPlans() {
               )}
             </div>
 
+            <div className="space-y-2">
+              <Label>Quantidade de escovas disponíveis</Label>
+              <Input type="number" min="0" placeholder="Ex: 4" value={form.escovas} onChange={(e) => setForm({ ...form, escovas: e.target.value })} />
+              <p className="text-xs text-muted-foreground">Número de escovas incluídas por mês no plano</p>
+            </div>
             <div className="space-y-2"><Label>Restrição</Label><Input value={form.restriction} onChange={(e) => setForm({ ...form, restriction: e.target.value })} /></div>
             <div className="space-y-2"><Label>Preço mensal (R$)</Label><Input type="number" step="0.01" value={form.price} onChange={(e) => setForm({ ...form, price: e.target.value })} required /></div>
             <div className="flex items-center gap-2">
