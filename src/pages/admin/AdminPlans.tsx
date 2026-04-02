@@ -424,7 +424,7 @@ export default function AdminPlans() {
                 {services.length === 0 ? (
                   <p className="text-sm text-muted-foreground text-center py-4">Nenhum serviço cadastrado.</p>
                 ) : (
-                  <div className="space-y-2">
+                  <div className="space-y-1">
                     {services.map((s) => (
                       <div key={s.id} className="flex items-center gap-3 rounded-md px-2 py-1.5 hover:bg-muted/60 transition-colors">
                         <Checkbox
@@ -436,9 +436,9 @@ export default function AdminPlans() {
                             )
                           }
                         />
-                        <label htmlFor={`svc-${s.id}`} className="flex-1 cursor-pointer text-sm leading-snug">
-                          {s.name}
-                          <span className="ml-2 text-xs text-muted-foreground">R$ {Number(s.price).toFixed(2).replace(".", ",")}</span>
+                        <label htmlFor={`svc-${s.id}`} className="flex-1 cursor-pointer text-sm leading-snug flex items-center justify-between">
+                          <span>{s.name}</span>
+                          <span className="text-xs text-muted-foreground whitespace-nowrap ml-2">R$ {Number(s.price).toFixed(2).replace(".", ",")}</span>
                         </label>
                       </div>
                     ))}
