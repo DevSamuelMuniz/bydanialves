@@ -53,7 +53,7 @@ export default function AdminPlans() {
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editing, setEditing] = useState<any | null>(null);
   const [selectedServices, setSelectedServices] = useState<string[]>([]);
-  const [form, setForm] = useState({ name: "", description: "", restriction: "", price: "", active: true });
+  const [form, setForm] = useState({ name: "", description: "", restriction: "", price: "", active: true, escovas: "" });
 
   const [selectedProfessionals, setSelectedProfessionals] = useState<string[]>([]);
   const [professionals, setProfessionals] = useState<{ user_id: string; full_name: string }[]>([]);
@@ -94,7 +94,7 @@ export default function AdminPlans() {
 
   const openAdd = () => {
     setEditing(null);
-    setForm({ name: "", description: "", restriction: "", price: "", active: true });
+    setForm({ name: "", description: "", restriction: "", price: "", active: true, escovas: "" });
     setSelectedServices([]);
     setSelectedProfessionals([]);
     setDialogOpen(true);
@@ -102,7 +102,9 @@ export default function AdminPlans() {
 
   const openEdit = async (p: any) => {
     setEditing(p);
-    setForm({ name: p.name, description: p.description || "", restriction: p.restriction || "", price: String(p.price), active: p.active });
+    // Extract escovas count from includes
+    const escovasMatch = (p.includes || "").match(/(\d+)\s*escova/i);
+    setForm({ name: p.name, description: p.description || "", restriction: p.restriction || "", price: String(p.price), active: p.active, escovas: escovasMatch ? escovasMatch[1] : "" });
     // Pre-select services whose names appear in includes
     const existingLines = (p.includes || "").split("\n").map((s: string) => s.trim()).filter(Boolean);
     const matched = services.filter((s) => existingLines.includes(s.name)).map((s) => s.id);
@@ -115,10 +117,11 @@ export default function AdminPlans() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    const includesText = selectedServices
+    const serviceNames = selectedServices
       .map((id) => services.find((s) => s.id === id)?.name)
-      .filter(Boolean)
-      .join("\n");
+      .filter(Boolean);
+    const escovasLine = form.escovas ? `${String(form.escovas).padStart(2, "0")} escovas por mês` : "";
+    const includesText = [escovasLine, ...serviceNames].filter(Boolean).join("\n");
     const payload = {
       name: form.name,
       description: form.description || null,
@@ -473,6 +476,11 @@ export default function AdminPlans() {
               )}
             </div>
 
+            <div className="space-y-2">
+              <Label>Quantidade de escovas disponíveis</Label>
+              <Input type="number" min="0" placeholder="Ex: 4" value={form.escovas} onChange={(e) => setForm({ ...form, escovas: e.target.value })} />
+              <p className="text-xs text-muted-foreground">Número de escovas incluídas por mês no plano</p>
+            </div>
             <div className="space-y-2"><Label>Restrição</Label><Input value={form.restriction} onChange={(e) => setForm({ ...form, restriction: e.target.value })} /></div>
             <div className="space-y-2"><Label>Preço mensal (R$)</Label><Input type="number" step="0.01" value={form.price} onChange={(e) => setForm({ ...form, price: e.target.value })} required /></div>
             <div className="flex items-center gap-2">
