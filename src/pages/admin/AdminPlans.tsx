@@ -53,7 +53,7 @@ export default function AdminPlans() {
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editing, setEditing] = useState<any | null>(null);
   const [selectedServices, setSelectedServices] = useState<string[]>([]);
-  const [form, setForm] = useState({ name: "", description: "", restriction: "", price: "", active: true });
+  const [form, setForm] = useState({ name: "", description: "", restriction: "", price: "", active: true, escovas: "" });
 
   const [selectedProfessionals, setSelectedProfessionals] = useState<string[]>([]);
   const [professionals, setProfessionals] = useState<{ user_id: string; full_name: string }[]>([]);
