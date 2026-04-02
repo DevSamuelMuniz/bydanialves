@@ -94,7 +94,7 @@ export default function AdminPlans() {
 
   const openAdd = () => {
     setEditing(null);
-    setForm({ name: "", description: "", restriction: "", price: "", active: true });
+    setForm({ name: "", description: "", restriction: "", price: "", active: true, escovas: "" });
     setSelectedServices([]);
     setSelectedProfessionals([]);
     setDialogOpen(true);
