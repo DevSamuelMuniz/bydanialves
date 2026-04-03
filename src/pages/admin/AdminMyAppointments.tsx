@@ -1041,7 +1041,7 @@ export default function AdminMyAppointments() {
               </div>
               <div className="flex items-center gap-2 text-sm text-muted-foreground">
                 <DollarSign className="w-4 h-4" />
-                Pagamento: <span className="font-medium text-foreground">Plano</span>
+                Pagamento: <span className="font-medium text-foreground">Escova por assinatura</span>
               </div>
             </div>
           )}
