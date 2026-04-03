@@ -1048,19 +1048,9 @@ export default function AdminMyAppointments() {
                   </p>
                 </div>
               </div>
-              <div className="space-y-2">
-                <label className="text-sm font-medium flex items-center gap-1.5">
-                  <DollarSign className="w-4 h-4 text-muted-foreground" />
-                  Forma de pagamento
-                </label>
-                <Select value={paymentMethod} onValueChange={setPaymentMethod}>
-                  <SelectTrigger><SelectValue /></SelectTrigger>
-                  <SelectContent>
-                    {PAYMENT_OPTIONS.map((opt) => (
-                      <SelectItem key={opt.value} value={opt.value}>{opt.label}</SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
+              <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                <DollarSign className="w-4 h-4" />
+                Pagamento: <span className="font-medium text-foreground">Plano</span>
               </div>
             </div>
           )}
