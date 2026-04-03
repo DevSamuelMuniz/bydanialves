@@ -87,7 +87,7 @@ export default function AdminMyAppointments() {
 
   // Complete modal
   const [completeTarget, setCompleteTarget] = useState<any | null>(null);
-  const [paymentMethod, setPaymentMethod] = useState("cash");
+  const [paymentMethod, setPaymentMethod] = useState(DEFAULT_PAYMENT);
   const [completing, setCompleting] = useState(false);
 
   // Manual booking dialog
