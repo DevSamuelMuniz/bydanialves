@@ -1038,15 +1038,6 @@ export default function AdminMyAppointments() {
                   <div><p className="text-muted-foreground">Horário</p><p className="font-medium">{completeTarget.appointment_time?.slice(0, 5)}</p></div>
                   <div><p className="text-muted-foreground">Duração</p><p className="font-medium">{completeTarget.services?.duration_minutes ?? "—"} min</p></div>
                 </div>
-                <div className="rounded-lg bg-green-600/10 border border-green-500/30 px-4 py-3 flex items-center justify-between">
-                  <p className="text-sm font-medium text-muted-foreground flex items-center gap-1.5">
-                    <DollarSign className="w-4 h-4 text-green-600" />
-                    Valor total
-                  </p>
-                  <p className="text-2xl font-bold text-green-600">
-                    R$ {Number(completeTarget.services?.price ?? 0).toFixed(2)}
-                  </p>
-                </div>
               </div>
               <div className="flex items-center gap-2 text-sm text-muted-foreground">
                 <DollarSign className="w-4 h-4" />
