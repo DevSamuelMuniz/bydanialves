@@ -42,13 +42,7 @@ function generateSlots(start = 8, end = 17): string[] {
 
 const ALL_SLOTS = generateSlots();
 
-const PAYMENT_OPTIONS = [
-  { value: "cash",        label: "💵 Dinheiro" },
-  { value: "pix",         label: "📱 PIX" },
-  { value: "credit_card", label: "💳 Cartão de Crédito" },
-  { value: "debit_card",  label: "💳 Cartão de Débito" },
-  { value: "other",       label: "Outro" },
-];
+const DEFAULT_PAYMENT = "plan";
 
 const STATUS_STYLE: Record<string, { label: string; bg: string; border: string; text: string }> = {
   pending:   { label: "Pendente",   bg: "bg-amber-400/20",  border: "border-l-amber-400",  text: "text-amber-700 dark:text-amber-300" },
@@ -93,7 +87,7 @@ export default function AdminMyAppointments() {
 
   // Complete modal
   const [completeTarget, setCompleteTarget] = useState<any | null>(null);
-  const [paymentMethod, setPaymentMethod] = useState("cash");
+  const [paymentMethod, setPaymentMethod] = useState(DEFAULT_PAYMENT);
   const [completing, setCompleting] = useState(false);
 
   // Manual booking dialog
@@ -272,7 +266,7 @@ export default function AdminMyAppointments() {
 
   const openCompleteModal = (appt: any) => {
     setCompleteTarget(appt);
-    setPaymentMethod("cash");
+    setPaymentMethod(DEFAULT_PAYMENT);
     setDetailAppt(null);
   };
 
@@ -293,7 +287,7 @@ export default function AdminMyAppointments() {
       .from("financial_records")
       .update({ payment_method: paymentMethod })
       .eq("appointment_id", completeTarget.id);
-    const label = PAYMENT_OPTIONS.find((p) => p.value === paymentMethod)?.label ?? paymentMethod;
+    const label = "Plano";
     toast({ title: "✅ Atendimento concluído!", description: `Pagamento: ${label}` });
     setCompleteTarget(null);
     setCompleting(false);
@@ -1054,19 +1048,9 @@ export default function AdminMyAppointments() {
                   </p>
                 </div>
               </div>
-              <div className="space-y-2">
-                <label className="text-sm font-medium flex items-center gap-1.5">
-                  <DollarSign className="w-4 h-4 text-muted-foreground" />
-                  Forma de pagamento
-                </label>
-                <Select value={paymentMethod} onValueChange={setPaymentMethod}>
-                  <SelectTrigger><SelectValue /></SelectTrigger>
-                  <SelectContent>
-                    {PAYMENT_OPTIONS.map((opt) => (
-                      <SelectItem key={opt.value} value={opt.value}>{opt.label}</SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
+              <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                <DollarSign className="w-4 h-4" />
+                Pagamento: <span className="font-medium text-foreground">Plano</span>
               </div>
             </div>
           )}
