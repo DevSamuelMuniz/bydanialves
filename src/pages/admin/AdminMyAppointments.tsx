@@ -266,7 +266,7 @@ export default function AdminMyAppointments() {
 
   const openCompleteModal = (appt: any) => {
     setCompleteTarget(appt);
-    setPaymentMethod("cash");
+    setPaymentMethod(DEFAULT_PAYMENT);
     setDetailAppt(null);
   };
 
