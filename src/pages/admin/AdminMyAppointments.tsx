@@ -42,13 +42,7 @@ function generateSlots(start = 8, end = 17): string[] {
 
 const ALL_SLOTS = generateSlots();
 
-const PAYMENT_OPTIONS = [
-  { value: "cash",        label: "💵 Dinheiro" },
-  { value: "pix",         label: "📱 PIX" },
-  { value: "credit_card", label: "💳 Cartão de Crédito" },
-  { value: "debit_card",  label: "💳 Cartão de Débito" },
-  { value: "other",       label: "Outro" },
-];
+const DEFAULT_PAYMENT = "plan";
 
 const STATUS_STYLE: Record<string, { label: string; bg: string; border: string; text: string }> = {
   pending:   { label: "Pendente",   bg: "bg-amber-400/20",  border: "border-l-amber-400",  text: "text-amber-700 dark:text-amber-300" },
