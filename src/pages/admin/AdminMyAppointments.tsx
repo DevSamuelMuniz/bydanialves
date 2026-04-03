@@ -287,7 +287,7 @@ export default function AdminMyAppointments() {
       .from("financial_records")
       .update({ payment_method: paymentMethod })
       .eq("appointment_id", completeTarget.id);
-    const label = PAYMENT_OPTIONS.find((p) => p.value === paymentMethod)?.label ?? paymentMethod;
+    const label = "Plano";
     toast({ title: "✅ Atendimento concluído!", description: `Pagamento: ${label}` });
     setCompleteTarget(null);
     setCompleting(false);
