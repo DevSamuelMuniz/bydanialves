@@ -290,7 +290,7 @@ export default function AdminUsers() {
                     <AlertDialogHeader>
                       <AlertDialogTitle>Adicionar à equipe interna?</AlertDialogTitle>
                       <AlertDialogDescription>
-                        {u.full_name} receberá acesso ao painel como Atendente. Você pode ajustar o nível depois.
+                        {u.full_name} receberá acesso ao painel como Recepcionista. Você pode ajustar o nível depois.
                       </AlertDialogDescription>
                     </AlertDialogHeader>
                     <AlertDialogFooter>

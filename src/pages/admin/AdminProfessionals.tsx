@@ -498,7 +498,7 @@ export default function AdminProfessionals() {
             <SelectContent>
               <SelectItem value="all">Todos os cargos</SelectItem>
               <SelectItem value="professional">Profissional</SelectItem>
-              <SelectItem value="attendant">Atendente</SelectItem>
+              <SelectItem value="attendant">Recepcionista</SelectItem>
             </SelectContent>
           </Select>
 
