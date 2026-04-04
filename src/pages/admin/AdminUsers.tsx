@@ -93,7 +93,7 @@ export default function AdminUsers() {
     if (error) {
       toast({ title: "Erro", description: error.message, variant: "destructive" });
     } else {
-      toast({ title: "Usuário adicionado como Atendente!" });
+      toast({ title: "Usuário adicionado como Recepcionista!" });
       fetchAll();
     }
   };
