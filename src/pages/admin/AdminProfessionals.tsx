@@ -57,7 +57,7 @@ const HOURS = Array.from({ length: 10 }, (_, i) => {
 });
 
 const LEVEL_OPTIONS: { value: NonNullable<AdminLevel>; label: string }[] = [
-  { value: "attendant",    label: "Atendente" },
+  { value: "attendant",    label: "Recepcionista" },
   { value: "professional", label: "Cabeleireiro(a)" },
 ];
 
@@ -498,7 +498,7 @@ export default function AdminProfessionals() {
             <SelectContent>
               <SelectItem value="all">Todos os cargos</SelectItem>
               <SelectItem value="professional">Profissional</SelectItem>
-              <SelectItem value="attendant">Atendente</SelectItem>
+              <SelectItem value="attendant">Recepcionista</SelectItem>
             </SelectContent>
           </Select>
 

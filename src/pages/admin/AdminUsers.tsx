@@ -24,7 +24,7 @@ interface UserInfo {
 }
 
 const LEVEL_OPTIONS: { value: NonNullable<AdminLevel>; label: string }[] = [
-  { value: "attendant", label: "Atendente" },
+  { value: "attendant", label: "Recepcionista" },
   { value: "professional", label: "Cabeleireiro(a)" },
   { value: "manager", label: "Gerente" },
   { value: "ceo", label: "CEO" },
@@ -93,7 +93,7 @@ export default function AdminUsers() {
     if (error) {
       toast({ title: "Erro", description: error.message, variant: "destructive" });
     } else {
-      toast({ title: "Usuário adicionado como Atendente!" });
+      toast({ title: "Usuário adicionado como Recepcionista!" });
       fetchAll();
     }
   };
@@ -290,7 +290,7 @@ export default function AdminUsers() {
                     <AlertDialogHeader>
                       <AlertDialogTitle>Adicionar à equipe interna?</AlertDialogTitle>
                       <AlertDialogDescription>
-                        {u.full_name} receberá acesso ao painel como Atendente. Você pode ajustar o nível depois.
+                        {u.full_name} receberá acesso ao painel como Recepcionista. Você pode ajustar o nível depois.
                       </AlertDialogDescription>
                     </AlertDialogHeader>
                     <AlertDialogFooter>

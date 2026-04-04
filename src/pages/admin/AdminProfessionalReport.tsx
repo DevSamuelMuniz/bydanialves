@@ -42,7 +42,7 @@ const LEVEL_LABELS: Record<string, string> = {
   ceo: "CEO",
   manager: "Gerente",
   professional: "Profissional",
-  attendant: "Atendente",
+  attendant: "Recepcionista",
 };
 
 const STATUS_COLORS: Record<string, string> = {
