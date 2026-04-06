@@ -408,8 +408,13 @@ export default function NewBooking() {
         const plan = (sub as any).plans;
         setTemPlanoAtivo(true);
         const totalEscovas = parseEscovasFromIncludes(plan.includes);
-        const subStart = sub.started_at ? sub.started_at.split('T')[0] : new Date().toISOString().split('T')[0];
-        const subEnd = sub.expires_at ? sub.expires_at.split('T')[0] : new Date().toISOString().split('T')[0];
+        const subStartDate = new Date(sub.started_at || Date.now());
+        const subStart = subStartDate.toISOString().split('T')[0];
+        // If no expires_at, calculate 30 days from started_at (subscription cycle)
+        const subEndDate = sub.expires_at
+          ? new Date(sub.expires_at)
+          : new Date(subStartDate.getTime() + 30 * 24 * 60 * 60 * 1000);
+        const subEnd = subEndDate.toISOString().split('T')[0];
 
         const { data: appointments } = await supabase
           .from("appointments")
@@ -418,7 +423,7 @@ export default function NewBooking() {
           .gte("appointment_date", subStart)
           .lte("appointment_date", subEnd)
           .neq("status", "cancelled");
-        const escovasUsadas = (appointments || []).filter((a: any) => a.services?.is_system === true).length;
+        const escovasUsadas = (appointments || []).filter((a: any) => a.services?.is_system === true || /escova/i.test(a.services?.name || "")).length;
         setEscovasDisponiveis(Math.max(0, totalEscovas - escovasUsadas));
 
         // Fetch professionals authorized for this plan
@@ -520,8 +525,12 @@ export default function NewBooking() {
         if (sub && (sub as any).plans) {
           const plan = (sub as any).plans;
           const totalEscovas = parseEscovasFromIncludes(plan.includes);
-          const subStart = sub.started_at ? sub.started_at.split('T')[0] : new Date().toISOString().split('T')[0];
-          const subEnd = sub.expires_at ? sub.expires_at.split('T')[0] : new Date().toISOString().split('T')[0];
+          const subStartDate2 = new Date(sub.started_at || Date.now());
+          const subStart = subStartDate2.toISOString().split('T')[0];
+          const subEndDate2 = sub.expires_at
+            ? new Date(sub.expires_at)
+            : new Date(subStartDate2.getTime() + 30 * 24 * 60 * 60 * 1000);
+          const subEnd = subEndDate2.toISOString().split('T')[0];
 
           const { data: appts } = await supabase
             .from("appointments")
@@ -531,7 +540,7 @@ export default function NewBooking() {
             .lte("appointment_date", subEnd)
             .neq("status", "cancelled");
 
-          const escovasUsadasAtual = (appts || []).filter((a: any) => a.services?.is_system === true).length;
+          const escovasUsadasAtual = (appts || []).filter((a: any) => a.services?.is_system === true || /escova/i.test(a.services?.name || "")).length;
           const creditosRestantes = Math.max(0, totalEscovas - escovasUsadasAtual);
 
           if (escovasNoAgendamento > creditosRestantes) {
