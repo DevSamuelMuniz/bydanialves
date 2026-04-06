@@ -68,8 +68,8 @@ function toMin(t: string): number {
  */
 function generateTimeSlots(
   totalMinutes: number,
-  workStart = 8 * 60,
-  workEnd = 17 * 60
+  workStart = 0,
+  workEnd = 24 * 60
 ): string[] {
   const slots: string[] = [];
   let t = workStart;
@@ -150,8 +150,8 @@ export default function NewBooking() {
 
     if (selectedProfessional && selectedProfessional !== "none") {
       // Specific professional: use their schedule window
-      let workStart = 8 * 60;
-      let workEnd = 17 * 60;
+      let workStart = 0;
+      let workEnd = 24 * 60;
       const daySchedule = selectedProfessional.schedules.find(
         (s) => s.day_of_week === dayOfWeek && s.active
       );

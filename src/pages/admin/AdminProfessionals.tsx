@@ -51,9 +51,8 @@ function fmtDate(d: Date): string {
   return `${String(d.getDate()).padStart(2, "0")}/${String(d.getMonth() + 1).padStart(2, "0")}`;
 }
 
-const HOURS = Array.from({ length: 10 }, (_, i) => {
-  const h = i + 8;
-  return `${String(h).padStart(2, "0")}:00`;
+const HOURS = Array.from({ length: 24 }, (_, i) => {
+  return `${String(i).padStart(2, "0")}:00`;
 });
 
 const LEVEL_OPTIONS: { value: NonNullable<AdminLevel>; label: string }[] = [
@@ -91,7 +90,7 @@ interface DayRow {
   existing_id?: string;
 }
 
-const defaultDayRow = (): DayRow => ({ enabled: false, start_time: "08:00", end_time: "17:00" });
+const defaultDayRow = (): DayRow => ({ enabled: false, start_time: "08:00", end_time: "18:00" });
 
 function buildWeekState(existingSchedules: Schedule[]): Record<number, DayRow> {
   const state: Record<number, DayRow> = {};
