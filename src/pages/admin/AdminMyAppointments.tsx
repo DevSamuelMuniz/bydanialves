@@ -81,7 +81,7 @@ export default function AdminMyAppointments() {
   const [selectedDate, setSelectedDate] = useState<Date>(today);
 
   // Professionals list (for attendant grid view)
-  const [professionals, setProfessionals] = useState<{ user_id: string; full_name: string; avatar_url: string | null }[]>([]);
+  const [professionals, setProfessionals] = useState<ProfWithSchedule[]>([]);
 
   const [appointments, setAppointments] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
