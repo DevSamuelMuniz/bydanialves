@@ -150,8 +150,8 @@ export default function NewBooking() {
 
     if (selectedProfessional && selectedProfessional !== "none") {
       // Specific professional: use their schedule window
-      let workStart = 8 * 60;
-      let workEnd = 17 * 60;
+      let workStart = 0;
+      let workEnd = 24 * 60;
       const daySchedule = selectedProfessional.schedules.find(
         (s) => s.day_of_week === dayOfWeek && s.active
       );
