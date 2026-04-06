@@ -18,6 +18,7 @@ import {
   LayoutDashboard, Users, Calendar, Scissors, DollarSign,
   Crown, Activity, ClipboardList, Building2, Tag, Star, Tv2, UserCheck, UserPlus,
   ChevronDown, BarChart2, LogOut, CalendarDays, TableProperties, Award, MessageCircle,
+  Link2,
 } from "lucide-react";
 import { useLocation } from "react-router-dom";
 import logoBlack from "@/assets/logo-black.png";
@@ -196,6 +197,7 @@ export function AdminSidebar() {
     (isAttendant || isProfessional) && { title: "Minha Escala", url: "/admin/my-schedule", icon: TableProperties, tourId: "sidebar-admin-my-schedule" },
     (perms.canViewClients && adminLevel !== "professional") && { title: "Clientes", url: "/admin/clients", icon: Users, tourId: "sidebar-admin-clients" },
     (adminLevel === "ceo" || isAttendant) && { title: "Criar Conta", url: "/admin/create-account", icon: UserPlus },
+    adminLevel === "ceo" && { title: "Link de Convite", url: "/admin/invite-link", icon: Link2 },
     perms.canViewBranches && { title: "Filiais", url: "/admin/branches", icon: Building2, tourId: "sidebar-admin-branches" },
   ].filter(Boolean) as NavItemDef[];
 
@@ -227,7 +229,7 @@ export function AdminSidebar() {
   const groups: NavGroupDef[] = [
     {
       label: "Gestão",
-      urls: ["/admin", "/admin/my-appointments", "/admin/my-schedule", "/admin/clients", "/admin/branches", "/admin/professionals", "/admin/create-account"],
+      urls: ["/admin", "/admin/my-appointments", "/admin/my-schedule", "/admin/clients", "/admin/branches", "/admin/professionals", "/admin/create-account", "/admin/invite-link"],
       items: gestaoItems,
       showProfDropdown: showProfDropdownFinal,
     },

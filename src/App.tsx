@@ -40,6 +40,8 @@ import AdminMySchedule from "./pages/admin/AdminMySchedule";
 import QueueTV from "./pages/admin/QueueTV";
 import AdminWhatsApp from "./pages/admin/AdminWhatsApp";
 import AdminCreateAccount from "./pages/admin/AdminCreateAccount";
+import AdminInviteLink from "./pages/admin/AdminInviteLink";
+import PublicInvite from "./pages/PublicInvite";
 import TermosDeServico from "./pages/TermosDeServico";
 import PoliticaDePrivacidade from "./pages/PoliticaDePrivacidade";
 import PoliticaETermos from "./pages/PoliticaETermos";
@@ -66,6 +68,7 @@ const App = () => (
 
             {/* Public Queue TV – no auth required */}
             <Route path="/tv" element={<PublicQueueTV />} />
+            <Route path="/convite" element={<PublicInvite />} />
 
             {/* Client routes */}
             <Route path="/client" element={<ProtectedRoute requiredRole="client"><ClientLayout /></ProtectedRoute>}>
@@ -103,6 +106,7 @@ const App = () => (
               <Route path="my-schedule" element={<AdminMySchedule />} />
               <Route path="whatsapp" element={<AdminWhatsApp />} />
               <Route path="create-account" element={<AdminCreateAccount />} />
+              <Route path="invite-link" element={<AdminInviteLink />} />
             </Route>
 
             <Route path="*" element={<NotFound />} />
