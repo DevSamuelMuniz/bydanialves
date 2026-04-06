@@ -23,6 +23,7 @@ import {
   Clock, DollarSign, User, Scissors, CheckCircle2, XCircle,
   CalendarIcon, RotateCcw, Plus, Search, CalendarDays, ListChecks,
   ChevronDown, ChevronUp, PlayCircle, LockKeyhole, UnlockKeyhole, CalendarOff,
+  GripVertical,
 } from "lucide-react";
 import {
   AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
@@ -127,6 +128,11 @@ export default function AdminMyAppointments() {
   const [blockMode, setBlockMode] = useState<"day" | "slots">("day");
   const [selectedBlockSlots, setSelectedBlockSlots] = useState<string[]>([]);
   const [dayBlocks, setDayBlocks] = useState<Record<string, { isFullDay: boolean; blockedSlots: string[] }>>({}); // professional_id -> block info
+
+  // Drag-and-drop state
+  const [dragAppt, setDragAppt] = useState<any | null>(null);
+  const [dropTarget, setDropTarget] = useState<{ slot: string; profId: string } | null>(null);
+  const [moving, setMoving] = useState(false);
 
   // ─── Data fetching ──────────────────────────────────────────────────────────
 
@@ -421,6 +427,36 @@ export default function AdminMyAppointments() {
     }
   };
 
+  // ─── Drag-and-drop move handler ────────────────────────────────────────────
+  const handleDrop = async (slot: string, profId: string) => {
+    if (!dragAppt || moving) return;
+    const sameSlot = dragAppt.appointment_time?.slice(0, 5) === slot;
+    const sameProf = (dragAppt.professional_id ?? "__none__") === profId;
+    if (sameSlot && sameProf) { setDragAppt(null); setDropTarget(null); return; }
+
+    // Don't allow moving completed/cancelled
+    if (["completed", "cancelled"].includes(dragAppt.status)) {
+      toast({ title: "Não é possível mover agendamentos concluídos ou cancelados", variant: "destructive" });
+      setDragAppt(null); setDropTarget(null); return;
+    }
+
+    setMoving(true);
+    const updates: any = { appointment_time: slot + ":00", updated_at: new Date().toISOString() };
+    if (!sameProf && profId !== "__none__") updates.professional_id = profId;
+
+    const { error } = await supabase.from("appointments").update(updates).eq("id", dragAppt.id);
+    setMoving(false);
+    if (error) {
+      toast({ title: "Erro ao mover agendamento", description: error.message, variant: "destructive" });
+    } else {
+      const profName = professionals.find(p => p.user_id === profId)?.full_name || "";
+      toast({ title: "✅ Agendamento movido!", description: `${slot} ${profName ? "— " + profName : ""}` });
+      fetchData();
+    }
+    setDragAppt(null);
+    setDropTarget(null);
+  };
+
   // ─── Computed ───────────────────────────────────────────────────────────────
 
   const isToday = format(selectedDate, "yyyy-MM-dd") === format(today, "yyyy-MM-dd");
@@ -517,18 +553,33 @@ export default function AdminMyAppointments() {
   // Tiny appointment chip inside the grid cell
   const ApptChip = ({ a }: { a: any }) => {
     const st = STATUS_STYLE[a.status] || STATUS_STYLE.pending;
+    const isDraggable = ["pending", "confirmed"].includes(a.status);
     return (
       <button
+        draggable={isDraggable}
+        onDragStart={(e) => {
+          if (!isDraggable) return;
+          setDragAppt(a);
+          e.dataTransfer.effectAllowed = "move";
+          e.dataTransfer.setData("text/plain", a.id);
+        }}
+        onDragEnd={() => { setDragAppt(null); setDropTarget(null); }}
         className={cn(
           "w-full text-left rounded-md border-l-2 px-2 py-1.5 text-xs transition-all hover:opacity-90 hover:scale-[1.01]",
-          st.bg, st.border
+          st.bg, st.border,
+          isDraggable && "cursor-grab active:cursor-grabbing"
         )}
         onClick={() => setDetailAppt(a)}
       >
-        <p className={cn("font-semibold truncate leading-tight", st.text)}>
-          {a.profiles?.full_name || "Cliente"}
-        </p>
-        <p className="text-muted-foreground truncate">{a.services?.name || "—"}</p>
+        <div className="flex items-center gap-1">
+          {isDraggable && <GripVertical className="h-3 w-3 text-muted-foreground/50 shrink-0" />}
+          <div className="min-w-0 flex-1">
+            <p className={cn("font-semibold truncate leading-tight", st.text)}>
+              {a.profiles?.full_name || "Cliente"}
+            </p>
+            <p className="text-muted-foreground truncate">{a.services?.name || "—"}</p>
+          </div>
+        </div>
       </button>
     );
   };
@@ -772,16 +823,29 @@ export default function AdminMyAppointments() {
                           const isSlotBlocked = !isProfFullDayBlocked && (profBlockInfo?.blockedSlots?.includes(slot) ?? false);
                           const isAnyBlocked = isProfFullDayBlocked || isSlotBlocked;
                           const isOutOfSchedule = profSlots[prof.user_id] && !profSlots[prof.user_id].has(slot);
+                          const isDropHere = dropTarget?.slot === slot && dropTarget?.profId === prof.user_id;
                           return (
                             <td
                               key={prof.user_id}
                               className={cn(
-                                "border-r border-border last:border-r-0 p-1.5 align-top min-h-[52px]",
+                                "border-r border-border last:border-r-0 p-1.5 align-top min-h-[52px] transition-colors",
                                 isProfFullDayBlocked && "bg-destructive/5",
                                 isSlotBlocked && "bg-destructive/5",
-                                isOutOfSchedule && "bg-muted/30"
+                                isOutOfSchedule && "bg-muted/30",
+                                isDropHere && "bg-primary/15 ring-2 ring-primary/40 ring-inset"
                               )}
                               style={{ minHeight: "52px" }}
+                              onDragOver={(e) => {
+                                e.preventDefault();
+                                e.dataTransfer.dropEffect = "move";
+                                setDropTarget({ slot, profId: prof.user_id });
+                              }}
+                              onDragLeave={() => setDropTarget(null)}
+                              onDrop={(e) => {
+                                e.preventDefault();
+                                setDropTarget(null);
+                                handleDrop(slot, prof.user_id);
+                              }}
                             >
                               {isOutOfSchedule && cellAppts.length === 0 ? (
                                 <div className="w-full h-10 rounded flex items-center justify-center">
