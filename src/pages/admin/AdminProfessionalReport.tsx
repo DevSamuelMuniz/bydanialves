@@ -599,7 +599,7 @@ function ProfCard({ prof, onExportPDF }: { prof: ProfessionalSummary; onExportPD
                 </BarChart>
               </ResponsiveContainer>
             ) : (
-              <p className="text-sm text-muted-foreground py-8 text-center">Sem atendimentos no período</p>
+              <p className="text-sm text-muted-foreground py-8 text-center">Sem agendamentos no período</p>
             )}
           </div>
 
