@@ -68,6 +68,7 @@ const App = () => (
 
             {/* Public Queue TV – no auth required */}
             <Route path="/tv" element={<PublicQueueTV />} />
+            <Route path="/convite" element={<PublicInvite />} />
 
             {/* Client routes */}
             <Route path="/client" element={<ProtectedRoute requiredRole="client"><ClientLayout /></ProtectedRoute>}>
