@@ -633,7 +633,7 @@ function ProfCard({ prof, onExportPDF }: { prof: ProfessionalSummary; onExportPD
         {prof.by_month.length > 0 && (
           <div>
             <p className="text-sm font-semibold mb-3 flex items-center gap-2">
-              <TrendingUp className="h-4 w-4 text-muted-foreground" /> Atendimentos por mês
+              <TrendingUp className="h-4 w-4 text-muted-foreground" /> Agendamentos por mês
             </p>
             <ResponsiveContainer width="100%" height={140}>
               <BarChart data={prof.by_month} margin={{ left: 0, right: 8 }}>
