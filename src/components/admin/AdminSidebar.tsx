@@ -16,7 +16,7 @@ import {
 } from "@/components/ui/collapsible";
 import {
   LayoutDashboard, Users, Calendar, Scissors, DollarSign,
-  Crown, Activity, ClipboardList, Building2, Tag, Star, Tv2, UserCheck,
+  Crown, Activity, ClipboardList, Building2, Tag, Star, Tv2, UserCheck, UserPlus,
   ChevronDown, BarChart2, LogOut, CalendarDays, TableProperties, Award, MessageCircle,
 } from "lucide-react";
 import { useLocation } from "react-router-dom";
@@ -195,6 +195,7 @@ export function AdminSidebar() {
     (isAttendant || isProfessional) && { title: isAttendant ? "Atendimentos" : "Meus Atendimentos", url: "/admin/my-appointments", icon: ClipboardList, tourId: "sidebar-admin-my-appointments" },
     (isAttendant || isProfessional) && { title: "Minha Escala", url: "/admin/my-schedule", icon: TableProperties, tourId: "sidebar-admin-my-schedule" },
     (perms.canViewClients && adminLevel !== "professional") && { title: "Clientes", url: "/admin/clients", icon: Users, tourId: "sidebar-admin-clients" },
+    (adminLevel === "ceo" || isAttendant) && { title: "Criar Conta", url: "/admin/create-account", icon: UserPlus },
     perms.canViewBranches && { title: "Filiais", url: "/admin/branches", icon: Building2, tourId: "sidebar-admin-branches" },
   ].filter(Boolean) as NavItemDef[];
 
@@ -226,7 +227,7 @@ export function AdminSidebar() {
   const groups: NavGroupDef[] = [
     {
       label: "Gestão",
-      urls: ["/admin", "/admin/my-appointments", "/admin/my-schedule", "/admin/clients", "/admin/branches", "/admin/professionals"],
+      urls: ["/admin", "/admin/my-appointments", "/admin/my-schedule", "/admin/clients", "/admin/branches", "/admin/professionals", "/admin/create-account"],
       items: gestaoItems,
       showProfDropdown: showProfDropdownFinal,
     },
