@@ -427,6 +427,36 @@ export default function AdminMyAppointments() {
     }
   };
 
+  // ─── Drag-and-drop move handler ────────────────────────────────────────────
+  const handleDrop = async (slot: string, profId: string) => {
+    if (!dragAppt || moving) return;
+    const sameSlot = dragAppt.appointment_time?.slice(0, 5) === slot;
+    const sameProf = (dragAppt.professional_id ?? "__none__") === profId;
+    if (sameSlot && sameProf) { setDragAppt(null); setDropTarget(null); return; }
+
+    // Don't allow moving completed/cancelled
+    if (["completed", "cancelled"].includes(dragAppt.status)) {
+      toast({ title: "Não é possível mover agendamentos concluídos ou cancelados", variant: "destructive" });
+      setDragAppt(null); setDropTarget(null); return;
+    }
+
+    setMoving(true);
+    const updates: any = { appointment_time: slot + ":00", updated_at: new Date().toISOString() };
+    if (!sameProf && profId !== "__none__") updates.professional_id = profId;
+
+    const { error } = await supabase.from("appointments").update(updates).eq("id", dragAppt.id);
+    setMoving(false);
+    if (error) {
+      toast({ title: "Erro ao mover agendamento", description: error.message, variant: "destructive" });
+    } else {
+      const profName = professionals.find(p => p.user_id === profId)?.full_name || "";
+      toast({ title: "✅ Agendamento movido!", description: `${slot} ${profName ? "— " + profName : ""}` });
+      fetchData();
+    }
+    setDragAppt(null);
+    setDropTarget(null);
+  };
+
   // ─── Computed ───────────────────────────────────────────────────────────────
 
   const isToday = format(selectedDate, "yyyy-MM-dd") === format(today, "yyyy-MM-dd");
