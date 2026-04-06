@@ -195,6 +195,7 @@ export function AdminSidebar() {
     (isAttendant || isProfessional) && { title: isAttendant ? "Atendimentos" : "Meus Atendimentos", url: "/admin/my-appointments", icon: ClipboardList, tourId: "sidebar-admin-my-appointments" },
     (isAttendant || isProfessional) && { title: "Minha Escala", url: "/admin/my-schedule", icon: TableProperties, tourId: "sidebar-admin-my-schedule" },
     (perms.canViewClients && adminLevel !== "professional") && { title: "Clientes", url: "/admin/clients", icon: Users, tourId: "sidebar-admin-clients" },
+    (adminLevel === "ceo" || isAttendant) && { title: "Criar Conta", url: "/admin/create-account", icon: UserPlus },
     perms.canViewBranches && { title: "Filiais", url: "/admin/branches", icon: Building2, tourId: "sidebar-admin-branches" },
   ].filter(Boolean) as NavItemDef[];
 
