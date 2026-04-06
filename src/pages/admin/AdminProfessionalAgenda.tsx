@@ -331,6 +331,26 @@ export default function AdminProfessionalAgenda() {
                 <CheckCircle2 className="h-3 w-3" />Concluir
               </Button>
             )}
+            {(col.key === "cancelled") && (
+              <AlertDialog>
+                <AlertDialogTrigger asChild>
+                  <Button size="sm" variant="outline" className="h-7 text-xs gap-1">
+                    <RotateCcw className="h-3 w-3" />
+                    Reabrir
+                  </Button>
+                </AlertDialogTrigger>
+                <AlertDialogContent>
+                  <AlertDialogHeader>
+                    <AlertDialogTitle>Reabrir agendamento?</AlertDialogTitle>
+                    <AlertDialogDescription>O status voltará para "Confirmado".</AlertDialogDescription>
+                  </AlertDialogHeader>
+                  <AlertDialogFooter>
+                    <AlertDialogCancel>Voltar</AlertDialogCancel>
+                    <AlertDialogAction onClick={() => markReopen(a.id)}>Confirmar Reabertura</AlertDialogAction>
+                  </AlertDialogFooter>
+                </AlertDialogContent>
+              </AlertDialog>
+            )}
             {col.key !== "cancelled" && (
               <div className="ml-auto">
                 <AlertDialog>
