@@ -25,6 +25,7 @@ import {
   ChevronDown, ChevronUp, PlayCircle, LockKeyhole, UnlockKeyhole, CalendarOff,
   GripVertical,
 } from "lucide-react";
+import ClientAppointmentsFilter from "@/components/admin/ClientAppointmentsFilter";
 import {
   AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
   AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle,
@@ -763,6 +764,8 @@ export default function AdminMyAppointments() {
               Apenas cancelados
             </Label>
           </div>
+
+          <ClientAppointmentsFilter />
 
           {!isToday && (
             <Button variant="ghost" size="icon" className="h-9 w-9" onClick={() => setSelectedDate(today)} title="Voltar para hoje">
