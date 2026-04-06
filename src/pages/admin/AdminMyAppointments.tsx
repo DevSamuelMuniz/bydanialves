@@ -32,6 +32,11 @@ import {
 
 // ─── Constants ───────────────────────────────────────────────────────────────
 
+function toMin(t: string): number {
+  const parts = t.split(":").map(Number);
+  return parts[0] * 60 + (parts[1] ?? 0);
+}
+
 function generateSlots(start = 6, end = 22): string[] {
   const slots: string[] = [];
   for (let h = start; h <= end; h++) {
@@ -40,7 +45,19 @@ function generateSlots(start = 6, end = 22): string[] {
   return slots;
 }
 
-const ALL_SLOTS = generateSlots();
+interface ProfSchedule {
+  day_of_week: number;
+  start_time: string;
+  end_time: string;
+  active: boolean;
+}
+
+interface ProfWithSchedule {
+  user_id: string;
+  full_name: string;
+  avatar_url: string | null;
+  schedules: ProfSchedule[];
+}
 
 const DEFAULT_PAYMENT = "plan";
 
@@ -64,7 +81,7 @@ export default function AdminMyAppointments() {
   const [selectedDate, setSelectedDate] = useState<Date>(today);
 
   // Professionals list (for attendant grid view)
-  const [professionals, setProfessionals] = useState<{ user_id: string; full_name: string; avatar_url: string | null }[]>([]);
+  const [professionals, setProfessionals] = useState<ProfWithSchedule[]>([]);
 
   const [appointments, setAppointments] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
@@ -180,7 +197,29 @@ export default function AdminMyAppointments() {
           }
           return { ...p, avatar_url: url };
         });
-        setProfessionals(resolved);
+
+        // Fetch schedules for all professionals
+        const { data: schedData } = await supabase
+          .from("professional_schedules")
+          .select("professional_id, day_of_week, start_time, end_time, active")
+          .in("professional_id", profIds);
+
+        const schedMap: Record<string, ProfSchedule[]> = {};
+        (schedData || []).forEach((s: any) => {
+          if (!schedMap[s.professional_id]) schedMap[s.professional_id] = [];
+          schedMap[s.professional_id].push({
+            day_of_week: s.day_of_week,
+            start_time: s.start_time?.slice(0, 5) || "08:00",
+            end_time: s.end_time?.slice(0, 5) || "18:00",
+            active: s.active,
+          });
+        });
+
+        const profsWithSchedules: ProfWithSchedule[] = resolved.map((p: any) => ({
+          ...p,
+          schedules: schedMap[p.user_id] || [],
+        }));
+        setProfessionals(profsWithSchedules);
       } else {
         setProfessionals([]);
       }
@@ -386,6 +425,52 @@ export default function AdminMyAppointments() {
 
   const isToday = format(selectedDate, "yyyy-MM-dd") === format(today, "yyyy-MM-dd");
 
+  // Compute dynamic ALL_SLOTS based on professional schedules for the selected day
+  const ALL_SLOTS = useMemo(() => {
+    const dayOfWeek = selectedDate.getDay();
+    const slotSet = new Set<string>();
+
+    professionals.forEach((prof) => {
+      const daySchedule = prof.schedules.find(
+        (s) => s.day_of_week === dayOfWeek && s.active
+      );
+      if (daySchedule) {
+        const startH = Math.floor(toMin(daySchedule.start_time) / 60);
+        const endH = Math.floor(toMin(daySchedule.end_time) / 60);
+        generateSlots(startH, endH).forEach((s) => slotSet.add(s));
+      }
+    });
+
+    // If no schedules found, fallback to all appointment times from the day
+    if (slotSet.size === 0) {
+      appointments.forEach((a) => {
+        const slot = a.appointment_time?.slice(0, 5);
+        if (slot) slotSet.add(slot);
+      });
+    }
+
+    return Array.from(slotSet).sort();
+  }, [selectedDate, professionals, appointments]);
+
+  // Compute which slots each professional is scheduled for
+  const profSlots = useMemo(() => {
+    const dayOfWeek = selectedDate.getDay();
+    const map: Record<string, Set<string>> = {};
+    professionals.forEach((prof) => {
+      const daySchedule = prof.schedules.find(
+        (s) => s.day_of_week === dayOfWeek && s.active
+      );
+      if (daySchedule) {
+        const startH = Math.floor(toMin(daySchedule.start_time) / 60);
+        const endH = Math.floor(toMin(daySchedule.end_time) / 60);
+        map[prof.user_id] = new Set(generateSlots(startH, endH));
+      } else {
+        map[prof.user_id] = new Set();
+      }
+    });
+    return map;
+  }, [selectedDate, professionals]);
+
   // For attendant: build map [slot][professional_id] => appointment[]
   const slotMap = useMemo(() => {
     const m: Record<string, Record<string, any[]>> = {};
@@ -397,13 +482,14 @@ export default function AdminMyAppointments() {
         return;
       }
       const slot = a.appointment_time?.slice(0, 5);
-      if (!slot || !m[slot]) return;
+      if (!slot) return;
+      if (!m[slot]) m[slot] = {};
       const pid = a.professional_id ?? "__none__";
       if (!m[slot][pid]) m[slot][pid] = [];
       m[slot][pid].push(a);
     });
     return m;
-  }, [appointments, showCancelled, onlyCancelled]);
+  }, [appointments, showCancelled, onlyCancelled, ALL_SLOTS]);
 
   // For professional view (non-attendant)
   const confirmed = useMemo(() =>
@@ -685,17 +771,23 @@ export default function AdminMyAppointments() {
                           const isProfFullDayBlocked = profBlockInfo?.isFullDay ?? false;
                           const isSlotBlocked = !isProfFullDayBlocked && (profBlockInfo?.blockedSlots?.includes(slot) ?? false);
                           const isAnyBlocked = isProfFullDayBlocked || isSlotBlocked;
+                          const isOutOfSchedule = profSlots[prof.user_id] && !profSlots[prof.user_id].has(slot);
                           return (
                             <td
                               key={prof.user_id}
                               className={cn(
                                 "border-r border-border last:border-r-0 p-1.5 align-top min-h-[52px]",
                                 isProfFullDayBlocked && "bg-destructive/5",
-                                isSlotBlocked && "bg-destructive/5"
+                                isSlotBlocked && "bg-destructive/5",
+                                isOutOfSchedule && "bg-muted/30"
                               )}
                               style={{ minHeight: "52px" }}
                             >
-                              {isAnyBlocked && cellAppts.length === 0 ? (
+                              {isOutOfSchedule && cellAppts.length === 0 ? (
+                                <div className="w-full h-10 rounded flex items-center justify-center">
+                                  <span className="text-[10px] text-muted-foreground/40">—</span>
+                                </div>
+                              ) : isAnyBlocked && cellAppts.length === 0 ? (
                                 <div className={cn(
                                   "w-full h-10 rounded border border-dashed flex items-center justify-center border-destructive/20"
                                 )}>
@@ -849,7 +941,7 @@ export default function AdminMyAppointments() {
                 <div className="space-y-2">
                   <Label className="text-xs text-muted-foreground">Selecione os horários para fechar:</Label>
                   <div className="grid grid-cols-5 gap-1.5">
-                    {ALL_SLOTS.map((slot) => {
+                    {(blockTarget ? Array.from(profSlots[blockTarget.user_id] || []).sort() : ALL_SLOTS).map((slot) => {
                       const isSelected = selectedBlockSlots.includes(slot);
                       return (
                         <button
@@ -1168,7 +1260,27 @@ export default function AdminMyAppointments() {
             <div className="space-y-2">
               <Label>Horário <span className="text-destructive">*</span></Label>
               <div className="grid grid-cols-4 sm:grid-cols-6 gap-1.5 max-h-36 overflow-y-auto pr-1">
-                {generateSlots().filter((slot) => {
+                {(() => {
+                  // Get slots based on selected professional's schedule
+                  let slots = generateSlots();
+                  if (bookingForm.professional_id && bookingForm.date) {
+                    const prof = professionals.find((p) => p.user_id === bookingForm.professional_id);
+                    if (prof) {
+                      const dayOfWeek = bookingForm.date.getDay();
+                      const daySchedule = prof.schedules.find(
+                        (s) => s.day_of_week === dayOfWeek && s.active
+                      );
+                      if (daySchedule) {
+                        const startH = Math.floor(toMin(daySchedule.start_time) / 60);
+                        const endH = Math.floor(toMin(daySchedule.end_time) / 60);
+                        slots = generateSlots(startH, endH);
+                      } else {
+                        slots = [];
+                      }
+                    }
+                  }
+                  return slots;
+                })().filter((slot) => {
                   if (!bookingForm.date) return true;
                   const now = new Date();
                   const d = bookingForm.date;
