@@ -628,7 +628,7 @@ export default function AdminMyAppointments() {
   // ─── Render ──────────────────────────────────────────────────────────────────
 
   return (
-    <div className="space-y-4 h-full flex flex-col">
+    <div className="space-y-4 h-[calc(100vh-6rem)] flex flex-col">
 
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 shrink-0">
@@ -716,22 +716,22 @@ export default function AdminMyAppointments() {
             {[...Array(6)].map((_, i) => <Skeleton key={i} className="h-12 w-full" />)}
           </div>
         ) : (
-          <div className="flex-1 overflow-auto rounded-xl border border-border bg-card">
+          <div className="flex-1 overflow-auto rounded-xl border border-border bg-card min-h-0">
             {visibleProfessionals.length === 0 ? (
               <div className="flex flex-col items-center justify-center h-60 text-muted-foreground gap-2">
                 <User className="h-8 w-8 opacity-30" />
                 <p className="text-sm">Nenhum profissional encontrado para esta filial.</p>
               </div>
             ) : (
-              <table className="w-full border-collapse" style={{ minWidth: `${120 + visibleProfessionals.length * 140}px` }}>
+              <table className="w-full border-collapse table-fixed" style={{ minWidth: visibleProfessionals.length > 6 ? `${120 + visibleProfessionals.length * 130}px` : undefined }}>
                 <thead className="sticky top-0 z-10 bg-card border-b border-border">
                   <tr>
                     {/* Time column header */}
-                    <th className="w-14 border-r border-border bg-muted/40 p-2">
+                    <th className="w-12 min-w-[48px] border-r border-border bg-muted/40 p-1.5">
                       <Clock className="h-4 w-4 text-muted-foreground mx-auto" />
                     </th>
                     {visibleProfessionals.map((prof) => (
-                      <th key={prof.user_id} className="border-r border-border last:border-r-0 align-top min-w-[140px]">
+                      <th key={prof.user_id} className="border-r border-border last:border-r-0 align-top">
                         <ProfHeader prof={prof} />
                       </th>
                     ))}
@@ -753,7 +753,7 @@ export default function AdminMyAppointments() {
                       >
                         {/* Time label */}
                         <td className={cn(
-                          "w-14 border-r border-border p-2 text-center align-top sticky left-0 bg-card z-[1]",
+                          "w-12 min-w-[48px] border-r border-border p-1 text-center align-top sticky left-0 bg-card z-[1]",
                           isCurrentHour && "bg-primary/10"
                         )}>
                           <span className={cn(
