@@ -197,6 +197,7 @@ export function AdminSidebar() {
     (isAttendant || isProfessional) && { title: "Minha Escala", url: "/admin/my-schedule", icon: TableProperties, tourId: "sidebar-admin-my-schedule" },
     (perms.canViewClients && adminLevel !== "professional") && { title: "Clientes", url: "/admin/clients", icon: Users, tourId: "sidebar-admin-clients" },
     (adminLevel === "ceo" || isAttendant) && { title: "Criar Conta", url: "/admin/create-account", icon: UserPlus },
+    adminLevel === "ceo" && { title: "Link de Convite", url: "/admin/invite-link", icon: Link2 },
     perms.canViewBranches && { title: "Filiais", url: "/admin/branches", icon: Building2, tourId: "sidebar-admin-branches" },
   ].filter(Boolean) as NavItemDef[];
 
