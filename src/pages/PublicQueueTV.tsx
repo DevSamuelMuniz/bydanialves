@@ -256,7 +256,7 @@ export default function PublicQueueTV() {
             <div className="min-w-0">
               <h1 className="text-base sm:text-2xl font-serif font-bold tracking-tight truncate">TV de Fila</h1>
               <p className="text-xs text-muted-foreground hidden sm:block">
-                {label || "Atendimentos de hoje"}
+                {label || "Agenda de hoje"}
               </p>
             </div>
           </div>
