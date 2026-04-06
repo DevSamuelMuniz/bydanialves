@@ -531,7 +531,7 @@ export default function NewBooking() {
             .lte("appointment_date", subEnd)
             .neq("status", "cancelled");
 
-          const escovasUsadasAtual = (appts || []).filter((a: any) => a.services?.is_system === true).length;
+          const escovasUsadasAtual = (appts || []).filter((a: any) => a.services?.is_system === true || /escova/i.test(a.services?.name || "")).length;
           const creditosRestantes = Math.max(0, totalEscovas - escovasUsadasAtual);
 
           if (escovasNoAgendamento > creditosRestantes) {
