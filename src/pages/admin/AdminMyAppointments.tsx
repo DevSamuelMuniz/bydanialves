@@ -553,18 +553,33 @@ export default function AdminMyAppointments() {
   // Tiny appointment chip inside the grid cell
   const ApptChip = ({ a }: { a: any }) => {
     const st = STATUS_STYLE[a.status] || STATUS_STYLE.pending;
+    const isDraggable = ["pending", "confirmed"].includes(a.status);
     return (
       <button
+        draggable={isDraggable}
+        onDragStart={(e) => {
+          if (!isDraggable) return;
+          setDragAppt(a);
+          e.dataTransfer.effectAllowed = "move";
+          e.dataTransfer.setData("text/plain", a.id);
+        }}
+        onDragEnd={() => { setDragAppt(null); setDropTarget(null); }}
         className={cn(
           "w-full text-left rounded-md border-l-2 px-2 py-1.5 text-xs transition-all hover:opacity-90 hover:scale-[1.01]",
-          st.bg, st.border
+          st.bg, st.border,
+          isDraggable && "cursor-grab active:cursor-grabbing"
         )}
         onClick={() => setDetailAppt(a)}
       >
-        <p className={cn("font-semibold truncate leading-tight", st.text)}>
-          {a.profiles?.full_name || "Cliente"}
-        </p>
-        <p className="text-muted-foreground truncate">{a.services?.name || "—"}</p>
+        <div className="flex items-center gap-1">
+          {isDraggable && <GripVertical className="h-3 w-3 text-muted-foreground/50 shrink-0" />}
+          <div className="min-w-0 flex-1">
+            <p className={cn("font-semibold truncate leading-tight", st.text)}>
+              {a.profiles?.full_name || "Cliente"}
+            </p>
+            <p className="text-muted-foreground truncate">{a.services?.name || "—"}</p>
+          </div>
+        </div>
       </button>
     );
   };
