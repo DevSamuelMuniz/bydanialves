@@ -73,7 +73,7 @@ const STATUS_STYLE: Record<string, { label: string; bg: string; border: string; 
 export default function AdminMyAppointments() {
   const { user, adminLevel, adminBranchId } = useAuth();
   const { toast } = useToast();
-  const isAttendant = adminLevel === "attendant";
+  const isAttendant = adminLevel === "attendant" || adminLevel === "ceo" || adminLevel === "manager";
 
   const today = new Date();
   today.setHours(0, 0, 0, 0);
