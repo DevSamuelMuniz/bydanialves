@@ -634,7 +634,7 @@ export default function AdminMyAppointments() {
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 shrink-0">
         <div>
           <h1 className="font-serif text-2xl">
-            {isAttendant ? "Atendimentos" : "Meus Atendimentos"}
+            {isAttendant ? "Agenda" : "Minha Agenda"}
           </h1>
           <p className="text-sm text-muted-foreground mt-0.5">
             {isAttendant

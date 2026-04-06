@@ -139,7 +139,7 @@ function downloadProfPDF(prof: ProfessionalSummary, dateFrom: string, dateTo: st
 
   const completionRate = prof.total > 0 ? Math.round((prof.completed / prof.total) * 100) : 0;
   const kpis = [
-    { label: "Total Atendimentos", value: String(prof.total), color: [79, 70, 229] },
+    { label: "Total Agendamentos", value: String(prof.total), color: [79, 70, 229] },
     { label: "Concluídos", value: String(prof.completed), color: [16, 185, 129] },
     { label: "Horas Trabalhadas", value: fmtHours(prof.hours_worked), color: [59, 130, 246] },
     { label: "Taxa de Conclusão", value: `${completionRate}%`, color: [139, 92, 246] },
@@ -584,7 +584,7 @@ function ProfCard({ prof, onExportPDF }: { prof: ProfessionalSummary; onExportPD
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
           <div>
             <p className="text-sm font-semibold mb-3 flex items-center gap-2">
-              <Scissors className="h-4 w-4 text-muted-foreground" /> Atendimentos por status
+              <Scissors className="h-4 w-4 text-muted-foreground" /> Agendamentos por status
             </p>
             {statusData.length > 0 ? (
               <ResponsiveContainer width="100%" height={160}>
@@ -599,7 +599,7 @@ function ProfCard({ prof, onExportPDF }: { prof: ProfessionalSummary; onExportPD
                 </BarChart>
               </ResponsiveContainer>
             ) : (
-              <p className="text-sm text-muted-foreground py-8 text-center">Sem atendimentos no período</p>
+              <p className="text-sm text-muted-foreground py-8 text-center">Sem agendamentos no período</p>
             )}
           </div>
 
@@ -633,14 +633,14 @@ function ProfCard({ prof, onExportPDF }: { prof: ProfessionalSummary; onExportPD
         {prof.by_month.length > 0 && (
           <div>
             <p className="text-sm font-semibold mb-3 flex items-center gap-2">
-              <TrendingUp className="h-4 w-4 text-muted-foreground" /> Atendimentos por mês
+              <TrendingUp className="h-4 w-4 text-muted-foreground" /> Agendamentos por mês
             </p>
             <ResponsiveContainer width="100%" height={140}>
               <BarChart data={prof.by_month} margin={{ left: 0, right: 8 }}>
                 <CartesianGrid strokeDasharray="3 3" vertical={false} />
                 <XAxis dataKey="month" tick={{ fontSize: 11 }} />
                 <YAxis tick={{ fontSize: 11 }} allowDecimals={false} />
-                <Tooltip formatter={(v) => [v, "Atendimentos"]} />
+                <Tooltip formatter={(v) => [v, "Agendamentos"]} />
                 <Bar dataKey="count" fill="hsl(var(--primary))" radius={[4, 4, 0, 0]} />
               </BarChart>
             </ResponsiveContainer>
