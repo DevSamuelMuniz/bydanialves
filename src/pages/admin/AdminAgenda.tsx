@@ -463,6 +463,8 @@ export default function AdminAgenda() {
               </SelectContent>
             </Select>
 
+            <ClientAppointmentsFilter />
+
             <div className="flex items-center space-x-2 border rounded-md px-3 h-10 border-input bg-background">
               <Checkbox
                 id="show-cancelled"
