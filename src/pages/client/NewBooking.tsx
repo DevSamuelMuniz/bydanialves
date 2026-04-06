@@ -169,32 +169,24 @@ export default function NewBooking() {
     }
 
     // "Sem preferência": union of all available slots across all branch professionals
-    // A slot is available if at least one professional is free at that time
+    // Only include professionals who have an active schedule for this day
     const profsForDay = allBranchProfessionals.filter((p) => {
-      if (p.schedules.length === 0) return true; // no schedule = always available
       return p.schedules.some((s) => s.day_of_week === dayOfWeek && s.active);
     });
 
     if (profsForDay.length === 0) {
-      // Fallback: use default window
-      return generateTimeSlots(totalDuration, 8 * 60, 17 * 60).filter((slot) => {
-        if (isToday && toMin(slot) <= currentMinutes) return false;
-        return isSlotAvailable(slot, totalDuration, bookedRanges, 3);
-      });
+      return []; // No professionals scheduled = no slots
     }
 
-    // Collect every possible slot from every professional's window
+    // Collect every possible slot from every professional's schedule window
     const slotSet = new Set<string>();
     profsForDay.forEach((prof) => {
-      let workStart = 8 * 60;
-      let workEnd = 17 * 60;
       const daySchedule = prof.schedules.find(
         (s) => s.day_of_week === dayOfWeek && s.active
       );
-      if (daySchedule) {
-        workStart = toMin(daySchedule.start_time);
-        workEnd = toMin(daySchedule.end_time);
-      }
+      if (!daySchedule) return;
+      const workStart = toMin(daySchedule.start_time);
+      const workEnd = toMin(daySchedule.end_time);
       generateTimeSlots(totalDuration, workStart, workEnd).forEach((s) => slotSet.add(s));
     });
 
