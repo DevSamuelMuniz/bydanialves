@@ -451,6 +451,11 @@ export default function AdminMyAppointments() {
     setMoving(true);
     const updates: any = { appointment_time: slot + ":00", updated_at: new Date().toISOString() };
     if (!sameProf && profId !== "__none__") updates.professional_id = profId;
+    // If moving a completed appointment, reopen it and remove financial record
+    if (dragAppt.status === "completed") {
+      updates.status = "confirmed";
+      await supabase.from("financial_records").delete().eq("appointment_id", dragAppt.id);
+    }
 
     const { error } = await supabase.from("appointments").update(updates).eq("id", dragAppt.id);
     setMoving(false);
