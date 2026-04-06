@@ -584,7 +584,7 @@ function ProfCard({ prof, onExportPDF }: { prof: ProfessionalSummary; onExportPD
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
           <div>
             <p className="text-sm font-semibold mb-3 flex items-center gap-2">
-              <Scissors className="h-4 w-4 text-muted-foreground" /> Atendimentos por status
+              <Scissors className="h-4 w-4 text-muted-foreground" /> Agendamentos por status
             </p>
             {statusData.length > 0 ? (
               <ResponsiveContainer width="100%" height={160}>
