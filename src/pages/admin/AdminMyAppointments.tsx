@@ -32,7 +32,7 @@ import {
 
 // ─── Constants ───────────────────────────────────────────────────────────────
 
-function generateSlots(start = 8, end = 17): string[] {
+function generateSlots(start = 0, end = 23): string[] {
   const slots: string[] = [];
   for (let h = start; h <= end; h++) {
     slots.push(`${String(h).padStart(2, "0")}:00`);

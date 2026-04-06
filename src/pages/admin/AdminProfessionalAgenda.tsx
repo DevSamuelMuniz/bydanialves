@@ -24,7 +24,7 @@ import { AccessDenied } from "@/components/admin/AccessDenied";
 const PAGE_SIZE = 100;
 
 // Generate time slots every 30 min
-function generateSlots(start = 8, end = 20): string[] {
+function generateSlots(start = 0, end = 24): string[] {
   const slots: string[] = [];
   for (let h = start; h < end; h++) {
     slots.push(`${String(h).padStart(2, "0")}:00`);

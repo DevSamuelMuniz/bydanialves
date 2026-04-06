@@ -90,7 +90,7 @@ interface DayRow {
   existing_id?: string;
 }
 
-const defaultDayRow = (): DayRow => ({ enabled: false, start_time: "08:00", end_time: "17:00" });
+const defaultDayRow = (): DayRow => ({ enabled: false, start_time: "08:00", end_time: "18:00" });
 
 function buildWeekState(existingSchedules: Schedule[]): Record<number, DayRow> {
   const state: Record<number, DayRow> = {};

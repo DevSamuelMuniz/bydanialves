@@ -68,8 +68,8 @@ function toMin(t: string): number {
  */
 function generateTimeSlots(
   totalMinutes: number,
-  workStart = 8 * 60,
-  workEnd = 17 * 60
+  workStart = 0,
+  workEnd = 24 * 60
 ): string[] {
   const slots: string[] = [];
   let t = workStart;
