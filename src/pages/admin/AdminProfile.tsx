@@ -11,13 +11,13 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
 import { useToast } from "@/hooks/use-toast";
-import { Mail, Phone, Calendar, Edit3, Save, Shield, Camera, Loader2, User, Info } from "lucide-react";
+import { Mail, Phone, Calendar, Edit3, Save, Shield, Camera, Loader2, User, Info, Trash2 } from "lucide-react";
 
 export default function AdminProfile() {
   const { user } = useAuth();
   const { toast } = useToast();
   const fileInputRef = useRef<HTMLInputElement>(null);
-  const { profile, loading, avatarUrl, uploadAvatar, setProfile } = useProfile();
+  const { profile, loading, avatarUrl, fetchProfile, uploadAvatar, setProfile } = useProfile();
 
   const [saving, setSaving] = useState(false);
   const [uploading, setUploading] = useState(false);
@@ -124,16 +124,40 @@ export default function AdminProfile() {
                   {initials}
                 </AvatarFallback>
               </Avatar>
-              <button
-                onClick={() => fileInputRef.current?.click()}
-                disabled={uploading}
-                className="absolute inset-0 flex items-center justify-center rounded-full bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity cursor-pointer">
-
-                {uploading ?
-                <Loader2 className="h-5 w-5 text-white animate-spin" /> :
-                <Camera className="h-5 w-5 text-white" />
-                }
-              </button>
+              <div className="absolute inset-0 flex items-center justify-center rounded-full bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity">
+                {uploading ? (
+                  <Loader2 className="h-5 w-5 text-white animate-spin" />
+                ) : (
+                  <div className="flex gap-1">
+                    <button
+                      onClick={() => fileInputRef.current?.click()}
+                      className="p-1 rounded-full hover:bg-white/20 cursor-pointer"
+                      title="Alterar foto">
+                      <Camera className="h-4 w-4 text-white" />
+                    </button>
+                    {avatarUrl && (
+                      <button
+                        onClick={async () => {
+                          if (!user) return;
+                          const { error } = await supabase
+                            .from("profiles")
+                            .update({ avatar_url: null } as any)
+                            .eq("user_id", user.id);
+                          if (error) {
+                            toast({ title: "Erro ao remover foto", description: error.message, variant: "destructive" });
+                          } else {
+                            fetchProfile();
+                            toast({ title: "Foto removida! 🗑️" });
+                          }
+                        }}
+                        className="p-1 rounded-full hover:bg-white/20 cursor-pointer"
+                        title="Remover foto">
+                        <Trash2 className="h-4 w-4 text-white" />
+                      </button>
+                    )}
+                  </div>
+                )}
+              </div>
               <input
                 ref={fileInputRef}
                 type="file"
