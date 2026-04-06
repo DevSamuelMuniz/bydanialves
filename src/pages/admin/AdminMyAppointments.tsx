@@ -628,7 +628,7 @@ export default function AdminMyAppointments() {
   // ─── Render ──────────────────────────────────────────────────────────────────
 
   return (
-    <div className="space-y-4 h-[calc(100vh-6rem)] flex flex-col">
+    <div className="flex flex-col gap-4" style={{ maxWidth: '100vw', overflow: 'hidden' }}>
 
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 shrink-0">
@@ -716,14 +716,14 @@ export default function AdminMyAppointments() {
             {[...Array(6)].map((_, i) => <Skeleton key={i} className="h-12 w-full" />)}
           </div>
         ) : (
-          <div className="flex-1 overflow-auto rounded-xl border border-border bg-card min-h-0">
+          <div className="rounded-xl border border-border bg-card overflow-x-auto overflow-y-auto" style={{ maxHeight: 'calc(100vh - 10rem)' }}>
             {visibleProfessionals.length === 0 ? (
               <div className="flex flex-col items-center justify-center h-60 text-muted-foreground gap-2">
                 <User className="h-8 w-8 opacity-30" />
                 <p className="text-sm">Nenhum profissional encontrado para esta filial.</p>
               </div>
             ) : (
-              <table className="w-full border-collapse table-fixed" style={{ minWidth: visibleProfessionals.length > 6 ? `${120 + visibleProfessionals.length * 130}px` : undefined }}>
+              <table className="w-full border-collapse" style={{ minWidth: `${60 + visibleProfessionals.length * 130}px` }}>
                 <thead className="sticky top-0 z-10 bg-card border-b border-border">
                   <tr>
                     {/* Time column header */}
