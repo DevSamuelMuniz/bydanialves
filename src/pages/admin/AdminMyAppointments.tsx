@@ -351,6 +351,14 @@ export default function AdminMyAppointments() {
     if (error) toast({ title: "Erro", description: error.message, variant: "destructive" });
     else { toast({ title: "Atendimento cancelado." }); fetchData(); }
   };
+
+  const markReopen = async (id: string) => {
+    // Delete financial record created on completion, then reopen
+    await supabase.from("financial_records").delete().eq("appointment_id", id);
+    const { error } = await supabase.from("appointments").update({ status: "confirmed", updated_at: new Date().toISOString() }).eq("id", id);
+    if (error) toast({ title: "Erro ao reabrir", description: error.message, variant: "destructive" });
+    else { toast({ title: "✅ Agendamento reaberto como confirmado." }); fetchData(); }
+  };
   // ─── Block/Unblock helpers ───────────────────────────────────────────────────
 
   const handleBlockDay = async () => {
