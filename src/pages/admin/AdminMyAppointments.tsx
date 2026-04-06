@@ -727,11 +727,11 @@ export default function AdminMyAppointments() {
                 <thead className="sticky top-0 z-10 bg-card border-b border-border">
                   <tr>
                     {/* Time column header */}
-                    <th className="w-14 border-r border-border bg-muted/40 p-2">
+                    <th className="w-12 min-w-[48px] border-r border-border bg-muted/40 p-1.5">
                       <Clock className="h-4 w-4 text-muted-foreground mx-auto" />
                     </th>
                     {visibleProfessionals.map((prof) => (
-                      <th key={prof.user_id} className="border-r border-border last:border-r-0 align-top min-w-[140px]">
+                      <th key={prof.user_id} className="border-r border-border last:border-r-0 align-top">
                         <ProfHeader prof={prof} />
                       </th>
                     ))}
