@@ -39,6 +39,7 @@ import AdminWorkCalendar from "./pages/admin/AdminWorkCalendar";
 import AdminMySchedule from "./pages/admin/AdminMySchedule";
 import QueueTV from "./pages/admin/QueueTV";
 import AdminWhatsApp from "./pages/admin/AdminWhatsApp";
+import AdminCreateAccount from "./pages/admin/AdminCreateAccount";
 import TermosDeServico from "./pages/TermosDeServico";
 import PoliticaDePrivacidade from "./pages/PoliticaDePrivacidade";
 import PoliticaETermos from "./pages/PoliticaETermos";
