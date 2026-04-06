@@ -150,15 +150,12 @@ export default function NewBooking() {
 
     if (selectedProfessional && selectedProfessional !== "none") {
       // Specific professional: use their schedule window
-      let workStart = 0;
-      let workEnd = 24 * 60;
       const daySchedule = selectedProfessional.schedules.find(
         (s) => s.day_of_week === dayOfWeek && s.active
       );
-      if (daySchedule) {
-        workStart = toMin(daySchedule.start_time);
-        workEnd = toMin(daySchedule.end_time);
-      }
+      if (!daySchedule) return []; // No schedule for this day = no slots
+      const workStart = toMin(daySchedule.start_time);
+      const workEnd = toMin(daySchedule.end_time);
       const relevantRanges = bookedRanges.filter(
         (r) => r.professionalId === selectedProfessional.user_id
       );
