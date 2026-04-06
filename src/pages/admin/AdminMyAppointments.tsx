@@ -783,7 +783,11 @@ export default function AdminMyAppointments() {
                               )}
                               style={{ minHeight: "52px" }}
                             >
-                              {isAnyBlocked && cellAppts.length === 0 ? (
+                              {isOutOfSchedule && cellAppts.length === 0 ? (
+                                <div className="w-full h-10 rounded flex items-center justify-center">
+                                  <span className="text-[10px] text-muted-foreground/40">—</span>
+                                </div>
+                              ) : isAnyBlocked && cellAppts.length === 0 ? (
                                 <div className={cn(
                                   "w-full h-10 rounded border border-dashed flex items-center justify-center border-destructive/20"
                                 )}>
