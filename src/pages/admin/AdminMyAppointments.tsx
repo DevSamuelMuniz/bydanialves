@@ -765,6 +765,8 @@ export default function AdminMyAppointments() {
             </Label>
           </div>
 
+          <ClientAppointmentsFilter />
+
           {!isToday && (
             <Button variant="ghost" size="icon" className="h-9 w-9" onClick={() => setSelectedDate(today)} title="Voltar para hoje">
               <RotateCcw className="h-4 w-4" />
