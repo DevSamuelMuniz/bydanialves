@@ -178,6 +178,13 @@ export default function AdminProfessionalAgenda() {
     }
   };
 
+  const markReopen = async (id: string) => {
+    await supabase.from("financial_records").delete().eq("appointment_id", id);
+    const { error } = await supabase.from("appointments").update({ status: "confirmed", updated_at: new Date().toISOString() }).eq("id", id);
+    if (error) toast({ title: "Erro ao reabrir", description: error.message, variant: "destructive" });
+    else { toast({ title: "✅ Agendamento reaberto como confirmado." }); }
+  };
+
   const saveNotes = async (id: string) => {
     const { error } = await supabase.from("appointments").update({ notes: notesValue }).eq("id", id);
     if (error) toast({ title: "Erro", description: error.message, variant: "destructive" });
