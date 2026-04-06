@@ -76,7 +76,7 @@ export default function ClientDashboard() {
       setAppointments(apptRes.data || []);
       setSubscription(subRes.data);
 
-      const escovas = (escovasRes.data || []).filter((a: any) => a.services?.is_system === true);
+      const escovas = (escovasRes.data || []).filter((a: any) => a.services?.is_system === true || /escova/i.test(a.services?.name || ""));
       setEscovasUsadas(escovas.length);
       setLoading(false);
     };

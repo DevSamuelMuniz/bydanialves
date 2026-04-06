@@ -418,7 +418,7 @@ export default function NewBooking() {
           .gte("appointment_date", subStart)
           .lte("appointment_date", subEnd)
           .neq("status", "cancelled");
-        const escovasUsadas = (appointments || []).filter((a: any) => a.services?.is_system === true).length;
+        const escovasUsadas = (appointments || []).filter((a: any) => a.services?.is_system === true || /escova/i.test(a.services?.name || "")).length;
         setEscovasDisponiveis(Math.max(0, totalEscovas - escovasUsadas));
 
         // Fetch professionals authorized for this plan
