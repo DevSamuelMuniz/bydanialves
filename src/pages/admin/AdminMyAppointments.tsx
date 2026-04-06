@@ -1169,6 +1169,81 @@ export default function AdminMyAppointments() {
                   </AlertDialog>
                 </div>
               )}
+              {detailAppt.status === "completed" && (
+                <div className="flex gap-2 pt-1">
+                  <AlertDialog>
+                    <AlertDialogTrigger asChild>
+                      <Button size="sm" variant="outline" className="flex-1 gap-1">
+                        <RotateCcw className="h-3.5 w-3.5" />
+                        Reabrir
+                      </Button>
+                    </AlertDialogTrigger>
+                    <AlertDialogContent>
+                      <AlertDialogHeader>
+                        <AlertDialogTitle>Reabrir atendimento concluído?</AlertDialogTitle>
+                        <AlertDialogDescription>O status voltará para "Confirmado" e o registro financeiro será removido.</AlertDialogDescription>
+                      </AlertDialogHeader>
+                      <AlertDialogFooter>
+                        <AlertDialogCancel>Voltar</AlertDialogCancel>
+                        <AlertDialogAction onClick={() => { markReopen(detailAppt.id); setDetailAppt(null); }}>
+                          Confirmar Reabertura
+                        </AlertDialogAction>
+                      </AlertDialogFooter>
+                    </AlertDialogContent>
+                  </AlertDialog>
+                  <AlertDialog>
+                    <AlertDialogTrigger asChild>
+                      <Button size="sm" variant="outline" className="gap-1 text-destructive border-destructive/40 hover:bg-destructive/10">
+                        <XCircle className="h-3.5 w-3.5" />
+                        Cancelar
+                      </Button>
+                    </AlertDialogTrigger>
+                    <AlertDialogContent>
+                      <AlertDialogHeader>
+                        <AlertDialogTitle>Cancelar atendimento concluído?</AlertDialogTitle>
+                        <AlertDialogDescription>O registro financeiro será removido e o agendamento será cancelado.</AlertDialogDescription>
+                      </AlertDialogHeader>
+                      <AlertDialogFooter>
+                        <AlertDialogCancel>Voltar</AlertDialogCancel>
+                        <AlertDialogAction
+                          className="bg-destructive hover:bg-destructive/90 text-destructive-foreground"
+                          onClick={async () => {
+                            await supabase.from("financial_records").delete().eq("appointment_id", detailAppt.id);
+                            markCancel(detailAppt.id);
+                            setDetailAppt(null);
+                          }}
+                        >
+                          Confirmar Cancelamento
+                        </AlertDialogAction>
+                      </AlertDialogFooter>
+                    </AlertDialogContent>
+                  </AlertDialog>
+                </div>
+              )}
+              {detailAppt.status === "cancelled" && (
+                <div className="flex gap-2 pt-1">
+                  <AlertDialog>
+                    <AlertDialogTrigger asChild>
+                      <Button size="sm" variant="outline" className="flex-1 gap-1">
+                        <RotateCcw className="h-3.5 w-3.5" />
+                        Reabrir
+                      </Button>
+                    </AlertDialogTrigger>
+                    <AlertDialogContent>
+                      <AlertDialogHeader>
+                        <AlertDialogTitle>Reabrir agendamento cancelado?</AlertDialogTitle>
+                        <AlertDialogDescription>O status voltará para "Confirmado".</AlertDialogDescription>
+                      </AlertDialogHeader>
+                      <AlertDialogFooter>
+                        <AlertDialogCancel>Voltar</AlertDialogCancel>
+                        <AlertDialogAction onClick={() => { markReopen(detailAppt.id); setDetailAppt(null); }}>
+                          Confirmar Reabertura
+                        </AlertDialogAction>
+                      </AlertDialogFooter>
+                    </AlertDialogContent>
+                  </AlertDialog>
+                </div>
+              )}
             </div>
           )}
           <DialogFooter>
