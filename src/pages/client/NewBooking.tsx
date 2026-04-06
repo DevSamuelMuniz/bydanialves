@@ -408,8 +408,13 @@ export default function NewBooking() {
         const plan = (sub as any).plans;
         setTemPlanoAtivo(true);
         const totalEscovas = parseEscovasFromIncludes(plan.includes);
-        const subStart = sub.started_at ? sub.started_at.split('T')[0] : new Date().toISOString().split('T')[0];
-        const subEnd = sub.expires_at ? sub.expires_at.split('T')[0] : new Date().toISOString().split('T')[0];
+        const subStartDate = new Date(sub.started_at || Date.now());
+        const subStart = subStartDate.toISOString().split('T')[0];
+        // If no expires_at, calculate 30 days from started_at (subscription cycle)
+        const subEndDate = sub.expires_at
+          ? new Date(sub.expires_at)
+          : new Date(subStartDate.getTime() + 30 * 24 * 60 * 60 * 1000);
+        const subEnd = subEndDate.toISOString().split('T')[0];
 
         const { data: appointments } = await supabase
           .from("appointments")
