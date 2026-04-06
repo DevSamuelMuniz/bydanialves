@@ -51,9 +51,8 @@ function fmtDate(d: Date): string {
   return `${String(d.getDate()).padStart(2, "0")}/${String(d.getMonth() + 1).padStart(2, "0")}`;
 }
 
-const HOURS = Array.from({ length: 10 }, (_, i) => {
-  const h = i + 8;
-  return `${String(h).padStart(2, "0")}:00`;
+const HOURS = Array.from({ length: 24 }, (_, i) => {
+  return `${String(i).padStart(2, "0")}:00`;
 });
 
 const LEVEL_OPTIONS: { value: NonNullable<AdminLevel>; label: string }[] = [
