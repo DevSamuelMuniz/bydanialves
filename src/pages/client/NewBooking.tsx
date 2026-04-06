@@ -505,6 +505,49 @@ export default function NewBooking() {
     if (!user || selectedServices.length === 0 || !selectedDate || !selectedTime) return;
     setSubmitting(true);
 
+    // Re-validate escova credits at confirmation time to prevent race conditions
+    if (temPlanoAtivo) {
+      const escovasNoAgendamento = selectedServices.filter(s => isPlanBrushService(s)).length;
+      if (escovasNoAgendamento > 0) {
+        // Re-fetch current usage from DB
+        const { data: sub } = await supabase
+          .from("subscriptions")
+          .select("*, plans(*)")
+          .eq("client_id", user.id)
+          .eq("status", "active")
+          .maybeSingle();
+
+        if (sub && (sub as any).plans) {
+          const plan = (sub as any).plans;
+          const totalEscovas = parseEscovasFromIncludes(plan.includes);
+          const subStart = sub.started_at ? sub.started_at.split('T')[0] : new Date().toISOString().split('T')[0];
+          const subEnd = sub.expires_at ? sub.expires_at.split('T')[0] : new Date().toISOString().split('T')[0];
+
+          const { data: appts } = await supabase
+            .from("appointments")
+            .select("*, services(name, is_system)")
+            .eq("client_id", user.id)
+            .gte("appointment_date", subStart)
+            .lte("appointment_date", subEnd)
+            .neq("status", "cancelled");
+
+          const escovasUsadasAtual = (appts || []).filter((a: any) => a.services?.is_system === true).length;
+          const creditosRestantes = Math.max(0, totalEscovas - escovasUsadasAtual);
+
+          if (escovasNoAgendamento > creditosRestantes) {
+            toast({
+              title: "Limite de escovas atingido",
+              description: `Você tem ${creditosRestantes} escova(s) disponível(is) no seu plano, mas está tentando agendar ${escovasNoAgendamento}.`,
+              variant: "destructive",
+            });
+            setEscovasDisponiveis(creditosRestantes);
+            setSubmitting(false);
+            return;
+          }
+        }
+      }
+    }
+
     const dateStr = selectedDate.toISOString().split("T")[0];
     const errors: string[] = [];
     const profId = selectedProfessional && selectedProfessional !== "none"
