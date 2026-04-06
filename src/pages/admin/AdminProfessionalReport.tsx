@@ -640,7 +640,7 @@ function ProfCard({ prof, onExportPDF }: { prof: ProfessionalSummary; onExportPD
                 <CartesianGrid strokeDasharray="3 3" vertical={false} />
                 <XAxis dataKey="month" tick={{ fontSize: 11 }} />
                 <YAxis tick={{ fontSize: 11 }} allowDecimals={false} />
-                <Tooltip formatter={(v) => [v, "Atendimentos"]} />
+                <Tooltip formatter={(v) => [v, "Agendamentos"]} />
                 <Bar dataKey="count" fill="hsl(var(--primary))" radius={[4, 4, 0, 0]} />
               </BarChart>
             </ResponsiveContainer>
