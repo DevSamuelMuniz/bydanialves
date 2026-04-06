@@ -753,7 +753,7 @@ export default function AdminMyAppointments() {
                       >
                         {/* Time label */}
                         <td className={cn(
-                          "w-14 border-r border-border p-2 text-center align-top sticky left-0 bg-card z-[1]",
+                          "w-12 min-w-[48px] border-r border-border p-1 text-center align-top sticky left-0 bg-card z-[1]",
                           isCurrentHour && "bg-primary/10"
                         )}>
                           <span className={cn(
