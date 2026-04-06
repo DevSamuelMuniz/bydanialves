@@ -425,6 +425,52 @@ export default function AdminMyAppointments() {
 
   const isToday = format(selectedDate, "yyyy-MM-dd") === format(today, "yyyy-MM-dd");
 
+  // Compute dynamic ALL_SLOTS based on professional schedules for the selected day
+  const ALL_SLOTS = useMemo(() => {
+    const dayOfWeek = selectedDate.getDay();
+    const slotSet = new Set<string>();
+
+    professionals.forEach((prof) => {
+      const daySchedule = prof.schedules.find(
+        (s) => s.day_of_week === dayOfWeek && s.active
+      );
+      if (daySchedule) {
+        const startH = Math.floor(toMin(daySchedule.start_time) / 60);
+        const endH = Math.floor(toMin(daySchedule.end_time) / 60);
+        generateSlots(startH, endH).forEach((s) => slotSet.add(s));
+      }
+    });
+
+    // If no schedules found, fallback to all appointment times from the day
+    if (slotSet.size === 0) {
+      appointments.forEach((a) => {
+        const slot = a.appointment_time?.slice(0, 5);
+        if (slot) slotSet.add(slot);
+      });
+    }
+
+    return Array.from(slotSet).sort();
+  }, [selectedDate, professionals, appointments]);
+
+  // Compute which slots each professional is scheduled for
+  const profSlots = useMemo(() => {
+    const dayOfWeek = selectedDate.getDay();
+    const map: Record<string, Set<string>> = {};
+    professionals.forEach((prof) => {
+      const daySchedule = prof.schedules.find(
+        (s) => s.day_of_week === dayOfWeek && s.active
+      );
+      if (daySchedule) {
+        const startH = Math.floor(toMin(daySchedule.start_time) / 60);
+        const endH = Math.floor(toMin(daySchedule.end_time) / 60);
+        map[prof.user_id] = new Set(generateSlots(startH, endH));
+      } else {
+        map[prof.user_id] = new Set();
+      }
+    });
+    return map;
+  }, [selectedDate, professionals]);
+
   // For attendant: build map [slot][professional_id] => appointment[]
   const slotMap = useMemo(() => {
     const m: Record<string, Record<string, any[]>> = {};
@@ -436,13 +482,14 @@ export default function AdminMyAppointments() {
         return;
       }
       const slot = a.appointment_time?.slice(0, 5);
-      if (!slot || !m[slot]) return;
+      if (!slot) return;
+      if (!m[slot]) m[slot] = {};
       const pid = a.professional_id ?? "__none__";
       if (!m[slot][pid]) m[slot][pid] = [];
       m[slot][pid].push(a);
     });
     return m;
-  }, [appointments, showCancelled, onlyCancelled]);
+  }, [appointments, showCancelled, onlyCancelled, ALL_SLOTS]);
 
   // For professional view (non-attendant)
   const confirmed = useMemo(() =>
