@@ -771,13 +771,15 @@ export default function AdminMyAppointments() {
                           const isProfFullDayBlocked = profBlockInfo?.isFullDay ?? false;
                           const isSlotBlocked = !isProfFullDayBlocked && (profBlockInfo?.blockedSlots?.includes(slot) ?? false);
                           const isAnyBlocked = isProfFullDayBlocked || isSlotBlocked;
+                          const isOutOfSchedule = profSlots[prof.user_id] && !profSlots[prof.user_id].has(slot);
                           return (
                             <td
                               key={prof.user_id}
                               className={cn(
                                 "border-r border-border last:border-r-0 p-1.5 align-top min-h-[52px]",
                                 isProfFullDayBlocked && "bg-destructive/5",
-                                isSlotBlocked && "bg-destructive/5"
+                                isSlotBlocked && "bg-destructive/5",
+                                isOutOfSchedule && "bg-muted/30"
                               )}
                               style={{ minHeight: "52px" }}
                             >
