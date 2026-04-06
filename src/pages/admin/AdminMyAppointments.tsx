@@ -173,7 +173,14 @@ export default function AdminMyAppointments() {
           .select("user_id, full_name, avatar_url")
           .in("user_id", profIds)
           .order("full_name");
-        setProfessionals(profProfiles || []);
+        const resolved = (profProfiles || []).map((p: any) => {
+          let url = p.avatar_url;
+          if (url && !url.startsWith("http")) {
+            url = supabase.storage.from("avatars").getPublicUrl(url).data.publicUrl + "?t=" + Date.now();
+          }
+          return { ...p, avatar_url: url };
+        });
+        setProfessionals(resolved);
       } else {
         setProfessionals([]);
       }
