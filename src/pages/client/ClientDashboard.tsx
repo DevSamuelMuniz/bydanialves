@@ -51,11 +51,7 @@ export default function ClientDashboard() {
   useEffect(() => {
     if (!user) return;
     const fetchData = async () => {
-      const now = new Date();
-      const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1).toISOString().split("T")[0];
-      const endOfMonth = new Date(now.getFullYear(), now.getMonth() + 1, 0).toISOString().split("T")[0];
-
-      const [profileRes, apptRes, subRes, escovasRes] = await Promise.all([
+      const [profileRes, apptRes, subRes] = await Promise.all([
         supabase.from("profiles").select("*").eq("user_id", user.id).single(),
         supabase
           .from("appointments")
@@ -64,20 +60,32 @@ export default function ClientDashboard() {
           .order("appointment_date", { ascending: true })
           .order("appointment_time", { ascending: true }),
         supabase.from("subscriptions").select("*, plans(*)").eq("client_id", user.id).eq("status", "active").maybeSingle(),
-        supabase
-          .from("appointments")
-          .select("*, services(name, is_system)")
-          .eq("client_id", user.id)
-          .gte("appointment_date", startOfMonth)
-          .lte("appointment_date", endOfMonth)
-          .neq("status", "cancelled"),
       ]);
       setProfile(profileRes.data);
       setAppointments(apptRes.data || []);
       setSubscription(subRes.data);
 
-      const escovas = (escovasRes.data || []).filter((a: any) => a.services?.is_system === true || /escova/i.test(a.services?.name || ""));
-      setEscovasUsadas(escovas.length);
+      // Count escovas using subscription period (not calendar month)
+      if (subRes.data) {
+        const sub = subRes.data;
+        const subStartDate = new Date(sub.started_at || Date.now());
+        const subStart = subStartDate.toISOString().split("T")[0];
+        const subEndDate = sub.expires_at
+          ? new Date(sub.expires_at)
+          : new Date(subStartDate.getTime() + 30 * 24 * 60 * 60 * 1000);
+        const subEnd = subEndDate.toISOString().split("T")[0];
+
+        const { data: escovasData } = await supabase
+          .from("appointments")
+          .select("*, services(name, is_system)")
+          .eq("client_id", user.id)
+          .gte("appointment_date", subStart)
+          .lte("appointment_date", subEnd)
+          .neq("status", "cancelled");
+
+        const escovas = (escovasData || []).filter((a: any) => a.services?.is_system === true || /escova/i.test(a.services?.name || ""));
+        setEscovasUsadas(escovas.length);
+      }
       setLoading(false);
     };
     fetchData();
