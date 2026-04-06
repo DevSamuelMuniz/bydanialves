@@ -16,7 +16,7 @@ import {
 } from "@/components/ui/collapsible";
 import {
   LayoutDashboard, Users, Calendar, Scissors, DollarSign,
-  Crown, Activity, ClipboardList, Building2, Tag, Star, Tv2, UserCheck,
+  Crown, Activity, ClipboardList, Building2, Tag, Star, Tv2, UserCheck, UserPlus,
   ChevronDown, BarChart2, LogOut, CalendarDays, TableProperties, Award, MessageCircle,
 } from "lucide-react";
 import { useLocation } from "react-router-dom";
