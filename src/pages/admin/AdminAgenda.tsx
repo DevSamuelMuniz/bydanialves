@@ -344,6 +344,29 @@ export default function AdminAgenda() {
               </Button>
             )}
 
+            {(col.key === "completed" || col.key === "cancelled") && (
+              <AlertDialog>
+                <AlertDialogTrigger asChild>
+                  <Button size="sm" variant="outline" className="h-7 text-xs gap-1">
+                    <RotateCcw className="h-3 w-3" />
+                    Reabrir
+                  </Button>
+                </AlertDialogTrigger>
+                <AlertDialogContent>
+                  <AlertDialogHeader>
+                    <AlertDialogTitle>Reabrir agendamento?</AlertDialogTitle>
+                    <AlertDialogDescription>
+                      {col.key === "completed" ? "O status voltará para \"Confirmado\" e o registro financeiro será removido." : "O status voltará para \"Confirmado\"."}
+                    </AlertDialogDescription>
+                  </AlertDialogHeader>
+                  <AlertDialogFooter>
+                    <AlertDialogCancel>Voltar</AlertDialogCancel>
+                    <AlertDialogAction onClick={() => markReopen(a.id)}>Confirmar Reabertura</AlertDialogAction>
+                  </AlertDialogFooter>
+                </AlertDialogContent>
+              </AlertDialog>
+            )}
+
             {col.key !== "cancelled" && (
             <div className="ml-auto">
               <AlertDialog>
@@ -355,11 +378,18 @@ export default function AdminAgenda() {
                 <AlertDialogContent>
                   <AlertDialogHeader>
                     <AlertDialogTitle>Cancelar agendamento?</AlertDialogTitle>
-                    <AlertDialogDescription>Esta ação não pode ser desfeita.</AlertDialogDescription>
+                    <AlertDialogDescription>
+                      {col.key === "completed" ? "O registro financeiro será removido e o agendamento será cancelado." : "Esta ação não pode ser desfeita."}
+                    </AlertDialogDescription>
                   </AlertDialogHeader>
                   <AlertDialogFooter>
                     <AlertDialogCancel>Voltar</AlertDialogCancel>
-                    <AlertDialogAction onClick={() => updateStatus(a.id, "cancelled")}>Cancelar Agendamento</AlertDialogAction>
+                    <AlertDialogAction onClick={async () => {
+                      if (a.status === "completed") {
+                        await supabase.from("financial_records").delete().eq("appointment_id", a.id);
+                      }
+                      updateStatus(a.id, "cancelled");
+                    }}>Cancelar Agendamento</AlertDialogAction>
                   </AlertDialogFooter>
                 </AlertDialogContent>
               </AlertDialog>
