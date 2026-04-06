@@ -129,6 +129,11 @@ export default function AdminMyAppointments() {
   const [selectedBlockSlots, setSelectedBlockSlots] = useState<string[]>([]);
   const [dayBlocks, setDayBlocks] = useState<Record<string, { isFullDay: boolean; blockedSlots: string[] }>>({}); // professional_id -> block info
 
+  // Drag-and-drop state
+  const [dragAppt, setDragAppt] = useState<any | null>(null);
+  const [dropTarget, setDropTarget] = useState<{ slot: string; profId: string } | null>(null);
+  const [moving, setMoving] = useState(false);
+
   // ─── Data fetching ──────────────────────────────────────────────────────────
 
   const fetchDayBlocks = useCallback(async (dateStr: string) => {
