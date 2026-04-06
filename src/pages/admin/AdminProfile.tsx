@@ -11,7 +11,7 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
 import { useToast } from "@/hooks/use-toast";
-import { Mail, Phone, Calendar, Edit3, Save, Shield, Camera, Loader2, User, Info } from "lucide-react";
+import { Mail, Phone, Calendar, Edit3, Save, Shield, Camera, Loader2, User, Info, Trash2 } from "lucide-react";
 
 export default function AdminProfile() {
   const { user } = useAuth();
