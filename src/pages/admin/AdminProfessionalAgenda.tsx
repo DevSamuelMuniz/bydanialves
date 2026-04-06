@@ -455,6 +455,8 @@ export default function AdminProfessionalAgenda() {
               </PopoverTrigger>
               <PopoverContent className="w-auto p-0"><Calendar mode="single" selected={dateTo} onSelect={(d) => setDateTo(d)} locale={ptBR} /></PopoverContent>
             </Popover>
+
+            <ClientAppointmentsFilter />
           </div>
           {(dateFrom || dateTo || branchFilter !== "all" || (isManager && profFilter !== "all")) && (
             <Button variant="ghost" size="sm" className="mt-2 text-xs" onClick={resetFilters}>Limpar filtros</Button>

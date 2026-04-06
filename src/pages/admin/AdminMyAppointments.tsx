@@ -25,6 +25,7 @@ import {
   ChevronDown, ChevronUp, PlayCircle, LockKeyhole, UnlockKeyhole, CalendarOff,
   GripVertical,
 } from "lucide-react";
+import ClientAppointmentsFilter from "@/components/admin/ClientAppointmentsFilter";
 import {
   AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
   AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle,
