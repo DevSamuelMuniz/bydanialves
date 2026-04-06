@@ -442,9 +442,9 @@ export default function AdminMyAppointments() {
     const sameProf = (dragAppt.professional_id ?? "__none__") === profId;
     if (sameSlot && sameProf) { setDragAppt(null); setDropTarget(null); return; }
 
-    // Don't allow moving completed/cancelled
-    if (["completed", "cancelled"].includes(dragAppt.status)) {
-      toast({ title: "Não é possível mover agendamentos concluídos ou cancelados", variant: "destructive" });
+    // Don't allow moving cancelled
+    if (dragAppt.status === "cancelled") {
+      toast({ title: "Não é possível mover agendamentos cancelados", variant: "destructive" });
       setDragAppt(null); setDropTarget(null); return;
     }
 
