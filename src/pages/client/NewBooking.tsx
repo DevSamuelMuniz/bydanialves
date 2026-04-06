@@ -483,9 +483,15 @@ export default function NewBooking() {
   }, [selectedDate, selectedBranch]);
 
   const toggleService = (s: ServiceItem) => {
-    if (temPlanoAtivo && isPlanBrushService(s) && escovasDisponiveis === 0) {
-      setPlanEsgotadoOpen(true);
-      return;
+    const isRemoving = selectedServices.find((x) => x.id === s.id);
+
+    if (!isRemoving && temPlanoAtivo && isPlanBrushService(s)) {
+      // Check if adding this escova would exceed the limit
+      const escovasJaSelecionadas = selectedServices.filter(x => isPlanBrushService(x)).length;
+      if (escovasJaSelecionadas >= escovasDisponiveis) {
+        setPlanEsgotadoOpen(true);
+        return;
+      }
     }
 
     setSelectedServices((prev) => {
