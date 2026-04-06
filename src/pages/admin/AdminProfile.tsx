@@ -17,7 +17,7 @@ export default function AdminProfile() {
   const { user } = useAuth();
   const { toast } = useToast();
   const fileInputRef = useRef<HTMLInputElement>(null);
-  const { profile, loading, avatarUrl, uploadAvatar, setProfile } = useProfile();
+  const { profile, loading, avatarUrl, fetchProfile, uploadAvatar, setProfile } = useProfile();
 
   const [saving, setSaving] = useState(false);
   const [uploading, setUploading] = useState(false);
