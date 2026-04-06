@@ -628,7 +628,7 @@ export default function AdminMyAppointments() {
   // ─── Render ──────────────────────────────────────────────────────────────────
 
   return (
-    <div className="space-y-4 h-[calc(100vh-6rem)] flex flex-col">
+    <div className="flex flex-col gap-4" style={{ maxWidth: '100vw', overflow: 'hidden' }}>
 
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 shrink-0">
