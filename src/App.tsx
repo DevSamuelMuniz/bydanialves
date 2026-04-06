@@ -106,6 +106,7 @@ const App = () => (
               <Route path="my-schedule" element={<AdminMySchedule />} />
               <Route path="whatsapp" element={<AdminWhatsApp />} />
               <Route path="create-account" element={<AdminCreateAccount />} />
+              <Route path="invite-link" element={<AdminInviteLink />} />
             </Route>
 
             <Route path="*" element={<NotFound />} />
