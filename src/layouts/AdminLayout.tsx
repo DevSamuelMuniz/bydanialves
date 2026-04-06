@@ -13,9 +13,9 @@ export default function AdminLayout() {
     <SidebarProvider>
       <div className="min-h-screen flex w-full bg-background">
         <AdminSidebar />
-        <main className="flex-1 flex flex-col">
+        <main className="flex-1 flex flex-col min-w-0 overflow-hidden">
           <AdminHeader />
-          <div className="flex-1 p-4 md:p-8 animate-fade-in overflow-auto w-full">
+          <div className="flex-1 p-4 md:p-8 animate-fade-in overflow-y-auto overflow-x-hidden w-full">
             <Outlet />
           </div>
         </main>
