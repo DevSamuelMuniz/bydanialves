@@ -32,6 +32,11 @@ import {
 
 // ─── Constants ───────────────────────────────────────────────────────────────
 
+function toMin(t: string): number {
+  const parts = t.split(":").map(Number);
+  return parts[0] * 60 + (parts[1] ?? 0);
+}
+
 function generateSlots(start = 6, end = 22): string[] {
   const slots: string[] = [];
   for (let h = start; h <= end; h++) {
@@ -40,7 +45,19 @@ function generateSlots(start = 6, end = 22): string[] {
   return slots;
 }
 
-const ALL_SLOTS = generateSlots();
+interface ProfSchedule {
+  day_of_week: number;
+  start_time: string;
+  end_time: string;
+  active: boolean;
+}
+
+interface ProfWithSchedule {
+  user_id: string;
+  full_name: string;
+  avatar_url: string | null;
+  schedules: ProfSchedule[];
+}
 
 const DEFAULT_PAYMENT = "plan";
 
