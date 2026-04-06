@@ -525,8 +525,12 @@ export default function NewBooking() {
         if (sub && (sub as any).plans) {
           const plan = (sub as any).plans;
           const totalEscovas = parseEscovasFromIncludes(plan.includes);
-          const subStart = sub.started_at ? sub.started_at.split('T')[0] : new Date().toISOString().split('T')[0];
-          const subEnd = sub.expires_at ? sub.expires_at.split('T')[0] : new Date().toISOString().split('T')[0];
+          const subStartDate2 = new Date(sub.started_at || Date.now());
+          const subStart = subStartDate2.toISOString().split('T')[0];
+          const subEndDate2 = sub.expires_at
+            ? new Date(sub.expires_at)
+            : new Date(subStartDate2.getTime() + 30 * 24 * 60 * 60 * 1000);
+          const subEnd = subEndDate2.toISOString().split('T')[0];
 
           const { data: appts } = await supabase
             .from("appointments")
