@@ -1260,7 +1260,27 @@ export default function AdminMyAppointments() {
             <div className="space-y-2">
               <Label>Horário <span className="text-destructive">*</span></Label>
               <div className="grid grid-cols-4 sm:grid-cols-6 gap-1.5 max-h-36 overflow-y-auto pr-1">
-                {generateSlots().filter((slot) => {
+                {(() => {
+                  // Get slots based on selected professional's schedule
+                  let slots = generateSlots();
+                  if (bookingForm.professional_id && bookingForm.date) {
+                    const prof = professionals.find((p) => p.user_id === bookingForm.professional_id);
+                    if (prof) {
+                      const dayOfWeek = bookingForm.date.getDay();
+                      const daySchedule = prof.schedules.find(
+                        (s) => s.day_of_week === dayOfWeek && s.active
+                      );
+                      if (daySchedule) {
+                        const startH = Math.floor(toMin(daySchedule.start_time) / 60);
+                        const endH = Math.floor(toMin(daySchedule.end_time) / 60);
+                        slots = generateSlots(startH, endH);
+                      } else {
+                        slots = [];
+                      }
+                    }
+                  }
+                  return slots;
+                })().filter((slot) => {
                   if (!bookingForm.date) return true;
                   const now = new Date();
                   const d = bookingForm.date;
