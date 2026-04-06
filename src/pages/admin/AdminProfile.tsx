@@ -146,7 +146,7 @@ export default function AdminProfile() {
                           if (error) {
                             toast({ title: "Erro ao remover foto", description: error.message, variant: "destructive" });
                           } else {
-                            resolveAvatarUrl(null);
+                            fetchProfile();
                             toast({ title: "Foto removida! 🗑️" });
                           }
                         }}
