@@ -716,14 +716,14 @@ export default function AdminMyAppointments() {
             {[...Array(6)].map((_, i) => <Skeleton key={i} className="h-12 w-full" />)}
           </div>
         ) : (
-          <div className="flex-1 overflow-auto rounded-xl border border-border bg-card">
+          <div className="flex-1 overflow-auto rounded-xl border border-border bg-card min-h-0">
             {visibleProfessionals.length === 0 ? (
               <div className="flex flex-col items-center justify-center h-60 text-muted-foreground gap-2">
                 <User className="h-8 w-8 opacity-30" />
                 <p className="text-sm">Nenhum profissional encontrado para esta filial.</p>
               </div>
             ) : (
-              <table className="w-full border-collapse" style={{ minWidth: `${120 + visibleProfessionals.length * 140}px` }}>
+              <table className="w-full border-collapse table-fixed" style={{ minWidth: visibleProfessionals.length > 6 ? `${120 + visibleProfessionals.length * 130}px` : undefined }}>
                 <thead className="sticky top-0 z-10 bg-card border-b border-border">
                   <tr>
                     {/* Time column header */}
