@@ -229,7 +229,7 @@ export function AdminSidebar() {
   const groups: NavGroupDef[] = [
     {
       label: "Gestão",
-      urls: ["/admin", "/admin/my-appointments", "/admin/my-schedule", "/admin/clients", "/admin/branches", "/admin/professionals", "/admin/create-account"],
+      urls: ["/admin", "/admin/my-appointments", "/admin/my-schedule", "/admin/clients", "/admin/branches", "/admin/professionals", "/admin/create-account", "/admin/invite-link"],
       items: gestaoItems,
       showProfDropdown: showProfDropdownFinal,
     },
