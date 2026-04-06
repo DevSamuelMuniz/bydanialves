@@ -823,16 +823,29 @@ export default function AdminMyAppointments() {
                           const isSlotBlocked = !isProfFullDayBlocked && (profBlockInfo?.blockedSlots?.includes(slot) ?? false);
                           const isAnyBlocked = isProfFullDayBlocked || isSlotBlocked;
                           const isOutOfSchedule = profSlots[prof.user_id] && !profSlots[prof.user_id].has(slot);
+                          const isDropHere = dropTarget?.slot === slot && dropTarget?.profId === prof.user_id;
                           return (
                             <td
                               key={prof.user_id}
                               className={cn(
-                                "border-r border-border last:border-r-0 p-1.5 align-top min-h-[52px]",
+                                "border-r border-border last:border-r-0 p-1.5 align-top min-h-[52px] transition-colors",
                                 isProfFullDayBlocked && "bg-destructive/5",
                                 isSlotBlocked && "bg-destructive/5",
-                                isOutOfSchedule && "bg-muted/30"
+                                isOutOfSchedule && "bg-muted/30",
+                                isDropHere && "bg-primary/15 ring-2 ring-primary/40 ring-inset"
                               )}
                               style={{ minHeight: "52px" }}
+                              onDragOver={(e) => {
+                                e.preventDefault();
+                                e.dataTransfer.dropEffect = "move";
+                                setDropTarget({ slot, profId: prof.user_id });
+                              }}
+                              onDragLeave={() => setDropTarget(null)}
+                              onDrop={(e) => {
+                                e.preventDefault();
+                                setDropTarget(null);
+                                handleDrop(slot, prof.user_id);
+                              }}
                             >
                               {isOutOfSchedule && cellAppts.length === 0 ? (
                                 <div className="w-full h-10 rounded flex items-center justify-center">
