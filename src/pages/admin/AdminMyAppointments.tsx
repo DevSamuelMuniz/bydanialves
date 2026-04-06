@@ -561,7 +561,7 @@ export default function AdminMyAppointments() {
   // Tiny appointment chip inside the grid cell
   const ApptChip = ({ a }: { a: any }) => {
     const st = STATUS_STYLE[a.status] || STATUS_STYLE.pending;
-    const isDraggable = ["pending", "confirmed"].includes(a.status);
+    const isDraggable = ["pending", "confirmed", "completed"].includes(a.status);
     return (
       <button
         draggable={isDraggable}
