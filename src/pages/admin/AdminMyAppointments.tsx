@@ -197,7 +197,29 @@ export default function AdminMyAppointments() {
           }
           return { ...p, avatar_url: url };
         });
-        setProfessionals(resolved);
+
+        // Fetch schedules for all professionals
+        const { data: schedData } = await supabase
+          .from("professional_schedules")
+          .select("professional_id, day_of_week, start_time, end_time, active")
+          .in("professional_id", profIds);
+
+        const schedMap: Record<string, ProfSchedule[]> = {};
+        (schedData || []).forEach((s: any) => {
+          if (!schedMap[s.professional_id]) schedMap[s.professional_id] = [];
+          schedMap[s.professional_id].push({
+            day_of_week: s.day_of_week,
+            start_time: s.start_time?.slice(0, 5) || "08:00",
+            end_time: s.end_time?.slice(0, 5) || "18:00",
+            active: s.active,
+          });
+        });
+
+        const profsWithSchedules: ProfWithSchedule[] = resolved.map((p: any) => ({
+          ...p,
+          schedules: schedMap[p.user_id] || [],
+        }));
+        setProfessionals(profsWithSchedules);
       } else {
         setProfessionals([]);
       }
