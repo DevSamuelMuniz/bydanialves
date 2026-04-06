@@ -941,7 +941,7 @@ export default function AdminMyAppointments() {
                 <div className="space-y-2">
                   <Label className="text-xs text-muted-foreground">Selecione os horários para fechar:</Label>
                   <div className="grid grid-cols-5 gap-1.5">
-                    {ALL_SLOTS.map((slot) => {
+                    {(blockTarget ? Array.from(profSlots[blockTarget.user_id] || []).sort() : ALL_SLOTS).map((slot) => {
                       const isSelected = selectedBlockSlots.includes(slot);
                       return (
                         <button
