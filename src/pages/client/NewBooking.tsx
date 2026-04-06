@@ -130,8 +130,15 @@ export default function NewBooking() {
   const [blockedSlotsMap, setBlockedSlotsMap] = useState<Record<string, string[]>>({}); // professional_id -> blocked slot times
 
   const totalDuration = selectedServices.reduce((acc, s) => acc + s.duration_minutes, 0);
+
+  // Count how many escova services are selected in the current session
+  const escovasNaSessao = selectedServices.filter(s => isPlanBrushService(s)).length;
+
   const totalPrice = selectedServices.reduce((acc, s) => {
-    const free = temPlanoAtivo && isPlanBrushService(s) && escovasDisponiveis > 0;
+    if (!temPlanoAtivo || !isPlanBrushService(s)) return acc + Number(s.price);
+    // Count how many escovas before this one in the selection are free
+    const escovasAntes = selectedServices.filter((x, i) => i < selectedServices.indexOf(s) && isPlanBrushService(x)).length;
+    const free = escovasAntes < escovasDisponiveis;
     return acc + (free ? 0 : Number(s.price));
   }, 0);
 
