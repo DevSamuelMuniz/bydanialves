@@ -351,6 +351,14 @@ export default function AdminMyAppointments() {
     if (error) toast({ title: "Erro", description: error.message, variant: "destructive" });
     else { toast({ title: "Atendimento cancelado." }); fetchData(); }
   };
+
+  const markReopen = async (id: string) => {
+    // Delete financial record created on completion, then reopen
+    await supabase.from("financial_records").delete().eq("appointment_id", id);
+    const { error } = await supabase.from("appointments").update({ status: "confirmed", updated_at: new Date().toISOString() }).eq("id", id);
+    if (error) toast({ title: "Erro ao reabrir", description: error.message, variant: "destructive" });
+    else { toast({ title: "✅ Agendamento reaberto como confirmado." }); fetchData(); }
+  };
   // ─── Block/Unblock helpers ───────────────────────────────────────────────────
 
   const handleBlockDay = async () => {
@@ -434,15 +442,20 @@ export default function AdminMyAppointments() {
     const sameProf = (dragAppt.professional_id ?? "__none__") === profId;
     if (sameSlot && sameProf) { setDragAppt(null); setDropTarget(null); return; }
 
-    // Don't allow moving completed/cancelled
-    if (["completed", "cancelled"].includes(dragAppt.status)) {
-      toast({ title: "Não é possível mover agendamentos concluídos ou cancelados", variant: "destructive" });
+    // Don't allow moving cancelled
+    if (dragAppt.status === "cancelled") {
+      toast({ title: "Não é possível mover agendamentos cancelados", variant: "destructive" });
       setDragAppt(null); setDropTarget(null); return;
     }
 
     setMoving(true);
     const updates: any = { appointment_time: slot + ":00", updated_at: new Date().toISOString() };
     if (!sameProf && profId !== "__none__") updates.professional_id = profId;
+    // If moving a completed appointment, reopen it and remove financial record
+    if (dragAppt.status === "completed") {
+      updates.status = "confirmed";
+      await supabase.from("financial_records").delete().eq("appointment_id", dragAppt.id);
+    }
 
     const { error } = await supabase.from("appointments").update(updates).eq("id", dragAppt.id);
     setMoving(false);
@@ -553,7 +566,7 @@ export default function AdminMyAppointments() {
   // Tiny appointment chip inside the grid cell
   const ApptChip = ({ a }: { a: any }) => {
     const st = STATUS_STYLE[a.status] || STATUS_STYLE.pending;
-    const isDraggable = ["pending", "confirmed"].includes(a.status);
+    const isDraggable = ["pending", "confirmed", "completed"].includes(a.status);
     return (
       <button
         draggable={isDraggable}
@@ -1155,6 +1168,81 @@ export default function AdminMyAppointments() {
                           onClick={() => { markCancel(detailAppt.id); setDetailAppt(null); }}
                         >
                           Confirmar Cancelamento
+                        </AlertDialogAction>
+                      </AlertDialogFooter>
+                    </AlertDialogContent>
+                  </AlertDialog>
+                </div>
+              )}
+              {detailAppt.status === "completed" && (
+                <div className="flex gap-2 pt-1">
+                  <AlertDialog>
+                    <AlertDialogTrigger asChild>
+                      <Button size="sm" variant="outline" className="flex-1 gap-1">
+                        <RotateCcw className="h-3.5 w-3.5" />
+                        Reabrir
+                      </Button>
+                    </AlertDialogTrigger>
+                    <AlertDialogContent>
+                      <AlertDialogHeader>
+                        <AlertDialogTitle>Reabrir atendimento concluído?</AlertDialogTitle>
+                        <AlertDialogDescription>O status voltará para "Confirmado" e o registro financeiro será removido.</AlertDialogDescription>
+                      </AlertDialogHeader>
+                      <AlertDialogFooter>
+                        <AlertDialogCancel>Voltar</AlertDialogCancel>
+                        <AlertDialogAction onClick={() => { markReopen(detailAppt.id); setDetailAppt(null); }}>
+                          Confirmar Reabertura
+                        </AlertDialogAction>
+                      </AlertDialogFooter>
+                    </AlertDialogContent>
+                  </AlertDialog>
+                  <AlertDialog>
+                    <AlertDialogTrigger asChild>
+                      <Button size="sm" variant="outline" className="gap-1 text-destructive border-destructive/40 hover:bg-destructive/10">
+                        <XCircle className="h-3.5 w-3.5" />
+                        Cancelar
+                      </Button>
+                    </AlertDialogTrigger>
+                    <AlertDialogContent>
+                      <AlertDialogHeader>
+                        <AlertDialogTitle>Cancelar atendimento concluído?</AlertDialogTitle>
+                        <AlertDialogDescription>O registro financeiro será removido e o agendamento será cancelado.</AlertDialogDescription>
+                      </AlertDialogHeader>
+                      <AlertDialogFooter>
+                        <AlertDialogCancel>Voltar</AlertDialogCancel>
+                        <AlertDialogAction
+                          className="bg-destructive hover:bg-destructive/90 text-destructive-foreground"
+                          onClick={async () => {
+                            await supabase.from("financial_records").delete().eq("appointment_id", detailAppt.id);
+                            markCancel(detailAppt.id);
+                            setDetailAppt(null);
+                          }}
+                        >
+                          Confirmar Cancelamento
+                        </AlertDialogAction>
+                      </AlertDialogFooter>
+                    </AlertDialogContent>
+                  </AlertDialog>
+                </div>
+              )}
+              {detailAppt.status === "cancelled" && (
+                <div className="flex gap-2 pt-1">
+                  <AlertDialog>
+                    <AlertDialogTrigger asChild>
+                      <Button size="sm" variant="outline" className="flex-1 gap-1">
+                        <RotateCcw className="h-3.5 w-3.5" />
+                        Reabrir
+                      </Button>
+                    </AlertDialogTrigger>
+                    <AlertDialogContent>
+                      <AlertDialogHeader>
+                        <AlertDialogTitle>Reabrir agendamento cancelado?</AlertDialogTitle>
+                        <AlertDialogDescription>O status voltará para "Confirmado".</AlertDialogDescription>
+                      </AlertDialogHeader>
+                      <AlertDialogFooter>
+                        <AlertDialogCancel>Voltar</AlertDialogCancel>
+                        <AlertDialogAction onClick={() => { markReopen(detailAppt.id); setDetailAppt(null); }}>
+                          Confirmar Reabertura
                         </AlertDialogAction>
                       </AlertDialogFooter>
                     </AlertDialogContent>

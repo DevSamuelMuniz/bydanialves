@@ -13,7 +13,7 @@ import { Calendar } from "@/components/ui/calendar";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
 import { useToast } from "@/hooks/use-toast";
-import { Clock, CalendarDays, Filter, StickyNote, Trash2, DollarSign, Handshake, CheckCircle2, User, Scissors, RefreshCw, AlertCircle, XCircle, Building2 } from "lucide-react";
+import { Clock, CalendarDays, Filter, StickyNote, Trash2, DollarSign, Handshake, CheckCircle2, User, Scissors, RefreshCw, AlertCircle, XCircle, Building2, RotateCcw } from "lucide-react";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { Checkbox } from "@/components/ui/checkbox";
@@ -132,6 +132,13 @@ export default function AdminAgenda() {
     } else {
       toast({ title: "Status atualizado!" });
     }
+  };
+
+  const markReopen = async (id: string) => {
+    await supabase.from("financial_records").delete().eq("appointment_id", id);
+    const { error } = await supabase.from("appointments").update({ status: "confirmed", updated_at: new Date().toISOString() }).eq("id", id);
+    if (error) toast({ title: "Erro ao reabrir", description: error.message, variant: "destructive" });
+    else { toast({ title: "✅ Agendamento reaberto como confirmado." }); }
   };
 
   const saveNotes = async (id: string) => {
@@ -337,6 +344,29 @@ export default function AdminAgenda() {
               </Button>
             )}
 
+            {(col.key === "completed" || col.key === "cancelled") && (
+              <AlertDialog>
+                <AlertDialogTrigger asChild>
+                  <Button size="sm" variant="outline" className="h-7 text-xs gap-1">
+                    <RotateCcw className="h-3 w-3" />
+                    Reabrir
+                  </Button>
+                </AlertDialogTrigger>
+                <AlertDialogContent>
+                  <AlertDialogHeader>
+                    <AlertDialogTitle>Reabrir agendamento?</AlertDialogTitle>
+                    <AlertDialogDescription>
+                      {col.key === "completed" ? "O status voltará para \"Confirmado\" e o registro financeiro será removido." : "O status voltará para \"Confirmado\"."}
+                    </AlertDialogDescription>
+                  </AlertDialogHeader>
+                  <AlertDialogFooter>
+                    <AlertDialogCancel>Voltar</AlertDialogCancel>
+                    <AlertDialogAction onClick={() => markReopen(a.id)}>Confirmar Reabertura</AlertDialogAction>
+                  </AlertDialogFooter>
+                </AlertDialogContent>
+              </AlertDialog>
+            )}
+
             {col.key !== "cancelled" && (
             <div className="ml-auto">
               <AlertDialog>
@@ -348,11 +378,18 @@ export default function AdminAgenda() {
                 <AlertDialogContent>
                   <AlertDialogHeader>
                     <AlertDialogTitle>Cancelar agendamento?</AlertDialogTitle>
-                    <AlertDialogDescription>Esta ação não pode ser desfeita.</AlertDialogDescription>
+                    <AlertDialogDescription>
+                      {col.key === "completed" ? "O registro financeiro será removido e o agendamento será cancelado." : "Esta ação não pode ser desfeita."}
+                    </AlertDialogDescription>
                   </AlertDialogHeader>
                   <AlertDialogFooter>
                     <AlertDialogCancel>Voltar</AlertDialogCancel>
-                    <AlertDialogAction onClick={() => updateStatus(a.id, "cancelled")}>Cancelar Agendamento</AlertDialogAction>
+                    <AlertDialogAction onClick={async () => {
+                      if (a.status === "completed") {
+                        await supabase.from("financial_records").delete().eq("appointment_id", a.id);
+                      }
+                      updateStatus(a.id, "cancelled");
+                    }}>Cancelar Agendamento</AlertDialogAction>
                   </AlertDialogFooter>
                 </AlertDialogContent>
               </AlertDialog>

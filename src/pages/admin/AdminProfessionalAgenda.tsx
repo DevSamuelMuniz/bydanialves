@@ -16,7 +16,7 @@ import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
 import { useToast } from "@/hooks/use-toast";
-import { Clock, CalendarDays, StickyNote, Trash2, DollarSign, Handshake, CheckCircle2, User, Scissors, RefreshCw, XCircle, Building2, Filter, UserCheck, Plus, Search } from "lucide-react";
+import { Clock, CalendarDays, StickyNote, Trash2, DollarSign, Handshake, CheckCircle2, User, Scissors, RefreshCw, XCircle, Building2, Filter, UserCheck, Plus, Search, RotateCcw } from "lucide-react";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { AccessDenied } from "@/components/admin/AccessDenied";
@@ -178,6 +178,13 @@ export default function AdminProfessionalAgenda() {
     }
   };
 
+  const markReopen = async (id: string) => {
+    await supabase.from("financial_records").delete().eq("appointment_id", id);
+    const { error } = await supabase.from("appointments").update({ status: "confirmed", updated_at: new Date().toISOString() }).eq("id", id);
+    if (error) toast({ title: "Erro ao reabrir", description: error.message, variant: "destructive" });
+    else { toast({ title: "✅ Agendamento reaberto como confirmado." }); }
+  };
+
   const saveNotes = async (id: string) => {
     const { error } = await supabase.from("appointments").update({ notes: notesValue }).eq("id", id);
     if (error) toast({ title: "Erro", description: error.message, variant: "destructive" });
@@ -330,6 +337,26 @@ export default function AdminProfessionalAgenda() {
               <Button size="sm" className="h-7 text-xs gap-1 bg-success hover:bg-success/90 text-success-foreground" onClick={() => updateStatus(a.id, "completed")}>
                 <CheckCircle2 className="h-3 w-3" />Concluir
               </Button>
+            )}
+            {(col.key === "cancelled") && (
+              <AlertDialog>
+                <AlertDialogTrigger asChild>
+                  <Button size="sm" variant="outline" className="h-7 text-xs gap-1">
+                    <RotateCcw className="h-3 w-3" />
+                    Reabrir
+                  </Button>
+                </AlertDialogTrigger>
+                <AlertDialogContent>
+                  <AlertDialogHeader>
+                    <AlertDialogTitle>Reabrir agendamento?</AlertDialogTitle>
+                    <AlertDialogDescription>O status voltará para "Confirmado".</AlertDialogDescription>
+                  </AlertDialogHeader>
+                  <AlertDialogFooter>
+                    <AlertDialogCancel>Voltar</AlertDialogCancel>
+                    <AlertDialogAction onClick={() => markReopen(a.id)}>Confirmar Reabertura</AlertDialogAction>
+                  </AlertDialogFooter>
+                </AlertDialogContent>
+              </AlertDialog>
             )}
             {col.key !== "cancelled" && (
               <div className="ml-auto">
