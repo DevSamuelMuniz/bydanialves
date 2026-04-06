@@ -139,7 +139,7 @@ function downloadProfPDF(prof: ProfessionalSummary, dateFrom: string, dateTo: st
 
   const completionRate = prof.total > 0 ? Math.round((prof.completed / prof.total) * 100) : 0;
   const kpis = [
-    { label: "Total Atendimentos", value: String(prof.total), color: [79, 70, 229] },
+    { label: "Total Agendamentos", value: String(prof.total), color: [79, 70, 229] },
     { label: "Concluídos", value: String(prof.completed), color: [16, 185, 129] },
     { label: "Horas Trabalhadas", value: fmtHours(prof.hours_worked), color: [59, 130, 246] },
     { label: "Taxa de Conclusão", value: `${completionRate}%`, color: [139, 92, 246] },

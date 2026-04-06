@@ -192,7 +192,7 @@ export function AdminSidebar() {
 
   const gestaoItems: NavItemDef[] = [
     perms.canViewDashboard && { title: "Dashboard", url: "/admin", icon: LayoutDashboard, tourId: "sidebar-admin-dashboard" },
-    (isAttendant || isProfessional) && { title: isAttendant ? "Atendimentos" : "Meus Atendimentos", url: "/admin/my-appointments", icon: ClipboardList, tourId: "sidebar-admin-my-appointments" },
+    (isAttendant || isProfessional) && { title: isAttendant ? "Agenda" : "Minha Agenda", url: "/admin/my-appointments", icon: ClipboardList, tourId: "sidebar-admin-my-appointments" },
     (isAttendant || isProfessional) && { title: "Minha Escala", url: "/admin/my-schedule", icon: TableProperties, tourId: "sidebar-admin-my-schedule" },
     (perms.canViewClients && adminLevel !== "professional") && { title: "Clientes", url: "/admin/clients", icon: Users, tourId: "sidebar-admin-clients" },
     (adminLevel === "ceo" || isAttendant) && { title: "Criar Conta", url: "/admin/create-account", icon: UserPlus },

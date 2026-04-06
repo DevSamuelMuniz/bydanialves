@@ -386,7 +386,7 @@ export default function QueueTV() {
             <div className="w-px h-7 sm:h-10 bg-border/40 shrink-0" />
             <div className="min-w-0">
               <h1 className="text-base sm:text-2xl font-serif font-bold tracking-tight truncate">TV de Fila</h1>
-              <p className="text-xs text-muted-foreground hidden sm:block">Atendimentos de hoje</p>
+              <p className="text-xs text-muted-foreground hidden sm:block">Agenda de hoje</p>
             </div>
           </div>
 

@@ -127,7 +127,7 @@ export default function AdminProfessionalHistory() {
         <div>
           <h1 className="font-serif text-2xl">Histórico do Profissional</h1>
           <p className="text-sm text-muted-foreground mt-0.5">
-            {isProfessional ? "Seu histórico de atendimentos" : "Histórico de atendimentos por profissional"}
+            {isProfessional ? "Seu histórico de agendamentos" : "Histórico de agendamentos por profissional"}
           </p>
         </div>
         <Button variant="outline" size="sm" className="gap-2" onClick={fetchHistory} disabled={loading}>
