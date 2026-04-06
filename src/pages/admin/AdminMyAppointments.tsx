@@ -628,7 +628,7 @@ export default function AdminMyAppointments() {
   // ─── Render ──────────────────────────────────────────────────────────────────
 
   return (
-    <div className="space-y-4 h-full flex flex-col">
+    <div className="space-y-4 h-[calc(100vh-6rem)] flex flex-col">
 
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 shrink-0">
