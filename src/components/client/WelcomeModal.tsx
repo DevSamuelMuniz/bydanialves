@@ -18,6 +18,11 @@ export function WelcomeModal() {
 
   useEffect(() => {
     if (!user) return;
+
+    // If already dismissed, never show again
+    const storageKey = `welcome_modal_done_${user.id}`;
+    if (localStorage.getItem(storageKey)) return;
+
     const check = async () => {
       const { data: profile } = await supabase
         .from("profiles")
@@ -27,10 +32,8 @@ export function WelcomeModal() {
 
       if (!profile) return;
 
-      // Show modal only if branch_id is null (never set) and account is fresh (< 5 min old)
-      const createdAt = new Date(profile.created_at).getTime();
-      const isNew = Date.now() - createdAt < 5 * 60 * 1000;
-      if (profile.branch_id === null && isNew) {
+      // Show modal only if branch_id is null (never set)
+      if (profile.branch_id === null) {
         setOpen(true);
         const { data: branchData } = await supabase
           .from("branches")
@@ -38,16 +41,21 @@ export function WelcomeModal() {
           .eq("active", true)
           .order("name");
         setBranches(branchData || []);
+      } else {
+        // Already has branch, mark as done
+        localStorage.setItem(storageKey, "true");
       }
     };
     check();
   }, [user]);
 
+  const markDone = () => {
+    if (user) localStorage.setItem(`welcome_modal_done_${user.id}`, "true");
+  };
+
   const handleNotClient = async () => {
-    // Mark as "seen" by setting a sentinel so modal doesn't reappear
-    await supabase.from("profiles").update({ branch_id: null } as any).eq("user_id", user!.id);
-    // We use bio field trick: store a flag — actually just close without touching
     setOpen(false);
+    markDone();
     window.dispatchEvent(new CustomEvent("welcome-modal-closed"));
     toast({ title: "Bem-vindo(a)! 🎉", description: "Você pode agendar seu primeiro serviço quando quiser." });
   };
@@ -58,6 +66,7 @@ export function WelcomeModal() {
     await supabase.from("profiles").update({ branch_id: selectedBranch } as any).eq("user_id", user!.id);
     setSaving(false);
     setOpen(false);
+    markDone();
     window.dispatchEvent(new CustomEvent("welcome-modal-closed"));
     toast({ title: "Tudo certo! 💇", description: "Sua filial preferida foi salva no seu perfil." });
   };
@@ -122,7 +131,7 @@ export function WelcomeModal() {
               <Button className="w-full" disabled={!selectedBranch || saving} onClick={handleSaveBranch}>
                 {saving ? "Salvando..." : "Confirmar filial"}
               </Button>
-              <Button variant="ghost" className="w-full text-muted-foreground text-sm" onClick={() => { setOpen(false); window.dispatchEvent(new CustomEvent("welcome-modal-closed")); }}>
+              <Button variant="ghost" className="w-full text-muted-foreground text-sm" onClick={() => { setOpen(false); markDone(); window.dispatchEvent(new CustomEvent("welcome-modal-closed")); }}>
                 Pular por agora
               </Button>
             </div>
