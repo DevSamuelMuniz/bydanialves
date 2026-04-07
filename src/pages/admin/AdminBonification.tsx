@@ -533,7 +533,7 @@ export default function AdminBonification() {
                 step={0.01}
                 placeholder="0,00"
                 value={totalPool}
-                onChange={(e) => setTotalPool(e.target.value)}
+                onChange={(e) => { setTotalPool(e.target.value); setTotalPoolManual(true); }}
                 className="h-9"
               />
             </div>
