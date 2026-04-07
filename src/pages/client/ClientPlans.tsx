@@ -35,7 +35,7 @@ export default function ClientPlans() {
     setPlans(data || []);
   };
 
-  const checkStripeSubscription = async () => {
+  const checkStripeSubscription = async (): Promise<{ subscribed: boolean; plan_id: string | null; subscription_end: string | null } | null> => {
     try {
       const { data, error } = await supabase.functions.invoke("check-subscription");
       if (error) throw error;
@@ -51,8 +51,10 @@ export default function ClientPlans() {
       } else {
         setSubscription(null);
       }
+      return data;
     } catch (err) {
       console.error("Error checking subscription:", err);
+      return null;
     }
   };
 
@@ -70,15 +72,16 @@ export default function ClientPlans() {
   useEffect(() => {
     if (searchParams.get("success") === "true") {
       toast({ title: "Pagamento processado! 🎉", description: "Verificando sua assinatura..." });
-      // Poll a few times to wait for Stripe to process
       let attempts = 0;
       const poll = setInterval(async () => {
         attempts++;
-        await checkStripeSubscription();
-        if (stripeSubscription?.subscribed || attempts >= 5) {
+        const result = await checkStripeSubscription();
+        if (result?.subscribed || attempts >= 8) {
           clearInterval(poll);
-          if (stripeSubscription?.subscribed) {
+          if (result?.subscribed) {
             toast({ title: "Assinatura ativada com sucesso! 🎉" });
+          } else if (attempts >= 8) {
+            toast({ title: "Assinatura pode levar alguns minutos", description: "Atualize a página em instantes.", variant: "destructive" });
           }
         }
       }, 3000);
