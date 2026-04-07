@@ -346,7 +346,7 @@ function SubscriptionModal({ open, onClose, selectedPlan }: { open: boolean; onC
                   <p className="text-xs text-muted-foreground leading-relaxed">Ao confirmar, você autoriza a cobrança de{" "}<span className="font-semibold text-foreground">{selectedPlan ? Number(selectedPlan.price).toLocaleString("pt-BR", { style: "currency", currency: "BRL" }) : ""}/mês</span>{" "}de forma automática todo mês até o cancelamento. Você pode cancelar quando quiser pelo portal do cliente, sem multa.</p>
                 </div>
               </div>
-              <ScrollArea className="h-64 rounded-lg border border-border/60 bg-muted/20 p-4 text-sm text-muted-foreground leading-relaxed">
+              <ScrollArea className="h-48 sm:h-64 rounded-lg border border-border/60 bg-muted/20 p-4 text-sm text-muted-foreground leading-relaxed">
                 <p className="font-bold text-foreground text-center mb-3">✨ REGRAS DA ESCOVA POR ASSINATURA – BY DANI ALVES ✨</p>
                 <p className="mb-4 text-xs">Para evitar dúvidas, seguem as principais informações do plano:</p>
                 <p className="font-semibold text-foreground mb-1">📌 1. Como funciona o plano</p>

@@ -104,6 +104,13 @@ export default function PublicInvite() {
   const handleSelectPlan = async (planId: string) => {
     setSubscribing(true);
     try {
+      const { data: sessionData } = await supabase.auth.getSession();
+      if (!sessionData.session) {
+        toast({ title: "Sessão expirada", description: "Faça login novamente.", variant: "destructive" });
+        setStep("signup");
+        setSubscribing(false);
+        return;
+      }
       const { data, error } = await supabase.functions.invoke("create-checkout", {
         body: { planId },
       });
