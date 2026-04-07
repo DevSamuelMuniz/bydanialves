@@ -18,6 +18,11 @@ export function WelcomeModal() {
 
   useEffect(() => {
     if (!user) return;
+
+    // If already dismissed, never show again
+    const storageKey = `welcome_modal_done_${user.id}`;
+    if (localStorage.getItem(storageKey)) return;
+
     const check = async () => {
       const { data: profile } = await supabase
         .from("profiles")
@@ -27,10 +32,8 @@ export function WelcomeModal() {
 
       if (!profile) return;
 
-      // Show modal only if branch_id is null (never set) and account is fresh (< 5 min old)
-      const createdAt = new Date(profile.created_at).getTime();
-      const isNew = Date.now() - createdAt < 5 * 60 * 1000;
-      if (profile.branch_id === null && isNew) {
+      // Show modal only if branch_id is null (never set)
+      if (profile.branch_id === null) {
         setOpen(true);
         const { data: branchData } = await supabase
           .from("branches")
@@ -38,6 +41,9 @@ export function WelcomeModal() {
           .eq("active", true)
           .order("name");
         setBranches(branchData || []);
+      } else {
+        // Already has branch, mark as done
+        localStorage.setItem(storageKey, "true");
       }
     };
     check();
