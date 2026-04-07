@@ -142,7 +142,8 @@ export default function AdminBonification() {
   const perms = useAdminPermissions();
 
   const monthOptions = useMemo(() => getMonthOptions(), []);
-  const defaultPeriod = monthOptions[monthOptions.length - 2]?.value ?? monthOptions[0]?.value;
+  const currentPeriodValue = monthOptions[monthOptions.length - 2]?.value ?? monthOptions[0]?.value ?? "";
+  const defaultPeriod = currentPeriodValue;
 
   const [selectedPeriod, setSelectedPeriod] = useState(defaultPeriod);
   const [totalPool, setTotalPool] = useState(""); // total_sales value
@@ -202,6 +203,7 @@ export default function AdminBonification() {
     () => rules.find((rule) => rule.reference_period === selectedPeriod) ?? null,
     [rules, selectedPeriod]
   );
+  const isCurrentPeriod = selectedPeriod === currentPeriodValue;
 
   async function fetchPeriodData(period: string) {
     setLoading(true);
@@ -246,8 +248,8 @@ export default function AdminBonification() {
       setApptStats({});
     }
 
-    // For open periods, auto-fill from subscriptions that started within the selected period
-    if (!totalPoolManual && !periodRule && range) {
+    // For the current/open period, always use live subscription revenue from that same month
+    if (!totalPoolManual && range && (!periodRule || isCurrentPeriod)) {
       const { data: subs } = await supabase
         .from("subscriptions")
         .select("plan_id, plans(price)")
@@ -274,14 +276,18 @@ export default function AdminBonification() {
     setTotalPoolManual(false);
 
     if (periodRule) {
-      setTotalPool(periodRule.total_sales != null ? String(Number(periodRule.total_sales)) : "");
+      if (!isCurrentPeriod) {
+        setTotalPool(periodRule.total_sales != null ? String(Number(periodRule.total_sales)) : "");
+      } else {
+        setTotalPool("");
+      }
       setPercentage(String(periodRule.percentage ?? 10));
       return;
     }
 
     setTotalPool("");
     setPercentage("10");
-  }, [selectedPeriod, periodRule?.id]);
+  }, [selectedPeriod, periodRule?.id, isCurrentPeriod]);
 
   useEffect(() => {
     if (professionals.length > 0) {
