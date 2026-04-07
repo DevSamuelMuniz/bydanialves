@@ -28,7 +28,7 @@ export default function ClientPendingAppointments() {
     if (!user) return;
     const { data } = await supabase
       .from("appointments")
-      .select("*, services(name, price, duration_minutes), branches(name)")
+      .select("*, services(name, duration_minutes), branches(name)")
       .eq("client_id", user.id)
       .in("status", ["pending", "confirmed"])
       .order("appointment_date", { ascending: true })
