@@ -122,7 +122,7 @@ export function WelcomeModal() {
               <Button className="w-full" disabled={!selectedBranch || saving} onClick={handleSaveBranch}>
                 {saving ? "Salvando..." : "Confirmar filial"}
               </Button>
-              <Button variant="ghost" className="w-full text-muted-foreground text-sm" onClick={() => setOpen(false)}>
+              <Button variant="ghost" className="w-full text-muted-foreground text-sm" onClick={() => { setOpen(false); window.dispatchEvent(new CustomEvent("welcome-modal-closed")); }}>
                 Pular por agora
               </Button>
             </div>
