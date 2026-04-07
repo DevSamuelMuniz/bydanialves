@@ -56,7 +56,7 @@ export default function ClientAppointmentsFilter({ onClientSelect }: ClientAppoi
     setLoadingAppts(true);
     const { data } = await supabase
       .from("appointments")
-      .select("*, services(name, price, duration_minutes), profiles!appointments_client_profile_fkey(full_name, phone), branches!appointments_branch_id_fkey(name)")
+      .select("*, services(name, duration_minutes), profiles!appointments_client_profile_fkey(full_name, phone), branches!appointments_branch_id_fkey(name)")
       .eq("client_id", clientId)
       .order("appointment_date", { ascending: false })
       .order("appointment_time", { ascending: false })
@@ -172,8 +172,8 @@ export default function ClientAppointmentsFilter({ onClientSelect }: ClientAppoi
                           {a.appointment_time?.slice(0, 5)}
                         </span>
                         <span className="flex items-center gap-1">
-                          <DollarSign className="h-3 w-3" />
-                          R$ {Number(a.services?.price || 0).toFixed(2)}
+                          <Clock className="h-3 w-3" />
+                          {a.services?.duration_minutes}min
                         </span>
                         {a.branches?.name && (
                           <span className="flex items-center gap-1">

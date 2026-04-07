@@ -9,7 +9,7 @@ import { Switch } from "@/components/ui/switch";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { useToast } from "@/hooks/use-toast";
 import { Skeleton } from "@/components/ui/skeleton";
-import { Plus, Pencil, Clock, DollarSign, FileText, Upload, Sparkles, ImageIcon, Loader2, Trash2 } from "lucide-react";
+import { Plus, Pencil, Clock, FileText, Upload, Sparkles, ImageIcon, Loader2, Trash2 } from "lucide-react";
 import { Textarea } from "@/components/ui/textarea";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
 
@@ -20,7 +20,7 @@ export default function AdminServices() {
   const [loading, setLoading] = useState(true);
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editing, setEditing] = useState<any>(null);
-  const [form, setForm] = useState({ name: "", description: "", price: "", duration_minutes: "60" });
+  const [form, setForm] = useState({ name: "", description: "", duration_minutes: "60" });
   const [previewImage, setPreviewImage] = useState<string | null>(null);
   const [pendingImageFile, setPendingImageFile] = useState<File | null>(null);
   const [uploadingImage, setUploadingImage] = useState(false);
@@ -60,7 +60,7 @@ export default function AdminServices() {
     setEditing(null);
     setPreviewImage(null);
     setPendingImageFile(null);
-    setForm({ name: "", description: "", price: "", duration_minutes: "60" });
+    setForm({ name: "", description: "", duration_minutes: "60" });
     setDialogOpen(true);
   };
 
@@ -68,7 +68,7 @@ export default function AdminServices() {
     setEditing(s);
     setPreviewImage(s.image_url || null);
     setPendingImageFile(null);
-    setForm({ name: s.name, description: s.description || "", price: String(s.price), duration_minutes: String(s.duration_minutes) });
+    setForm({ name: s.name, description: s.description || "", duration_minutes: String(s.duration_minutes) });
     setDialogOpen(true);
   };
 
@@ -77,7 +77,6 @@ export default function AdminServices() {
     const payload = {
       name: form.name,
       description: form.description,
-      price: Number(form.price),
       duration_minutes: Number(form.duration_minutes),
     };
     if (editing) {
@@ -277,10 +276,6 @@ export default function AdminServices() {
                   <Clock className="h-3 w-3" />
                   <span>{s.duration_minutes} min</span>
                 </div>
-                <div className="flex items-center gap-1 text-xs font-medium text-foreground">
-                  <DollarSign className="h-3 w-3 text-primary" />
-                  <span>R$ {Number(s.price).toFixed(2)}</span>
-                </div>
               </div>
             </CardContent>
           </Card>
@@ -385,10 +380,7 @@ export default function AdminServices() {
               />
             </div>
 
-            <div className="grid grid-cols-2 gap-4">
-              <div className="space-y-2"><Label>Preço (R$)</Label><Input type="number" step="0.01" value={form.price} onChange={(e) => setForm({ ...form, price: e.target.value })} required /></div>
-              <div className="space-y-2"><Label>Duração (min)</Label><Input type="number" value={form.duration_minutes} onChange={(e) => setForm({ ...form, duration_minutes: e.target.value })} required /></div>
-            </div>
+            <div className="space-y-2"><Label>Duração (min)</Label><Input type="number" value={form.duration_minutes} onChange={(e) => setForm({ ...form, duration_minutes: e.target.value })} required /></div>
             <Button type="submit" className="w-full">Salvar</Button>
           </form>
         </DialogContent>

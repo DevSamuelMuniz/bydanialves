@@ -145,7 +145,7 @@ export default function AdminClients() {
     setLoadingDetail(true);
     const { data } = await supabase
       .from("appointments")
-      .select("*, services(name, price)")
+      .select("*, services(name)")
       .eq("client_id", client.user_id)
       .order("appointment_date", { ascending: false })
       .limit(50);
@@ -225,9 +225,7 @@ export default function AdminClients() {
     );
   });
 
-  const totalSpent = clientAppointments
-    .filter((a) => a.status === "completed")
-    .reduce((sum, a) => sum + Number(a.services?.price || 0), 0);
+  const totalCompleted = clientAppointments.filter((a) => a.status === "completed").length;
 
 
   if (loading)
@@ -378,8 +376,8 @@ export default function AdminClients() {
                   </div>
                   {!isProfessional && (
                     <div className="flex items-center gap-1 text-sm text-muted-foreground">
-                      <DollarSign className="h-3 w-3" />
-                      R$ {totalSpent.toFixed(2)} gastos
+                      <CheckCircle2 className="h-3 w-3" />
+                      {totalCompleted} concluídos
                     </div>
                   )}
                   {clientFreqBranch[selectedClient.user_id] && (
