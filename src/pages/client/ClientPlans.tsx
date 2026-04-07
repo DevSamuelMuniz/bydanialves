@@ -35,7 +35,7 @@ export default function ClientPlans() {
     setPlans(data || []);
   };
 
-  const checkStripeSubscription = async () => {
+  const checkStripeSubscription = async (): Promise<{ subscribed: boolean; plan_id: string | null; subscription_end: string | null } | null> => {
     try {
       const { data, error } = await supabase.functions.invoke("check-subscription");
       if (error) throw error;
@@ -51,8 +51,10 @@ export default function ClientPlans() {
       } else {
         setSubscription(null);
       }
+      return data;
     } catch (err) {
       console.error("Error checking subscription:", err);
+      return null;
     }
   };
 
