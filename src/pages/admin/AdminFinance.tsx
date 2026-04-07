@@ -219,7 +219,7 @@ export default function AdminFinance() {
       value: val,
       fill: CATEGORY_COLORS[cat] ?? CATEGORY_COLORS.other,
     }));
-  }, [income, appointmentServiceRevenue]);
+  }, [income]);
 
   // Despesa por categoria
   const expenseByCategory = useMemo(() => {
@@ -259,10 +259,6 @@ export default function AdminFinance() {
   const contributionMargin = totalIncome - totalVariableCosts;
   const netProfit          = totalIncome - totalExpense;
   const grossMarginPct     = pct(netProfit, totalIncome);
-  const avgTicket = activeSubscriptions.length > 0
-    ? activeSubscriptionRevenue / activeSubscriptions.length
-    : 0;
-
   // Receita de assinaturas
   const totalSubscriptionRevenue = useMemo(() =>
     subscriptions.reduce((s, sub) => s + Number((sub.plans as any)?.price || 0), 0),
@@ -271,6 +267,9 @@ export default function AdminFinance() {
   const activeSubscriptionRevenue = useMemo(() =>
     activeSubscriptions.reduce((s, sub) => s + Number((sub.plans as any)?.price || 0), 0),
   [activeSubscriptions]);
+  const avgTicket = activeSubscriptions.length > 0
+    ? activeSubscriptionRevenue / activeSubscriptions.length
+    : 0;
 
   // Faturamento por filial
   const byBranch = useMemo(() => {
@@ -767,8 +766,8 @@ export default function AdminFinance() {
             <CardHeader className="pb-2">
               <CardTitle className="text-sm font-medium text-muted-foreground flex items-center gap-2">
                 <Scissors className="h-4 w-4" />
-                Atendimentos Concluídos · Receita Contabilizada
-                <span className="ml-auto font-bold text-foreground">{fmt(appointmentServiceRevenue)}</span>
+                Atendimentos Concluídos
+                <span className="ml-auto font-bold text-foreground">{appointmentCount} atendimentos</span>
               </CardTitle>
             </CardHeader>
             <CardContent>
