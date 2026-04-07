@@ -289,6 +289,7 @@ export default function AdminBonification() {
         (p) => p.professional_id === prof.user_id && p.reference_period === selectedPeriod
       );
 
+      // Always recalculate bonus from current pool/hours inputs
       const bonus =
         totalHoursInPeriod > 0
           ? parseFloat(((hours / totalHoursInPeriod) * bonusPool).toFixed(2))
@@ -302,7 +303,7 @@ export default function AdminBonification() {
         time_worked_min: stats.time_worked_min,
         clients_count: stats.clients_count,
         hours_worked: hours,
-        bonus_amount: paymentEntry?.bonus_amount ?? bonus,
+        bonus_amount: bonus,
         payment_id: paymentEntry?.id ?? null,
         payment_status: paymentEntry?.status ?? null,
         paid_at: paymentEntry?.paid_at ?? null,
