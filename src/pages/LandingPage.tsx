@@ -240,12 +240,10 @@ function SubscriptionModal({ open, onClose, selectedPlan }: { open: boolean; onC
         const { data, error } = await supabase.functions.invoke("create-checkout", { body: { planId: selectedPlan.id } });
         if (error) throw error;
         if (data?.url) {
-          onClose();
-          window.open(data.url, "_blank");
-          const checkInterval = setInterval(async () => {
-            const { data: { session } } = await supabase.auth.getSession();
-            if (session) { clearInterval(checkInterval); navigate("/client"); }
-          }, 2000);
+          window.location.href = data.url;
+        } else {
+          alert("Erro: não foi possível gerar o link de pagamento.");
+          setStep("terms");
         }
       } catch (err: any) {
         alert("Erro ao iniciar pagamento: " + err.message);
