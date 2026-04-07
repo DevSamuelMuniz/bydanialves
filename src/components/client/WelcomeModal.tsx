@@ -75,7 +75,7 @@ export function WelcomeModal() {
 
   return (
     <Dialog open={open} onOpenChange={() => {}}>
-      <DialogContent className="max-w-md" onPointerDownOutside={(e) => e.preventDefault()}>
+      <DialogContent className="max-w-md [&>button.absolute]:hidden" onPointerDownOutside={(e) => e.preventDefault()}>
         {step === "question" ? (
           <>
             <DialogHeader>
