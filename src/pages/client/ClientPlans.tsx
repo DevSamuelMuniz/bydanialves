@@ -72,15 +72,16 @@ export default function ClientPlans() {
   useEffect(() => {
     if (searchParams.get("success") === "true") {
       toast({ title: "Pagamento processado! 🎉", description: "Verificando sua assinatura..." });
-      // Poll a few times to wait for Stripe to process
       let attempts = 0;
       const poll = setInterval(async () => {
         attempts++;
-        await checkStripeSubscription();
-        if (stripeSubscription?.subscribed || attempts >= 5) {
+        const result = await checkStripeSubscription();
+        if (result?.subscribed || attempts >= 8) {
           clearInterval(poll);
-          if (stripeSubscription?.subscribed) {
+          if (result?.subscribed) {
             toast({ title: "Assinatura ativada com sucesso! 🎉" });
+          } else if (attempts >= 8) {
+            toast({ title: "Assinatura pode levar alguns minutos", description: "Atualize a página em instantes.", variant: "destructive" });
           }
         }
       }, 3000);
