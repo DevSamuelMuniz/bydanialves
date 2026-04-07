@@ -198,6 +198,11 @@ export default function AdminBonification() {
     setRules((rulesRes.data ?? []) as unknown as BonificationRule[]);
   }
 
+  const periodRule = useMemo(
+    () => rules.find((rule) => rule.reference_period === selectedPeriod) ?? null,
+    [rules, selectedPeriod]
+  );
+
   async function fetchPeriodData(period: string) {
     setLoading(true);
     const range = parsePeriod(period);
@@ -241,15 +246,18 @@ export default function AdminBonification() {
       setApptStats({});
     }
 
-    // Auto-fill total sales from active subscriptions only if user hasn't manually edited
-    if (!totalPoolManual) {
+    // For open periods, auto-fill from active subscriptions only when there is no saved rule
+    if (!totalPoolManual && !periodRule) {
       const { data: subs } = await supabase
         .from("subscriptions")
         .select("plan_id, plans(price)")
         .eq("status", "active");
+
       if (subs && subs.length > 0) {
         const total = (subs as any[]).reduce((acc, s) => acc + (s.plans?.price ?? 0), 0);
         setTotalPool(total.toFixed(2));
+      } else {
+        setTotalPool("");
       }
     }
 
@@ -261,11 +269,23 @@ export default function AdminBonification() {
   }, []);
 
   useEffect(() => {
-    if (professionals.length > 0 || loading) {
-      setTotalPoolManual(false);
+    setTotalPoolManual(false);
+
+    if (periodRule) {
+      setTotalPool(periodRule.total_sales != null ? String(Number(periodRule.total_sales)) : "");
+      setPercentage(String(periodRule.percentage ?? 10));
+      return;
+    }
+
+    setTotalPool("");
+    setPercentage("10");
+  }, [selectedPeriod, periodRule?.id]);
+
+  useEffect(() => {
+    if (professionals.length > 0) {
       fetchPeriodData(selectedPeriod);
     }
-  }, [selectedPeriod, professionals.length]);
+  }, [selectedPeriod, professionals.length, periodRule?.id]);
 
   // ─── Computed rows ───────────────────────────────────────────────────────────
 
@@ -275,23 +295,35 @@ export default function AdminBonification() {
     return (sales * pct) / 100;
   }, [totalPool, percentage]);
 
+  const effectiveHoursByProfessional = useMemo(() => {
+    return professionals.reduce<Record<string, number>>((acc, prof) => {
+      const stats = apptStats[prof.user_id] ?? { services_count: 0, time_worked_min: 0, clients_count: 0 };
+      const hoursEntry = allHours.find((h) => h.professional_id === prof.user_id);
+      const fallbackHours = parseFloat((stats.time_worked_min / 60).toFixed(2));
+
+      acc[prof.user_id] = hoursEntry?.hours_worked ?? fallbackHours;
+      return acc;
+    }, {});
+  }, [professionals, apptStats, allHours]);
+
   const totalHoursInPeriod = useMemo(
-    () => allHours.reduce((a, h) => a + h.hours_worked, 0),
-    [allHours]
+    () => Object.values(effectiveHoursByProfessional).reduce((total, hours) => total + hours, 0),
+    [effectiveHoursByProfessional]
+  );
+
+  const periodPayments = useMemo(
+    () => payments.filter((payment) => payment.reference_period === selectedPeriod),
+    [payments, selectedPeriod]
   );
 
   const rows = useMemo<CommissionRow[]>(() => {
     return professionals.map((prof) => {
       const stats = apptStats[prof.user_id] ?? { services_count: 0, time_worked_min: 0, clients_count: 0 };
-      const hoursEntry = allHours.find((h) => h.professional_id === prof.user_id);
-      const hours = hoursEntry?.hours_worked ?? parseFloat((stats.time_worked_min / 60).toFixed(2));
+      const hours = effectiveHoursByProfessional[prof.user_id] ?? 0;
 
-      const paymentEntry = payments.find(
-        (p) => p.professional_id === prof.user_id && p.reference_period === selectedPeriod
-      );
+      const paymentEntry = periodPayments.find((p) => p.professional_id === prof.user_id);
 
-      // Always recalculate bonus from current pool/hours inputs
-      const bonus =
+      const calculatedBonus =
         totalHoursInPeriod > 0
           ? parseFloat(((hours / totalHoursInPeriod) * bonusPool).toFixed(2))
           : 0;
@@ -304,23 +336,20 @@ export default function AdminBonification() {
         time_worked_min: stats.time_worked_min,
         clients_count: stats.clients_count,
         hours_worked: hours,
-        bonus_amount: bonus,
+        bonus_amount: paymentEntry?.bonus_amount ?? calculatedBonus,
         payment_id: paymentEntry?.id ?? null,
         payment_status: paymentEntry?.status ?? null,
         paid_at: paymentEntry?.paid_at ?? null,
       };
     });
-  }, [professionals, apptStats, allHours, payments, selectedPeriod, bonusPool, totalHoursInPeriod]);
+  }, [professionals, apptStats, effectiveHoursByProfessional, periodPayments, bonusPool, totalHoursInPeriod]);
 
   const filteredRows = useMemo(() => {
     if (!searchQuery.trim()) return rows;
     return rows.filter((r) => r.full_name.toLowerCase().includes(searchQuery.toLowerCase()));
   }, [rows, searchQuery]);
 
-  const alreadyDistributed = useMemo(
-    () => payments.some((p) => p.reference_period === selectedPeriod),
-    [payments, selectedPeriod]
-  );
+  const alreadyDistributed = useMemo(() => periodPayments.length > 0, [periodPayments]);
 
   const pendingPayments = useMemo(
     () => rows.filter((r) => r.payment_status === "pending"),
