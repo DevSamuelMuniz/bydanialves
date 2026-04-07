@@ -292,20 +292,20 @@ export default function AdminDashboard() {
 
     const [clientCountRes, recentClientsRes] = await Promise.all([clientCountQ, recentClientsQ]);
 
-    // Financial records — scoped to date range
-    // financial_records uses created_at (timestamp), branch as text
-    let finQuery = supabase.from("financial_records")
-      .select("amount, created_at, branch")
-      .eq("type", "income")
-      .gte("created_at", from)
-      .lte("created_at", to + "T23:59:59");
+    // Subscription revenue — scoped to date range, by client branch
+    let subsQuery = supabase.from("subscriptions")
+      .select("started_at, plans(price), profiles!subscriptions_client_profile_fkey(branch_id)")
+      .eq("status", "active")
+      .gte("started_at", from)
+      .lte("started_at", to + "T23:59:59");
 
-    if (currentActiveBranchId) {
-      const found = currentBranches.find((b) => b.id === currentActiveBranchId);
-      if (found) finQuery = finQuery.ilike("branch", found.name);
-    }
+    const subsRes = await subsQuery;
+    const subs = (subsRes.data || []) as any[];
 
-    const finRes = await finQuery;
+    // Filter by branch if needed
+    const filteredSubs = currentActiveBranchId
+      ? subs.filter((s: any) => s.profiles?.branch_id === currentActiveBranchId)
+      : subs;
 
     // ── Set KPIs ──
     setTodayAppointments(todayRes.data || []);
@@ -316,17 +316,16 @@ export default function AdminDashboard() {
     setRecentClients(recentClientsRes.data || []);
 
     // ── Revenue chart ──
-    const fin = finRes.data || [];
-    setTotalRevenue(fin.reduce((s, r) => s + Number(r.amount), 0));
+    setTotalRevenue(filteredSubs.reduce((s: number, r: any) => s + Number(r.plans?.price || 0), 0));
 
     const fromDate = parseISO(from);
     const toDate = parseISO(to);
     const days = eachDayOfInterval({ start: fromDate, end: toDate > new Date() ? new Date() : toDate });
     const dayMap: Record<string, number> = {};
     for (const d of days) dayMap[format(d, "yyyy-MM-dd")] = 0;
-    for (const r of fin) {
-      const d = r.created_at.split("T")[0];
-      if (dayMap[d] !== undefined) dayMap[d] += Number(r.amount);
+    for (const r of filteredSubs) {
+      const d = r.started_at?.split("T")[0];
+      if (d && dayMap[d] !== undefined) dayMap[d] += Number(r.plans?.price || 0);
     }
     // If range > 60 days, group by week for readability
     const rangeLen = days.length;
@@ -400,12 +399,14 @@ export default function AdminDashboard() {
   // ─── Fetch branch KPIs (respects date filter) ────────────────────────────
   const fetchBranchKpis = useCallback(async (from: string, to: string) => {
     if (!canViewBranchKpis) return;
-    const [branchListRes, branchApptsRes, branchFinRes] = await Promise.all([
+    const [branchListRes, branchApptsRes, branchSubsRes] = await Promise.all([
       supabase.from("branches").select("id, name").eq("active", true),
       supabase.from("appointments").select("branch_id, status")
         .gte("appointment_date", from).lte("appointment_date", to),
-      supabase.from("financial_records").select("branch, amount")
-        .eq("type", "income").gte("created_at", from).lte("created_at", to + "T23:59:59"),
+      supabase.from("subscriptions")
+        .select("client_id, plans(price), profiles!subscriptions_client_profile_fkey(branch_id)")
+        .eq("status", "active")
+        .gte("started_at", from).lte("started_at", to + "T23:59:59"),
     ]);
     const branchMap: Record<string, { id: string; name: string; count: number; revenue: number; pending: number }> = {};
     for (const br of (branchListRes.data || []))
@@ -415,10 +416,11 @@ export default function AdminDashboard() {
         branchMap[a.branch_id].count++;
         if (a.status === "pending") branchMap[a.branch_id].pending++;
       }
-    for (const r of (branchFinRes.data || [])) {
-      const norm = normalizeName(r.branch || "");
-      const entry = Object.values(branchMap).find((b) => normalizeName(b.name) === norm);
-      if (entry) entry.revenue += Number(r.amount);
+    for (const s of (branchSubsRes.data || []) as any[]) {
+      const branchId = s.profiles?.branch_id;
+      if (branchId && branchMap[branchId]) {
+        branchMap[branchId].revenue += Number(s.plans?.price || 0);
+      }
     }
     setBranchKpis(Object.values(branchMap).sort((a, b) => b.count - a.count));
   }, [canViewBranchKpis]);
