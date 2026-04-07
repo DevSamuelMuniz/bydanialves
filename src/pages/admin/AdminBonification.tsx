@@ -519,9 +519,9 @@ export default function AdminBonification() {
               </select>
             </div>
 
-            {/* Total Bolo */}
+            {/* Receita Assinaturas */}
             <div className="space-y-1.5 min-w-[180px]">
-              <Label className="text-xs text-muted-foreground">Total Bolo (R$)</Label>
+              <Label className="text-xs text-muted-foreground">Receita Assinaturas (R$)</Label>
               <Input
                 type="number"
                 min={0}
