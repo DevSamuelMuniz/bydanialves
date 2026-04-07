@@ -13,7 +13,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import {
-  Clock, DollarSign, Scissors, User, CheckCircle2, XCircle, CalendarDays,
+  Clock, Scissors, User, CheckCircle2, XCircle, CalendarDays,
   RefreshCw, UserCheck, Building2, Star, StickyNote,
 } from "lucide-react";
 
@@ -73,7 +73,7 @@ export default function AdminProfessionalHistory() {
       .from("appointments")
       .select(`
         id, status, appointment_date, appointment_time, notes, professional_id,
-        services(name, price, duration_minutes),
+        services(name, duration_minutes),
         profiles!appointments_client_profile_fkey(full_name, phone, avatar_url),
         reviews(rating, comment)
       `)
@@ -103,7 +103,6 @@ export default function AdminProfessionalHistory() {
   // Metrics
   const completed = appointments.filter((a) => a.status === "completed");
   const cancelled = appointments.filter((a) => a.status === "cancelled");
-  const totalRevenue = completed.reduce((acc, a) => acc + Number(a.services?.price || 0), 0);
   const totalHours = completed.reduce((acc, a) => acc + Number(a.services?.duration_minutes || 60), 0);
   const ratings = completed.flatMap((a) => (a.reviews || []).map((r: any) => r.rating)).filter(Boolean);
   const avgRating = ratings.length ? ratings.reduce((a: number, b: number) => a + b, 0) / ratings.length : null;
@@ -189,7 +188,7 @@ export default function AdminProfessionalHistory() {
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
           <KpiCard icon={<CheckCircle2 className="h-4 w-4 text-emerald-600" />} label="Concluídos" value={String(completed.length)} color="text-emerald-600" />
           <KpiCard icon={<XCircle className="h-4 w-4 text-destructive" />} label="Cancelados" value={String(cancelled.length)} color="text-destructive" />
-          <KpiCard icon={<DollarSign className="h-4 w-4 text-primary" />} label="Receita" value={`R$ ${totalRevenue.toFixed(0)}`} color="text-primary" />
+          <KpiCard icon={<Clock className="h-4 w-4 text-primary" />} label="Horas" value={`${(totalHours / 60).toFixed(1)}h`} color="text-primary" />
           <KpiCard
             icon={<Star className="h-4 w-4 text-amber-500" />}
             label="Avaliação média"
@@ -250,12 +249,9 @@ export default function AdminProfessionalHistory() {
                             <Scissors className="h-3 w-3 text-primary shrink-0" />
                             <span className="text-sm font-medium truncate">{a.services?.name || "—"}</span>
                           </div>
-                          <div className="flex items-center justify-between">
-                            <div className="flex items-center gap-1.5">
-                              <Clock className="h-3 w-3 text-muted-foreground" />
-                              <span className="text-xs text-muted-foreground">{a.appointment_time?.slice(0, 5)}</span>
-                            </div>
-                            <span className="text-xs font-medium text-primary">R$ {Number(a.services?.price || 0).toFixed(2)}</span>
+                          <div className="flex items-center gap-1.5">
+                            <Clock className="h-3 w-3 text-muted-foreground" />
+                            <span className="text-xs text-muted-foreground">{a.appointment_time?.slice(0, 5)}</span>
                           </div>
                         </div>
                         {/* Professional tag (for manager view) */}
