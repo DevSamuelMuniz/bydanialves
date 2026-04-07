@@ -48,6 +48,7 @@ export function WelcomeModal() {
     await supabase.from("profiles").update({ branch_id: null } as any).eq("user_id", user!.id);
     // We use bio field trick: store a flag — actually just close without touching
     setOpen(false);
+    window.dispatchEvent(new CustomEvent("welcome-modal-closed"));
     toast({ title: "Bem-vindo(a)! 🎉", description: "Você pode agendar seu primeiro serviço quando quiser." });
   };
 
@@ -57,6 +58,7 @@ export function WelcomeModal() {
     await supabase.from("profiles").update({ branch_id: selectedBranch } as any).eq("user_id", user!.id);
     setSaving(false);
     setOpen(false);
+    window.dispatchEvent(new CustomEvent("welcome-modal-closed"));
     toast({ title: "Tudo certo! 💇", description: "Sua filial preferida foi salva no seu perfil." });
   };
 
@@ -120,7 +122,7 @@ export function WelcomeModal() {
               <Button className="w-full" disabled={!selectedBranch || saving} onClick={handleSaveBranch}>
                 {saving ? "Salvando..." : "Confirmar filial"}
               </Button>
-              <Button variant="ghost" className="w-full text-muted-foreground text-sm" onClick={() => setOpen(false)}>
+              <Button variant="ghost" className="w-full text-muted-foreground text-sm" onClick={() => { setOpen(false); window.dispatchEvent(new CustomEvent("welcome-modal-closed")); }}>
                 Pular por agora
               </Button>
             </div>

@@ -176,50 +176,79 @@ export function OnboardingTour({ role, adminLevel }: OnboardingTourProps) {
     const alreadyDone = localStorage.getItem(storageKey);
     if (alreadyDone) return;
 
-    // Destroy any existing global instance before creating a new one
-    if (activeDriverInstance) {
-      try { activeDriverInstance.destroy(); } catch {}
-      activeDriverInstance = null;
-    }
+    const startTour = () => {
+      if (startedRef.current) return;
 
-    startedRef.current = true;
+      // Destroy any existing global instance before creating a new one
+      if (activeDriverInstance) {
+        try { activeDriverInstance.destroy(); } catch {}
+        activeDriverInstance = null;
+      }
 
-    const timer = setTimeout(() => {
-      const steps = role === "client" ? CLIENT_STEPS : ADMIN_STEPS_BASE;
+      startedRef.current = true;
 
-      const validSteps = steps.filter((step) => {
-        if (!("element" in step) || !step.element) return true;
-        return !!document.querySelector(step.element as string);
-      });
+      const timer = setTimeout(() => {
+        const steps = role === "client" ? CLIENT_STEPS : ADMIN_STEPS_BASE;
 
-      if (validSteps.length === 0) return;
+        const validSteps = steps.filter((step) => {
+          if (!("element" in step) || !step.element) return true;
+          return !!document.querySelector(step.element as string);
+        });
 
-      const instance = driver({
-        showProgress: true,
-        progressText: "{{current}} de {{total}}",
-        nextBtnText: "Próximo →",
-        prevBtnText: "← Anterior",
-        doneBtnText: "Concluir ✓",
-        overlayOpacity: 0.35,
-        smoothScroll: true,
-        allowClose: true,
-        popoverClass: "onboarding-popover",
-        onDestroyStarted: () => {
-          localStorage.setItem(storageKey, "true");
-          instance.destroy();
-          activeDriverInstance = null;
-        },
-        steps: validSteps,
-      });
+        if (validSteps.length === 0) return;
 
-      driverRef.current = instance;
-      activeDriverInstance = instance;
-      instance.drive();
-    }, 1000);
+        const instance = driver({
+          showProgress: true,
+          progressText: "{{current}} de {{total}}",
+          nextBtnText: "Próximo →",
+          prevBtnText: "← Anterior",
+          doneBtnText: "Concluir ✓",
+          overlayOpacity: 0.35,
+          smoothScroll: true,
+          allowClose: true,
+          popoverClass: "onboarding-popover",
+          onDestroyStarted: () => {
+            localStorage.setItem(storageKey, "true");
+            instance.destroy();
+            activeDriverInstance = null;
+          },
+          steps: validSteps,
+        });
 
-    return () => {
-      clearTimeout(timer);
+        driverRef.current = instance;
+        activeDriverInstance = instance;
+        instance.drive();
+      }, 600);
+
+      return timer;
     };
+
+    // Check if WelcomeModal is likely to show (client role, fresh account)
+    // If so, wait for it to close before starting the tour
+    if (role === "client") {
+      let timer: ReturnType<typeof setTimeout> | undefined;
+      const handler = () => {
+        timer = startTour();
+      };
+      window.addEventListener("welcome-modal-closed", handler, { once: true });
+
+      // Fallback: if welcome modal doesn't appear within 3s, start tour anyway
+      const fallback = setTimeout(() => {
+        window.removeEventListener("welcome-modal-closed", handler);
+        startTour();
+      }, 3000);
+
+      return () => {
+        clearTimeout(fallback);
+        if (timer) clearTimeout(timer);
+        window.removeEventListener("welcome-modal-closed", handler);
+      };
+    } else {
+      const timer = startTour();
+      return () => {
+        if (timer) clearTimeout(timer);
+      };
+    }
   }, [user, role]);
 
   // Cleanup on unmount
