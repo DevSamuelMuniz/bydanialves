@@ -185,95 +185,151 @@
   }
 }
 
-/* ========== Driver.js Onboarding Tour Custom Styles ========== */
+/* ========== Driver.js Onboarding Tour — Premium Glassmorphism ========== */
 .driver-popover.onboarding-popover {
-  background: hsl(var(--card)) !important;
+  background: hsl(var(--card) / 0.85) !important;
+  backdrop-filter: blur(20px) saturate(1.6) !important;
+  -webkit-backdrop-filter: blur(20px) saturate(1.6) !important;
   color: hsl(var(--foreground)) !important;
-  border: 1px solid hsl(var(--border)) !important;
-  border-radius: 1rem !important;
-  box-shadow: 0 20px 60px hsl(var(--foreground) / 0.15),
-              0 0 0 1px hsl(var(--primary) / 0.15) !important;
+  border: 1px solid hsl(var(--primary) / 0.2) !important;
+  border-radius: 1.25rem !important;
+  box-shadow:
+    0 8px 32px hsl(var(--foreground) / 0.08),
+    0 0 0 1px hsl(var(--primary) / 0.08),
+    inset 0 1px 0 hsl(var(--primary) / 0.06) !important;
   font-family: 'Poppins', sans-serif !important;
-  max-width: 320px !important;
-  padding: 1.25rem !important;
+  max-width: 340px !important;
+  padding: 0 !important;
+  overflow: hidden !important;
+}
+
+.driver-popover.onboarding-popover::before {
+  content: '' !important;
+  display: block !important;
+  height: 3px !important;
+  background: linear-gradient(90deg, hsl(var(--gold-start)), hsl(var(--gold-end))) !important;
+  border-radius: 1.25rem 1.25rem 0 0 !important;
 }
 
 .driver-popover.onboarding-popover .driver-popover-title {
-  font-size: 1rem !important;
-  font-weight: 600 !important;
+  font-size: 1.05rem !important;
+  font-weight: 700 !important;
   color: hsl(var(--foreground)) !important;
-  margin-bottom: 0.5rem !important;
+  margin: 0 !important;
+  padding: 1.25rem 1.25rem 0.25rem !important;
   font-family: 'Poppins', sans-serif !important;
+  letter-spacing: -0.01em !important;
+  line-height: 1.3 !important;
 }
 
 .driver-popover.onboarding-popover .driver-popover-description {
   font-size: 0.8125rem !important;
   color: hsl(var(--muted-foreground)) !important;
-  line-height: 1.6 !important;
+  line-height: 1.65 !important;
   font-family: 'Poppins', sans-serif !important;
+  padding: 0.25rem 1.25rem 0 !important;
+  margin: 0 !important;
 }
 
 .driver-popover.onboarding-popover .driver-popover-progress-text {
-  color: hsl(var(--muted-foreground)) !important;
-  font-size: 0.75rem !important;
+  color: hsl(var(--muted-foreground) / 0.7) !important;
+  font-size: 0.6875rem !important;
+  font-weight: 500 !important;
+  letter-spacing: 0.03em !important;
+  text-transform: uppercase !important;
 }
 
 .driver-popover.onboarding-popover .driver-popover-footer {
-  margin-top: 1rem !important;
+  margin: 0 !important;
+  padding: 0.75rem 1.25rem 1.25rem !important;
   gap: 0.5rem !important;
 }
 
-.driver-popover.onboarding-popover .driver-popover-prev-btn,
 .driver-popover.onboarding-popover .driver-popover-next-btn,
 .driver-popover.onboarding-popover .driver-popover-done-btn {
-  background: hsl(var(--primary)) !important;
+  background: linear-gradient(135deg, hsl(var(--gold-start)), hsl(var(--gold-end))) !important;
   color: hsl(var(--primary-foreground)) !important;
   border: none !important;
-  border-radius: 0.5rem !important;
+  border-radius: 0.625rem !important;
   font-size: 0.8125rem !important;
-  font-weight: 500 !important;
-  padding: 0.4rem 0.875rem !important;
+  font-weight: 600 !important;
+  padding: 0.5rem 1rem !important;
   font-family: 'Poppins', sans-serif !important;
   cursor: pointer !important;
-  transition: opacity 0.15s !important;
+  transition: all 0.2s ease !important;
+  box-shadow: 0 2px 8px hsl(var(--gold-start) / 0.3) !important;
+}
+
+.driver-popover.onboarding-popover .driver-popover-next-btn:hover,
+.driver-popover.onboarding-popover .driver-popover-done-btn:hover {
+  transform: translateY(-1px) !important;
+  box-shadow: 0 4px 12px hsl(var(--gold-start) / 0.4) !important;
 }
 
 .driver-popover.onboarding-popover .driver-popover-prev-btn {
-  background: hsl(var(--secondary)) !important;
-  color: hsl(var(--secondary-foreground)) !important;
+  background: hsl(var(--muted)) !important;
+  color: hsl(var(--muted-foreground)) !important;
+  border: 1px solid hsl(var(--border)) !important;
+  border-radius: 0.625rem !important;
+  font-size: 0.8125rem !important;
+  font-weight: 500 !important;
+  padding: 0.5rem 1rem !important;
+  font-family: 'Poppins', sans-serif !important;
+  cursor: pointer !important;
+  transition: all 0.2s ease !important;
+  box-shadow: none !important;
 }
 
-.driver-popover.onboarding-popover .driver-popover-prev-btn:hover,
-.driver-popover.onboarding-popover .driver-popover-next-btn:hover,
-.driver-popover.onboarding-popover .driver-popover-done-btn:hover {
-  opacity: 0.85 !important;
+.driver-popover.onboarding-popover .driver-popover-prev-btn:hover {
+  background: hsl(var(--accent)) !important;
+  color: hsl(var(--accent-foreground)) !important;
+  border-color: hsl(var(--primary) / 0.2) !important;
 }
 
 .driver-popover.onboarding-popover .driver-popover-close-btn {
-  color: hsl(var(--muted-foreground)) !important;
-  font-size: 1.25rem !important;
-  top: 0.75rem !important;
-  right: 0.75rem !important;
+  color: hsl(var(--muted-foreground) / 0.6) !important;
+  font-size: 1.125rem !important;
+  top: 1rem !important;
+  right: 1rem !important;
+  width: 1.75rem !important;
+  height: 1.75rem !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  border-radius: 50% !important;
+  transition: all 0.15s ease !important;
+}
+
+.driver-popover.onboarding-popover .driver-popover-close-btn:hover {
+  background: hsl(var(--muted)) !important;
+  color: hsl(var(--foreground)) !important;
 }
 
 .driver-popover.onboarding-popover .driver-popover-arrow-side-left.driver-popover-arrow {
-  border-right-color: hsl(var(--card)) !important;
+  border-right-color: hsl(var(--card) / 0.85) !important;
 }
 .driver-popover.onboarding-popover .driver-popover-arrow-side-right.driver-popover-arrow {
-  border-left-color: hsl(var(--card)) !important;
+  border-left-color: hsl(var(--card) / 0.85) !important;
 }
 .driver-popover.onboarding-popover .driver-popover-arrow-side-top.driver-popover-arrow {
-  border-bottom-color: hsl(var(--card)) !important;
+  border-bottom-color: hsl(var(--card) / 0.85) !important;
 }
 .driver-popover.onboarding-popover .driver-popover-arrow-side-bottom.driver-popover-arrow {
-  border-top-color: hsl(var(--card)) !important;
+  border-top-color: hsl(var(--card) / 0.85) !important;
 }
 
 .driver-overlay {
-  background: rgba(0, 0, 0, 0.35) !important;
+  background: rgba(0, 0, 0, 0.4) !important;
 }
 
-/* Prevent duplicate overlay stacking */
 .driver-overlay ~ .driver-overlay {
   display: none !important;
+}
+
+@keyframes driver-popover-in {
+  from { opacity: 0; transform: scale(0.95) translateY(4px); }
+  to { opacity: 1; transform: scale(1) translateY(0); }
+}
+.driver-popover.onboarding-popover {
+  animation: driver-popover-in 0.25s ease-out !important;
 }
