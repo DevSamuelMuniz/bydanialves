@@ -291,15 +291,13 @@ function SubscriptionModal({ open, onClose, selectedPlan }: { open: boolean; onC
                 </form> :
                 <form onSubmit={handleSignUp} className="space-y-3">
                   <div className="space-y-1.5"><Label htmlFor="m-name">Nome completo</Label><Input id="m-name" value={fullName} onChange={(e) => setFullName(e.target.value)} required placeholder="Seu nome" /></div>
-                  <div className="grid grid-cols-2 gap-3">
-                    <div className="space-y-1.5"><Label htmlFor="m-phone">WhatsApp *</Label><Input id="m-phone" type="tel" value={phone} onChange={(e) => setPhone(e.target.value)} required placeholder="(00) 00000-0000" /></div>
-                    <div className="space-y-1.5">
-                      <Label>Gênero</Label>
-                      <RadioGroup value={gender} onValueChange={setGender} className="flex gap-3 pt-1">
-                        <div className="flex items-center gap-1.5"><RadioGroupItem value="female" id="m-fem" /><Label htmlFor="m-fem" className="font-normal text-xs cursor-pointer">Fem.</Label></div>
-                        <div className="flex items-center gap-1.5"><RadioGroupItem value="male" id="m-masc" /><Label htmlFor="m-masc" className="font-normal text-xs cursor-pointer">Masc.</Label></div>
-                      </RadioGroup>
-                    </div>
+                  <div className="space-y-1.5"><Label htmlFor="m-phone">WhatsApp *</Label><Input id="m-phone" type="tel" value={phone} onChange={(e) => setPhone(e.target.value)} required placeholder="(00) 00000-0000" /></div>
+                  <div className="space-y-1.5">
+                    <Label>Gênero</Label>
+                    <RadioGroup value={gender} onValueChange={setGender} className="flex gap-3 pt-1">
+                      <div className="flex items-center gap-1.5"><RadioGroupItem value="female" id="m-fem" /><Label htmlFor="m-fem" className="font-normal text-xs cursor-pointer">Fem.</Label></div>
+                      <div className="flex items-center gap-1.5"><RadioGroupItem value="male" id="m-masc" /><Label htmlFor="m-masc" className="font-normal text-xs cursor-pointer">Masc.</Label></div>
+                    </RadioGroup>
                   </div>
                   <div className="space-y-1.5"><Label htmlFor="m-email2">E-mail</Label><Input id="m-email2" type="email" value={email} onChange={(e) => setEmail(e.target.value)} required placeholder="seu@email.com" /></div>
                   <div className="grid grid-cols-2 gap-3">
