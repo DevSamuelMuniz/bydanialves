@@ -48,6 +48,7 @@ export function WelcomeModal() {
     await supabase.from("profiles").update({ branch_id: null } as any).eq("user_id", user!.id);
     // We use bio field trick: store a flag — actually just close without touching
     setOpen(false);
+    window.dispatchEvent(new CustomEvent("welcome-modal-closed"));
     toast({ title: "Bem-vindo(a)! 🎉", description: "Você pode agendar seu primeiro serviço quando quiser." });
   };
 
