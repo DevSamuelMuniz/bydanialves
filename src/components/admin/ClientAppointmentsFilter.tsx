@@ -6,7 +6,7 @@ import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Separator } from "@/components/ui/separator";
-import { Search, User, Clock, Scissors, DollarSign, CalendarDays, X } from "lucide-react";
+import { Search, User, Clock, Scissors, CalendarDays, X } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 const STATUS_MAP: Record<string, { label: string; color: string }> = {
