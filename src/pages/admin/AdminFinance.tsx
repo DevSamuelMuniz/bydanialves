@@ -180,10 +180,10 @@ export default function AdminFinance() {
     const { data: apptData } = await apptQuery;
     setCompletedAppointments(apptData || []);
 
-    // Fetch subscriptions with plan info and client profile
+    // Fetch subscriptions with plan info and client profile (including branch_id)
     let subsQuery = supabase
       .from("subscriptions")
-      .select("id, status, started_at, expires_at, created_at, client_id, plans(name, price), profiles(full_name)")
+      .select("id, status, started_at, expires_at, created_at, client_id, plans(name, price), profiles(full_name, branch_id)")
       .order("created_at", { ascending: false })
       .limit(500);
     if (dateFrom) subsQuery = subsQuery.gte("created_at", format(dateFrom, "yyyy-MM-dd"));
@@ -271,22 +271,37 @@ export default function AdminFinance() {
     ? activeSubscriptionRevenue / activeSubscriptions.length
     : 0;
 
-  // Faturamento por filial
+  // Faturamento por filial (receita = assinaturas por filial do cliente, despesas = registros financeiros)
   const byBranch = useMemo(() => {
+    // Build branch name map from branches state
+    const branchNameMap: Record<string, string> = {};
+    for (const b of branches) branchNameMap[b.id] = b.name;
+
     const map: Record<string, { income: number; expense: number }> = {};
-    for (const r of records) {
+
+    // Subscription revenue by client branch
+    for (const sub of subscriptions) {
+      const profile = sub.profiles as any;
+      const branchId = profile?.branch_id;
+      const branchName = branchId && branchNameMap[branchId] ? branchNameMap[branchId] : "Sem filial";
+      if (!map[branchName]) map[branchName] = { income: 0, expense: 0 };
+      map[branchName].income += Number((sub.plans as any)?.price || 0);
+    }
+
+    // Expenses from financial records
+    for (const r of expense) {
       const b = r.branch || "Principal";
       if (!map[b]) map[b] = { income: 0, expense: 0 };
-      if (r.type === "income")  map[b].income  += Number(r.amount);
-      if (r.type === "expense") map[b].expense += Number(r.amount);
+      map[b].expense += Number(r.amount);
     }
+
     return Object.entries(map).map(([name, v]) => ({
       name,
       Receita: v.income,
       Despesas: v.expense,
       "Lucro Líquido": v.income - v.expense,
     }));
-  }, [records]);
+  }, [subscriptions, expense, branches]);
 
   // Evolução mensal (últimos 6 meses)
   const monthlyEvolution = useMemo(() => {
