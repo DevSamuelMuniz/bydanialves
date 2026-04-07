@@ -256,7 +256,7 @@ function SubscriptionModal({ open, onClose, selectedPlan }: { open: boolean; onC
 
   return (
     <Dialog open={open} onOpenChange={(v) => { if (!v) onClose(); }}>
-      <DialogContent className="max-w-md p-0 overflow-hidden gap-0">
+      <DialogContent className="w-[95vw] max-w-md p-0 overflow-hidden gap-0 max-h-[90vh] overflow-y-auto">
         <div className="gradient-gold p-5 flex items-center gap-3">
           <img src={logoGold} alt="Dani Alves Esmalteria" className="h-10 object-contain border-2 border-white/30 shadow rounded" />
           <div>
