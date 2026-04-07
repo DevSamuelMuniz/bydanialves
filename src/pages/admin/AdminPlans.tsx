@@ -68,7 +68,7 @@ export default function AdminPlans() {
     const [plansRes, subsRes, servicesRes, profsRolesRes] = await Promise.all([
       supabase.from("plans").select("*").order("price"),
       supabase.from("subscriptions").select("*, plans(name), profiles!subscriptions_client_profile_fkey(full_name)").order("created_at", { ascending: false }),
-      supabase.from("services").select("id, name, price").eq("active", true).order("name"),
+      supabase.from("services").select("id, name").eq("active", true).order("name"),
       supabase.from("user_roles").select("user_id").eq("role", "admin").eq("admin_level", "professional"),
     ]);
     setPlans(plansRes.data || []);
@@ -436,9 +436,8 @@ export default function AdminPlans() {
                             )
                           }
                         />
-                        <label htmlFor={`svc-${s.id}`} className="flex-1 cursor-pointer text-sm leading-snug flex items-center justify-between">
+                        <label htmlFor={`svc-${s.id}`} className="flex-1 cursor-pointer text-sm leading-snug">
                           <span>{s.name}</span>
-                          <span className="text-xs text-muted-foreground whitespace-nowrap ml-2">R$ {Number(s.price).toFixed(2).replace(".", ",")}</span>
                         </label>
                       </div>
                     ))}
