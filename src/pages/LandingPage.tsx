@@ -300,10 +300,8 @@ function SubscriptionModal({ open, onClose, selectedPlan }: { open: boolean; onC
                     </RadioGroup>
                   </div>
                   <div className="space-y-1.5"><Label htmlFor="m-email2">E-mail</Label><Input id="m-email2" type="email" value={email} onChange={(e) => setEmail(e.target.value)} required placeholder="seu@email.com" /></div>
-                  <div className="grid grid-cols-2 gap-3">
-                    <div className="space-y-1.5"><Label htmlFor="m-pw">Senha</Label><PasswordInput id="m-pw" value={password} onChange={(e) => setPassword(e.target.value)} required minLength={6} placeholder="Mín. 6 caracteres" /></div>
-                    <div className="space-y-1.5"><Label htmlFor="m-cpw">Confirmar</Label><PasswordInput id="m-cpw" value={confirmPassword} onChange={(e) => setConfirmPassword(e.target.value)} required placeholder="Repita a senha" /></div>
-                  </div>
+                  <div className="space-y-1.5"><Label htmlFor="m-pw">Senha</Label><PasswordInput id="m-pw" value={password} onChange={(e) => setPassword(e.target.value)} required minLength={6} placeholder="Mín. 6 caracteres" /></div>
+                  <div className="space-y-1.5"><Label htmlFor="m-cpw">Confirmar</Label><PasswordInput id="m-cpw" value={confirmPassword} onChange={(e) => setConfirmPassword(e.target.value)} required placeholder="Repita a senha" /></div>
                   <Button type="submit" className="w-full gradient-gold border-0 text-primary-foreground" disabled={loading}>{loading ? <><Loader2 className="h-4 w-4 mr-2 animate-spin" /> Criando conta...</> : "Criar conta e continuar"}</Button>
                 </form>
               }
