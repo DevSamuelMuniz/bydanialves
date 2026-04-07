@@ -251,6 +251,7 @@ export default function AdminBonification() {
       const { data: subs } = await supabase
         .from("subscriptions")
         .select("plan_id, plans(price)")
+        .eq("status", "active")
         .gte("started_at", `${range.from}T00:00:00`)
         .lte("started_at", `${range.to}T23:59:59`);
 
