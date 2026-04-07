@@ -146,6 +146,7 @@ export default function AdminBonification() {
 
   const [selectedPeriod, setSelectedPeriod] = useState(defaultPeriod);
   const [totalPool, setTotalPool] = useState(""); // total_sales value
+  const [totalPoolManual, setTotalPoolManual] = useState(false); // user manually edited
   const [percentage, setPercentage] = useState("10");
   const [searchQuery, setSearchQuery] = useState("");
   const [loading, setLoading] = useState(false);
@@ -240,14 +241,16 @@ export default function AdminBonification() {
       setApptStats({});
     }
 
-    // Auto-fill total sales from active subscriptions if not set
-    const { data: subs } = await supabase
-      .from("subscriptions")
-      .select("plan_id, plans(price)")
-      .eq("status", "active");
-    if (subs && subs.length > 0) {
-      const total = (subs as any[]).reduce((acc, s) => acc + (s.plans?.price ?? 0), 0);
-      setTotalPool(total.toFixed(2));
+    // Auto-fill total sales from active subscriptions only if user hasn't manually edited
+    if (!totalPoolManual) {
+      const { data: subs } = await supabase
+        .from("subscriptions")
+        .select("plan_id, plans(price)")
+        .eq("status", "active");
+      if (subs && subs.length > 0) {
+        const total = (subs as any[]).reduce((acc, s) => acc + (s.plans?.price ?? 0), 0);
+        setTotalPool(total.toFixed(2));
+      }
     }
 
     setLoading(false);
@@ -259,6 +262,7 @@ export default function AdminBonification() {
 
   useEffect(() => {
     if (professionals.length > 0 || loading) {
+      setTotalPoolManual(false);
       fetchPeriodData(selectedPeriod);
     }
   }, [selectedPeriod, professionals.length]);
@@ -286,6 +290,7 @@ export default function AdminBonification() {
         (p) => p.professional_id === prof.user_id && p.reference_period === selectedPeriod
       );
 
+      // Always recalculate bonus from current pool/hours inputs
       const bonus =
         totalHoursInPeriod > 0
           ? parseFloat(((hours / totalHoursInPeriod) * bonusPool).toFixed(2))
@@ -299,7 +304,7 @@ export default function AdminBonification() {
         time_worked_min: stats.time_worked_min,
         clients_count: stats.clients_count,
         hours_worked: hours,
-        bonus_amount: paymentEntry?.bonus_amount ?? bonus,
+        bonus_amount: bonus,
         payment_id: paymentEntry?.id ?? null,
         payment_status: paymentEntry?.status ?? null,
         paid_at: paymentEntry?.paid_at ?? null,
@@ -528,7 +533,7 @@ export default function AdminBonification() {
                 step={0.01}
                 placeholder="0,00"
                 value={totalPool}
-                onChange={(e) => setTotalPool(e.target.value)}
+                onChange={(e) => { setTotalPool(e.target.value); setTotalPoolManual(true); }}
                 className="h-9"
               />
             </div>
