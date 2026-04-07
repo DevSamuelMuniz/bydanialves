@@ -167,10 +167,10 @@ export default function AdminFinance() {
     const { data } = await query;
     setRecords(data || []);
 
-    // Fetch completed appointments with service prices and client profiles
+    // Fetch completed appointments (for count only, no price)
     let apptQuery = supabase
       .from("appointments")
-      .select("id, appointment_date, appointment_time, created_at, notes, client_id, branch_id, profiles(full_name), services(name, price, is_system)")
+      .select("id, appointment_date, appointment_time, created_at, notes, client_id, branch_id, profiles(full_name), services(name, is_system)")
       .eq("status", "completed")
       .order("appointment_date", { ascending: false })
       .limit(500);
@@ -200,10 +200,8 @@ export default function AdminFinance() {
   const income  = records.filter((r) => r.type === "income");
   const expense = records.filter((r) => r.type === "expense");
 
-  // Receita de agendamentos concluídos (usada para ticket médio e gráfico separado)
-  const appointmentServiceRevenue = useMemo(() =>
-    completedAppointments.reduce((s, a) => s + Number((a.services as any)?.price || 0), 0),
-  [completedAppointments]);
+  // Appointment count (revenue comes from subscriptions now)
+  const appointmentCount = completedAppointments.length;
 
   // Faturamento bruto = soma de todos os registros de entrada (já inclui atendimentos concluídos via trigger)
   const totalIncome  = income.reduce((s, r) => s + Number(r.amount), 0);
@@ -261,8 +259,8 @@ export default function AdminFinance() {
   const contributionMargin = totalIncome - totalVariableCosts;
   const netProfit          = totalIncome - totalExpense;
   const grossMarginPct     = pct(netProfit, totalIncome);
-  const avgTicket          = completedAppointments.length > 0
-    ? appointmentServiceRevenue / completedAppointments.length
+  const avgTicket = activeSubscriptions.length > 0
+    ? activeSubscriptionRevenue / activeSubscriptions.length
     : 0;
 
   // Receita de assinaturas
@@ -310,12 +308,12 @@ export default function AdminFinance() {
       if (r.type === "income")  m.income  += Number(r.amount);
       if (r.type === "expense") m.expense += Number(r.amount);
     }
-    // Agendamentos concluídos (receita automática)
-    for (const a of completedAppointments) {
-      const key = a.appointment_date?.slice(0, 7);
+    // Subscription revenue by month
+    for (const sub of subscriptions) {
+      const key = sub.created_at?.slice(0, 7);
       const m = months.find((m) => m.key === key);
       if (!m) continue;
-      m.income += Number((a.services as any)?.price || 0);
+      m.income += Number((sub.plans as any)?.price || 0);
     }
     return months.map((m) => ({
       name: m.label,
@@ -577,7 +575,7 @@ export default function AdminFinance() {
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
           <SummaryRow label="Custos Fixos"           value={fmt(totalFixedCosts)} />
             <SummaryRow label="CMV"                    value={fmt(totalCMV)} />
-            <SummaryRow label="Ticket Médio Serviços"  value={avgTicket > 0 ? fmt(avgTicket) : "—"} />
+            <SummaryRow label="Ticket Médio Planos"  value={avgTicket > 0 ? fmt(avgTicket) : "—"} />
             <SummaryRow label="Atendimentos Concluídos" value={`${completedAppointments.length} serviços`} />
           </div>
         </TabsContent>
