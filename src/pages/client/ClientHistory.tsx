@@ -412,23 +412,15 @@ export default function ClientHistory() {
 
                   <div className="border-t border-border/40 mt-auto" />
 
-                  {/* Total price */}
-                  <div className="flex items-center justify-between">
+                  {/* Duration total */}
+                  {group.totalDuration > 0 && (
                     <div className="flex items-center gap-2">
-                      <BanknoteIcon className="h-3.5 w-3.5 text-primary shrink-0" />
+                      <Timer className="h-3.5 w-3.5 text-primary shrink-0" />
                       <span className="font-serif font-semibold text-foreground text-sm">
-                        {group.totalPrice === 0 && group.hasFree
-                          ? <span className="text-primary">Grátis</span>
-                          : `R$ ${group.totalPrice.toFixed(2)}`
-                        }
+                        {group.totalDuration} min
                       </span>
                     </div>
-                    {group.hasFree && group.totalPrice > 0 && (
-                      <Badge variant="secondary" className="text-[10px] bg-primary/10 text-primary border-primary/20">
-                        Incluso no plano
-                      </Badge>
-                    )}
-                  </div>
+                  )}
 
                   {/* Review buttons — one per reviewable appointment in group */}
                   {group.reviewableIds.length > 0 && (
