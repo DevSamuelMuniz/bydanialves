@@ -1,0 +1,1 @@
+DROP FUNCTION IF EXISTS public.create_financial_record_on_completion() CASCADE;

@@ -16,7 +16,7 @@ import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
 import { useToast } from "@/hooks/use-toast";
-import { Clock, CalendarDays, StickyNote, Trash2, DollarSign, Handshake, CheckCircle2, User, Scissors, RefreshCw, XCircle, Building2, Filter, UserCheck, Plus, Search, RotateCcw } from "lucide-react";
+import { Clock, CalendarDays, StickyNote, Trash2, Crown, Handshake, CheckCircle2, User, Scissors, RefreshCw, XCircle, Building2, Filter, UserCheck, Plus, Search, RotateCcw } from "lucide-react";
 import ClientAppointmentsFilter from "@/components/admin/ClientAppointmentsFilter";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
@@ -104,7 +104,7 @@ export default function AdminProfessionalAgenda() {
   // Load services and clients for booking dialog
   const loadBookingData = useCallback(async () => {
     const [{ data: svcs }, { data: roles }] = await Promise.all([
-      supabase.from("services").select("id, name, price, duration_minutes").eq("active", true).order("name"),
+      supabase.from("services").select("id, name, duration_minutes").eq("active", true).order("name"),
       supabase.from("user_roles").select("user_id").eq("role", "client"),
     ]);
     setServices(svcs || []);
@@ -127,7 +127,7 @@ export default function AdminProfessionalAgenda() {
     setLoading(true);
     let query = supabase
       .from("appointments")
-      .select("*, services(name, price, duration_minutes), profiles!appointments_client_profile_fkey(full_name, phone)")
+      .select("*, services(name, duration_minutes), profiles!appointments_client_profile_fkey(full_name, phone)")
       .in("status", ["confirmed", "cancelled"]);
 
     if (!isManager) {
@@ -303,10 +303,12 @@ export default function AdminProfessionalAgenda() {
                 {new Date(a.appointment_date).toLocaleDateString("pt-BR")} às {a.appointment_time?.slice(0, 5)}
               </span>
             </div>
-            <div className="flex items-center gap-1.5">
-              <DollarSign className="h-3 w-3 text-muted-foreground shrink-0" />
-              <span className="text-xs text-muted-foreground">R$ {Number(a.services?.price || 0).toFixed(2)}</span>
-            </div>
+            {(a as any).planName && (
+              <div className="flex items-center gap-1.5">
+                <Crown className="h-3 w-3 text-primary shrink-0" />
+                <span className="text-xs text-muted-foreground">{(a as any).planName}</span>
+              </div>
+            )}
           </div>
           {editingNotes === a.id ? (
             <div className="space-y-1.5">
@@ -559,7 +561,7 @@ export default function AdminProfessionalAgenda() {
                 <SelectContent>
                   {services.map((s) => (
                     <SelectItem key={s.id} value={s.id}>
-                      {s.name} — R$ {Number(s.price).toFixed(2)} ({s.duration_minutes}min)
+                      {s.name} ({s.duration_minutes}min)
                     </SelectItem>
                   ))}
                 </SelectContent>

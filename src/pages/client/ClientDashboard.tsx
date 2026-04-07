@@ -62,7 +62,7 @@ export default function ClientDashboard() {
         supabase.from("profiles").select("*").eq("user_id", user.id).single(),
         supabase
           .from("appointments")
-          .select("*, services(name, price, duration_minutes, description), branches(name, address)")
+          .select("*, services(name, duration_minutes, description), branches(name, address)")
           .eq("client_id", user.id)
           .order("appointment_date", { ascending: true })
           .order("appointment_time", { ascending: true }),
@@ -218,7 +218,6 @@ export default function ClientDashboard() {
                 });
                 const weekday = new Date(appt.appointment_date + "T12:00:00").toLocaleDateString("pt-BR", { weekday: "short" });
                 const timeFormatted = appt.appointment_time?.slice(0, 5);
-                const price = Number(appt.services?.price ?? 0);
                 const duration = appt.services?.duration_minutes;
 
                 return (
@@ -250,7 +249,7 @@ export default function ClientDashboard() {
                         <p className="text-lg font-bold font-serif text-primary leading-tight mt-0.5">{timeFormatted}</p>
                       </div>
 
-                      {/* Duration + price */}
+                      {/* Duration + plan badge */}
                       <div className="flex flex-wrap gap-1.5">
                         {duration && (
                           <span className="flex items-center gap-1 text-xs bg-muted rounded-full px-2 py-0.5">
@@ -258,13 +257,9 @@ export default function ClientDashboard() {
                             {duration}min
                           </span>
                         )}
-                        {price > 0 ? (
+                        {subscription && (
                           <span className="text-xs bg-primary/10 text-primary rounded-full px-2 py-0.5 font-semibold">
-                            R$ {price.toFixed(2)}
-                          </span>
-                        ) : (
-                          <span className="text-xs bg-success/10 text-success rounded-full px-2 py-0.5 font-semibold">
-                            Incluso
+                            {subscription.plans?.name}
                           </span>
                         )}
                       </div>
@@ -290,7 +285,6 @@ export default function ClientDashboard() {
           weekday: "long", day: "2-digit", month: "long", year: "numeric",
         });
         const timeFormatted = appt.appointment_time?.slice(0, 5);
-        const price = Number(appt.services?.price ?? 0);
         const duration = appt.services?.duration_minutes;
         const statusIcon = {
           pending: <AlertCircle className="h-4 w-4" />,
@@ -354,7 +348,7 @@ export default function ClientDashboard() {
                   </div>
                 )}
 
-                {/* Duration + price */}
+                {/* Duration */}
                 <div className="flex gap-4">
                   {duration && (
                     <div className="flex items-start gap-3">
@@ -365,15 +359,15 @@ export default function ClientDashboard() {
                       </div>
                     </div>
                   )}
-                  <div className="flex items-start gap-3">
-                    <Clock className="h-4 w-4 text-primary mt-0.5 shrink-0" />
-                    <div>
-                      <p className="text-xs text-muted-foreground">Valor</p>
-                      <p className="text-sm font-medium">
-                        {price > 0 ? `R$ ${price.toFixed(2)}` : "Incluso no plano"}
-                      </p>
+                  {subscription && (
+                    <div className="flex items-start gap-3">
+                      <Crown className="h-4 w-4 text-primary mt-0.5 shrink-0" />
+                      <div>
+                        <p className="text-xs text-muted-foreground">Plano</p>
+                        <p className="text-sm font-medium">{subscription.plans?.name}</p>
+                      </div>
                     </div>
-                  </div>
+                  )}
                 </div>
 
                 {/* Description */}

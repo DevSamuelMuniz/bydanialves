@@ -13,7 +13,7 @@ import { Calendar } from "@/components/ui/calendar";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
 import { useToast } from "@/hooks/use-toast";
-import { Clock, CalendarDays, Filter, StickyNote, Trash2, DollarSign, Handshake, CheckCircle2, User, Scissors, RefreshCw, AlertCircle, XCircle, Building2, RotateCcw } from "lucide-react";
+import { Clock, CalendarDays, Filter, StickyNote, Trash2, Crown, Handshake, CheckCircle2, User, Scissors, RefreshCw, AlertCircle, XCircle, Building2, RotateCcw } from "lucide-react";
 import ClientAppointmentsFilter from "@/components/admin/ClientAppointmentsFilter";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
@@ -64,7 +64,7 @@ export default function AdminAgenda() {
     setLoading(true);
     let query = supabase
       .from("appointments")
-      .select("*, services(name, price, duration_minutes), profiles!appointments_client_profile_fkey(full_name, phone)")
+      .select("*, services(name, duration_minutes), profiles!appointments_client_profile_fkey(full_name, phone)")
       .in("status", ["pending", "confirmed", "cancelled", "completed"]);
 
     // Staff with a fixed branch → use that; manager/ceo → use the branch filter dropdown
@@ -276,10 +276,12 @@ export default function AdminAgenda() {
                 {new Date(a.appointment_date).toLocaleDateString("pt-BR")} às {a.appointment_time?.slice(0, 5)}
               </span>
             </div>
-            <div className="flex items-center gap-1.5">
-              <DollarSign className="h-3 w-3 text-muted-foreground shrink-0" />
-              <span className="text-xs text-muted-foreground">R$ {Number(a.services?.price || 0).toFixed(2)}</span>
-            </div>
+            {(a as any).planName && (
+              <div className="flex items-center gap-1.5">
+                <Crown className="h-3 w-3 text-primary shrink-0" />
+                <span className="text-xs text-muted-foreground">{(a as any).planName}</span>
+              </div>
+            )}
           </div>
 
           {/* Notes */}
