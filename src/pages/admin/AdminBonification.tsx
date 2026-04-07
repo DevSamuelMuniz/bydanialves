@@ -326,7 +326,7 @@ export default function AdminBonification() {
 
   async function handleGenerate() {
     if (!totalPool || parseFloat(totalPool) <= 0)
-      return toast({ title: "Informe o Total Bolo", variant: "destructive" });
+      return toast({ title: "Informe a Receita de Assinaturas", variant: "destructive" });
     if (alreadyDistributed)
       return toast({ title: "Distribuição já realizada para este período", variant: "destructive" });
     if (totalHoursInPeriod === 0) {
