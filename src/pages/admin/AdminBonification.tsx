@@ -187,11 +187,17 @@ export default function AdminBonification() {
         .select("user_id, full_name, avatar_url")
         .in("user_id", profIds);
       if (profilesData) {
-        profs = profilesData.map((p: any) => ({
-          user_id: p.user_id,
-          full_name: p.full_name ?? "—",
-          avatar_url: p.avatar_url ?? null,
-        }));
+        profs = profilesData.map((p: any) => {
+          let avatarUrl = p.avatar_url ?? null;
+          if (avatarUrl && !avatarUrl.startsWith("http")) {
+            avatarUrl = supabase.storage.from("avatars").getPublicUrl(avatarUrl).data.publicUrl;
+          }
+          return {
+            user_id: p.user_id,
+            full_name: p.full_name ?? "—",
+            avatar_url: avatarUrl,
+          };
+        });
       }
     }
     setProfessionals(profs);
