@@ -15,7 +15,7 @@ import {
   DialogDescription,
 } from "@/components/ui/dialog";
 import {
-  Clock, Filter, MapPin, Scissors, CalendarDays, BanknoteIcon,
+  Clock, Filter, MapPin, Scissors, CalendarDays,
   StickyNote, Timer, Star, RotateCcw, UserCircle2, ChevronDown, ChevronUp,
 } from "lucide-react";
 import { toast } from "sonner";
@@ -86,7 +86,6 @@ function groupKey(appt: any): string {
 interface BookingGroup {
   key: string;
   appointments: any[];
-  /** First appointment drives the card-level metadata */
   status: string;
   appointment_date: string;
   appointment_time: string;
@@ -94,11 +93,8 @@ interface BookingGroup {
   professional: any;
   notes: string | null;
   totalDuration: number;
-  totalPrice: number;
   hasFree: boolean;
-  /** IDs of appointments that can be reviewed */
   reviewableIds: string[];
-  /** IDs already reviewed */
   reviewedIdsInGroup: string[];
 }
 
@@ -125,7 +121,7 @@ export default function ClientHistory() {
     let query = supabase
       .from("appointments")
       .select(
-        "*, services(name, price, description, duration_minutes, is_system), branches(name, address), professional:profiles!appointments_professional_id_fkey(full_name)"
+        "*, services(name, description, duration_minutes, is_system), branches(name, address), professional:profiles!appointments_professional_id_fkey(full_name)"
       )
       .eq("client_id", user.id)
       .order("appointment_date", { ascending: false })
@@ -196,10 +192,6 @@ export default function ClientHistory() {
     return Array.from(map.entries()).map(([key, appts]) => {
       const first = appts[0];
       const totalDuration = appts.reduce((s, a) => s + (a.services?.duration_minutes ?? 0), 0);
-      const totalPrice = appts.reduce((s, a) => {
-        const isFree = a.services?.is_system && escovasDisponiveis > 0;
-        return s + (isFree ? 0 : Number(a.services?.price ?? 0));
-      }, 0);
       const hasFree = appts.some((a) => a.services?.is_system && escovasDisponiveis > 0);
       const reviewableIds = appts
         .filter((a) => a.status === "completed" && !reviewedIds.has(a.id))
@@ -218,7 +210,6 @@ export default function ClientHistory() {
         professional: first.professional,
         notes: first.notes,
         totalDuration,
-        totalPrice,
         hasFree,
         reviewableIds,
         reviewedIdsInGroup,
@@ -353,23 +344,13 @@ export default function ClientHistory() {
                       {isExpanded && (
                         <div className="mt-1.5 space-y-1.5 border border-border/50 rounded-lg p-2.5 bg-muted/20">
                           {group.appointments.map((appt) => {
-                            const isFree = appt.services?.is_system && escovasDisponiveis > 0;
                             return (
                               <div key={appt.id} className="flex items-center justify-between gap-2">
                                 <div className="flex items-center gap-1.5 min-w-0">
                                   <Scissors className="h-3 w-3 text-muted-foreground shrink-0" />
                                   <span className="text-xs text-foreground truncate">{appt.services?.name}</span>
                                 </div>
-                                <div className="flex items-center gap-2 shrink-0">
-                                  <span className="text-[10px] text-muted-foreground">{appt.services?.duration_minutes}min</span>
-                                  {isFree ? (
-                                    <span className="text-xs font-semibold text-primary">Grátis</span>
-                                  ) : (
-                                    <span className="text-xs font-semibold">
-                                      R$ {Number(appt.services?.price ?? 0).toFixed(2)}
-                                    </span>
-                                  )}
-                                </div>
+                                <span className="text-[10px] text-muted-foreground shrink-0">{appt.services?.duration_minutes}min</span>
                               </div>
                             );
                           })}
