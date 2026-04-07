@@ -247,8 +247,8 @@
 
 .driver-popover.onboarding-popover .driver-popover-next-btn,
 .driver-popover.onboarding-popover .driver-popover-done-btn {
-  background: linear-gradient(135deg, hsl(var(--gold-start)), hsl(var(--gold-end))) !important;
-  color: hsl(var(--primary-foreground)) !important;
+  background: hsl(var(--foreground)) !important;
+  color: hsl(var(--background)) !important;
   border: none !important;
   border-radius: 0.625rem !important;
   font-size: 0.8125rem !important;
@@ -257,7 +257,7 @@
   font-family: 'Poppins', sans-serif !important;
   cursor: pointer !important;
   transition: all 0.2s ease !important;
-  box-shadow: 0 2px 8px hsl(var(--gold-start) / 0.3) !important;
+  box-shadow: 0 2px 8px hsl(var(--foreground) / 0.2) !important;
 }
 
 .driver-popover.onboarding-popover .driver-popover-next-btn:hover,
