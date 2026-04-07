@@ -146,6 +146,7 @@ export default function AdminBonification() {
 
   const [selectedPeriod, setSelectedPeriod] = useState(defaultPeriod);
   const [totalPool, setTotalPool] = useState(""); // total_sales value
+  const [totalPoolManual, setTotalPoolManual] = useState(false); // user manually edited
   const [percentage, setPercentage] = useState("10");
   const [searchQuery, setSearchQuery] = useState("");
   const [loading, setLoading] = useState(false);
