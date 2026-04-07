@@ -791,8 +791,8 @@ export default function AdminFinance() {
                             </p>
                           </div>
                         </div>
-                        <span className="text-sm font-bold text-green-700">
-                          + {fmt(Number(svc?.price || 0))}
+                        <span className="text-xs text-muted-foreground">
+                          {svc?.is_system ? "Incluso no plano" : "Serviço avulso"}
                         </span>
                       </div>
                     );
