@@ -262,6 +262,7 @@ export default function AdminBonification() {
 
   useEffect(() => {
     if (professionals.length > 0 || loading) {
+      setTotalPoolManual(false);
       fetchPeriodData(selectedPeriod);
     }
   }, [selectedPeriod, professionals.length]);
