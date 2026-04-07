@@ -241,14 +241,16 @@ export default function AdminBonification() {
       setApptStats({});
     }
 
-    // Auto-fill total sales from active subscriptions if not set
-    const { data: subs } = await supabase
-      .from("subscriptions")
-      .select("plan_id, plans(price)")
-      .eq("status", "active");
-    if (subs && subs.length > 0) {
-      const total = (subs as any[]).reduce((acc, s) => acc + (s.plans?.price ?? 0), 0);
-      setTotalPool(total.toFixed(2));
+    // Auto-fill total sales from active subscriptions only if user hasn't manually edited
+    if (!totalPoolManual) {
+      const { data: subs } = await supabase
+        .from("subscriptions")
+        .select("plan_id, plans(price)")
+        .eq("status", "active");
+      if (subs && subs.length > 0) {
+        const total = (subs as any[]).reduce((acc, s) => acc + (s.plans?.price ?? 0), 0);
+        setTotalPool(total.toFixed(2));
+      }
     }
 
     setLoading(false);
