@@ -240,12 +240,10 @@ function SubscriptionModal({ open, onClose, selectedPlan }: { open: boolean; onC
         const { data, error } = await supabase.functions.invoke("create-checkout", { body: { planId: selectedPlan.id } });
         if (error) throw error;
         if (data?.url) {
-          onClose();
-          window.open(data.url, "_blank");
-          const checkInterval = setInterval(async () => {
-            const { data: { session } } = await supabase.auth.getSession();
-            if (session) { clearInterval(checkInterval); navigate("/client"); }
-          }, 2000);
+          window.location.href = data.url;
+        } else {
+          alert("Erro: não foi possível gerar o link de pagamento.");
+          setStep("terms");
         }
       } catch (err: any) {
         alert("Erro ao iniciar pagamento: " + err.message);
@@ -258,7 +256,7 @@ function SubscriptionModal({ open, onClose, selectedPlan }: { open: boolean; onC
 
   return (
     <Dialog open={open} onOpenChange={(v) => { if (!v) onClose(); }}>
-      <DialogContent className="max-w-md p-0 overflow-hidden gap-0">
+      <DialogContent className="w-[95vw] max-w-md p-0 overflow-hidden gap-0 max-h-[90vh] overflow-y-auto">
         <div className="gradient-gold p-5 flex items-center gap-3">
           <img src={logoGold} alt="Dani Alves Esmalteria" className="h-10 object-contain border-2 border-white/30 shadow rounded" />
           <div>
@@ -293,21 +291,17 @@ function SubscriptionModal({ open, onClose, selectedPlan }: { open: boolean; onC
                 </form> :
                 <form onSubmit={handleSignUp} className="space-y-3">
                   <div className="space-y-1.5"><Label htmlFor="m-name">Nome completo</Label><Input id="m-name" value={fullName} onChange={(e) => setFullName(e.target.value)} required placeholder="Seu nome" /></div>
-                  <div className="grid grid-cols-2 gap-3">
-                    <div className="space-y-1.5"><Label htmlFor="m-phone">WhatsApp *</Label><Input id="m-phone" type="tel" value={phone} onChange={(e) => setPhone(e.target.value)} required placeholder="(00) 00000-0000" /></div>
-                    <div className="space-y-1.5">
-                      <Label>Gênero</Label>
-                      <RadioGroup value={gender} onValueChange={setGender} className="flex gap-3 pt-1">
-                        <div className="flex items-center gap-1.5"><RadioGroupItem value="female" id="m-fem" /><Label htmlFor="m-fem" className="font-normal text-xs cursor-pointer">Fem.</Label></div>
-                        <div className="flex items-center gap-1.5"><RadioGroupItem value="male" id="m-masc" /><Label htmlFor="m-masc" className="font-normal text-xs cursor-pointer">Masc.</Label></div>
-                      </RadioGroup>
-                    </div>
+                  <div className="space-y-1.5"><Label htmlFor="m-phone">WhatsApp *</Label><Input id="m-phone" type="tel" value={phone} onChange={(e) => setPhone(e.target.value)} required placeholder="(00) 00000-0000" /></div>
+                  <div className="space-y-1.5">
+                    <Label>Gênero</Label>
+                    <RadioGroup value={gender} onValueChange={setGender} className="flex gap-3 pt-1">
+                      <div className="flex items-center gap-1.5"><RadioGroupItem value="female" id="m-fem" /><Label htmlFor="m-fem" className="font-normal text-xs cursor-pointer">Fem.</Label></div>
+                      <div className="flex items-center gap-1.5"><RadioGroupItem value="male" id="m-masc" /><Label htmlFor="m-masc" className="font-normal text-xs cursor-pointer">Masc.</Label></div>
+                    </RadioGroup>
                   </div>
                   <div className="space-y-1.5"><Label htmlFor="m-email2">E-mail</Label><Input id="m-email2" type="email" value={email} onChange={(e) => setEmail(e.target.value)} required placeholder="seu@email.com" /></div>
-                  <div className="grid grid-cols-2 gap-3">
-                    <div className="space-y-1.5"><Label htmlFor="m-pw">Senha</Label><PasswordInput id="m-pw" value={password} onChange={(e) => setPassword(e.target.value)} required minLength={6} placeholder="Mín. 6 caracteres" /></div>
-                    <div className="space-y-1.5"><Label htmlFor="m-cpw">Confirmar</Label><PasswordInput id="m-cpw" value={confirmPassword} onChange={(e) => setConfirmPassword(e.target.value)} required placeholder="Repita a senha" /></div>
-                  </div>
+                  <div className="space-y-1.5"><Label htmlFor="m-pw">Senha</Label><PasswordInput id="m-pw" value={password} onChange={(e) => setPassword(e.target.value)} required minLength={6} placeholder="Mín. 6 caracteres" /></div>
+                  <div className="space-y-1.5"><Label htmlFor="m-cpw">Confirmar</Label><PasswordInput id="m-cpw" value={confirmPassword} onChange={(e) => setConfirmPassword(e.target.value)} required placeholder="Repita a senha" /></div>
                   <Button type="submit" className="w-full gradient-gold border-0 text-primary-foreground" disabled={loading}>{loading ? <><Loader2 className="h-4 w-4 mr-2 animate-spin" /> Criando conta...</> : "Criar conta e continuar"}</Button>
                 </form>
               }
@@ -352,7 +346,7 @@ function SubscriptionModal({ open, onClose, selectedPlan }: { open: boolean; onC
                   <p className="text-xs text-muted-foreground leading-relaxed">Ao confirmar, você autoriza a cobrança de{" "}<span className="font-semibold text-foreground">{selectedPlan ? Number(selectedPlan.price).toLocaleString("pt-BR", { style: "currency", currency: "BRL" }) : ""}/mês</span>{" "}de forma automática todo mês até o cancelamento. Você pode cancelar quando quiser pelo portal do cliente, sem multa.</p>
                 </div>
               </div>
-              <ScrollArea className="h-64 rounded-lg border border-border/60 bg-muted/20 p-4 text-sm text-muted-foreground leading-relaxed">
+              <ScrollArea className="h-48 sm:h-64 rounded-lg border border-border/60 bg-muted/20 p-4 text-sm text-muted-foreground leading-relaxed">
                 <p className="font-bold text-foreground text-center mb-3">✨ REGRAS DA ESCOVA POR ASSINATURA – BY DANI ALVES ✨</p>
                 <p className="mb-4 text-xs">Para evitar dúvidas, seguem as principais informações do plano:</p>
                 <p className="font-semibold text-foreground mb-1">📌 1. Como funciona o plano</p>

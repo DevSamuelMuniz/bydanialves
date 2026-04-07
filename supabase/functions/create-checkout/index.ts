@@ -69,7 +69,7 @@ serve(async (req) => {
         .eq("status", "active");
     }
 
-    const origin = req.headers.get("origin") || "https://id-preview--76555cc4-4bca-4bf7-af8c-8a10b830603b.lovable.app";
+    const origin = req.headers.get("origin") || req.headers.get("referer")?.replace(/\/[^/]*$/, "") || "https://bydanialves.lovable.app";
 
     const session = await stripe.checkout.sessions.create({
       customer: customerId,
