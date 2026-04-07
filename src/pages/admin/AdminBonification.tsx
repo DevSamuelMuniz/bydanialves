@@ -246,12 +246,13 @@ export default function AdminBonification() {
       setApptStats({});
     }
 
-    // For open periods, auto-fill from active subscriptions only when there is no saved rule
-    if (!totalPoolManual && !periodRule) {
+    // For open periods, auto-fill from subscriptions that started within the selected period
+    if (!totalPoolManual && !periodRule && range) {
       const { data: subs } = await supabase
         .from("subscriptions")
         .select("plan_id, plans(price)")
-        .eq("status", "active");
+        .gte("started_at", `${range.from}T00:00:00`)
+        .lte("started_at", `${range.to}T23:59:59`);
 
       if (subs && subs.length > 0) {
         const total = (subs as any[]).reduce((acc, s) => acc + (s.plans?.price ?? 0), 0);
