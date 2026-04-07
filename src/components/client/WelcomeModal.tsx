@@ -49,11 +49,13 @@ export function WelcomeModal() {
     check();
   }, [user]);
 
+  const markDone = () => {
+    if (user) localStorage.setItem(`welcome_modal_done_${user.id}`, "true");
+  };
+
   const handleNotClient = async () => {
-    // Mark as "seen" by setting a sentinel so modal doesn't reappear
-    await supabase.from("profiles").update({ branch_id: null } as any).eq("user_id", user!.id);
-    // We use bio field trick: store a flag — actually just close without touching
     setOpen(false);
+    markDone();
     window.dispatchEvent(new CustomEvent("welcome-modal-closed"));
     toast({ title: "Bem-vindo(a)! 🎉", description: "Você pode agendar seu primeiro serviço quando quiser." });
   };
