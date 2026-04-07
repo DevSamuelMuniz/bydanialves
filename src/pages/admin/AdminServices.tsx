@@ -74,9 +74,10 @@ export default function AdminServices() {
 
   const handleSave = async (e: React.FormEvent) => {
     e.preventDefault();
-    const payload = {
+    const payload: any = {
       name: form.name,
       description: form.description,
+      price: 0,
       duration_minutes: Number(form.duration_minutes),
     };
     if (editing) {
