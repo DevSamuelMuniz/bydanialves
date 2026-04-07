@@ -326,7 +326,7 @@ export default function AdminBonification() {
 
   async function handleGenerate() {
     if (!totalPool || parseFloat(totalPool) <= 0)
-      return toast({ title: "Informe o Total Bolo", variant: "destructive" });
+      return toast({ title: "Informe a Receita de Assinaturas", variant: "destructive" });
     if (alreadyDistributed)
       return toast({ title: "Distribuição já realizada para este período", variant: "destructive" });
     if (totalHoursInPeriod === 0) {
@@ -519,9 +519,9 @@ export default function AdminBonification() {
               </select>
             </div>
 
-            {/* Total Bolo */}
+            {/* Receita Assinaturas */}
             <div className="space-y-1.5 min-w-[180px]">
-              <Label className="text-xs text-muted-foreground">Total Bolo (R$)</Label>
+              <Label className="text-xs text-muted-foreground">Receita Assinaturas (R$)</Label>
               <Input
                 type="number"
                 min={0}
