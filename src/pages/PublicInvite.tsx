@@ -36,13 +36,11 @@ export default function PublicInvite() {
   const [subscribing, setSubscribing] = useState(false);
   const [userId, setUserId] = useState<string | null>(null);
 
-  // Check if already logged in
+  // Sign out any existing session so the invite page always shows signup
   useEffect(() => {
     supabase.auth.getSession().then(({ data }) => {
       if (data.session) {
-        setUserId(data.session.user.id);
-        setStep("plans");
-        loadPlans();
+        supabase.auth.signOut();
       }
     });
   }, []);
