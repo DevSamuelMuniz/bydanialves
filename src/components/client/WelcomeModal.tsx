@@ -66,6 +66,7 @@ export function WelcomeModal() {
     await supabase.from("profiles").update({ branch_id: selectedBranch } as any).eq("user_id", user!.id);
     setSaving(false);
     setOpen(false);
+    markDone();
     window.dispatchEvent(new CustomEvent("welcome-modal-closed"));
     toast({ title: "Tudo certo! 💇", description: "Sua filial preferida foi salva no seu perfil." });
   };
