@@ -382,6 +382,63 @@ export type Database = {
         }
         Relationships: []
       }
+      payments: {
+        Row: {
+          asaas_customer_id: string | null
+          asaas_payment_id: string
+          billing_type: string
+          created_at: string
+          due_date: string | null
+          id: string
+          invoice_url: string | null
+          paid_at: string | null
+          pix_copy_paste: string | null
+          pix_qr_code: string | null
+          plan_id: string | null
+          status: string
+          subscription_id: string | null
+          updated_at: string
+          user_id: string
+          value: number
+        }
+        Insert: {
+          asaas_customer_id?: string | null
+          asaas_payment_id: string
+          billing_type: string
+          created_at?: string
+          due_date?: string | null
+          id?: string
+          invoice_url?: string | null
+          paid_at?: string | null
+          pix_copy_paste?: string | null
+          pix_qr_code?: string | null
+          plan_id?: string | null
+          status?: string
+          subscription_id?: string | null
+          updated_at?: string
+          user_id: string
+          value: number
+        }
+        Update: {
+          asaas_customer_id?: string | null
+          asaas_payment_id?: string
+          billing_type?: string
+          created_at?: string
+          due_date?: string | null
+          id?: string
+          invoice_url?: string | null
+          paid_at?: string | null
+          pix_copy_paste?: string | null
+          pix_qr_code?: string | null
+          plan_id?: string | null
+          status?: string
+          subscription_id?: string | null
+          updated_at?: string
+          user_id?: string
+          value?: number
+        }
+        Relationships: []
+      }
       plan_professionals: {
         Row: {
           created_at: string
@@ -447,6 +504,30 @@ export type Database = {
           restriction?: string | null
           stripe_price_id?: string | null
           updated_at?: string
+        }
+        Relationships: []
+      }
+      processed_webhooks: {
+        Row: {
+          event_id: string
+          event_type: string
+          id: string
+          payload: Json | null
+          processed_at: string
+        }
+        Insert: {
+          event_id: string
+          event_type: string
+          id?: string
+          payload?: Json | null
+          processed_at?: string
+        }
+        Update: {
+          event_id?: string
+          event_type?: string
+          id?: string
+          payload?: Json | null
+          processed_at?: string
         }
         Relationships: []
       }
@@ -564,6 +645,7 @@ export type Database = {
       }
       profiles: {
         Row: {
+          asaas_customer_id: string | null
           avatar_url: string | null
           bio: string | null
           block_reason: string | null
@@ -579,6 +661,7 @@ export type Database = {
           user_id: string
         }
         Insert: {
+          asaas_customer_id?: string | null
           avatar_url?: string | null
           bio?: string | null
           block_reason?: string | null
@@ -594,6 +677,7 @@ export type Database = {
           user_id: string
         }
         Update: {
+          asaas_customer_id?: string | null
           avatar_url?: string | null
           bio?: string | null
           block_reason?: string | null
