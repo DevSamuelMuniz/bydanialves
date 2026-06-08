@@ -244,7 +244,7 @@ export default function PublicInvite() {
                             <Button
                               size="sm"
                               className="mt-2 gap-1"
-                              onClick={() => handleSelectPlan(plan.id)}
+                              onClick={() => handleSelectPlan(plan)}
                               disabled={subscribing}
                             >
                               <Check className="h-3.5 w-3.5" />
@@ -265,6 +265,15 @@ export default function PublicInvite() {
           </div>
         )}
       </div>
+
+      <AsaasCheckoutModal
+        open={asaasOpen}
+        onClose={() => setAsaasOpen(false)}
+        planId={asaasPlan?.id || null}
+        planName={asaasPlan?.name}
+        planPrice={asaasPlan?.price}
+        onSuccess={() => navigate("/client")}
+      />
     </div>
   );
 }
