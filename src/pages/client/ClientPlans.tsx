@@ -13,6 +13,7 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Link } from "react-router-dom";
 import { useSearchParams } from "react-router-dom";
+import { AsaasCheckoutModal } from "@/components/AsaasCheckoutModal";
 
 export default function ClientPlans() {
   const { user } = useAuth();
@@ -29,6 +30,8 @@ export default function ClientPlans() {
   const [pendingPlanId, setPendingPlanId] = useState<string | null>(null);
   const [termsAccepted, setTermsAccepted] = useState(false);
   const [alreadyAccepted, setAlreadyAccepted] = useState(false);
+  const [asaasOpen, setAsaasOpen] = useState(false);
+  const [asaasPlan, setAsaasPlan] = useState<any | null>(null);
 
   const fetchPlans = async () => {
     const { data } = await supabase.from("plans").select("*").eq("active", true).order("price");
@@ -148,7 +151,9 @@ export default function ClientPlans() {
         .update({ terms_accepted_at: new Date().toISOString() } as any)
         .eq("user_id", user.id);
     }
-    await handleCheckout(pendingPlanId);
+    const plan = plans.find((p) => p.id === pendingPlanId);
+    setAsaasPlan(plan);
+    setAsaasOpen(true);
     setPendingPlanId(null);
   };
 
@@ -380,6 +385,15 @@ export default function ClientPlans() {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      <AsaasCheckoutModal
+        open={asaasOpen}
+        onClose={() => setAsaasOpen(false)}
+        planId={asaasPlan?.id || null}
+        planName={asaasPlan?.name}
+        planPrice={asaasPlan?.price}
+        onSuccess={() => { checkStripeSubscription(); }}
+      />
     </div>
   );
 }
