@@ -12,6 +12,7 @@ import { PasswordInput } from "@/components/PasswordInput";
 import { useToast } from "@/hooks/use-toast";
 import { Crown, Check, ArrowRight, ArrowLeft, User, Sparkles } from "lucide-react";
 import logoBlack from "@/assets/logo-black.png";
+import { AsaasCheckoutModal } from "@/components/AsaasCheckoutModal";
 
 type Step = "signup" | "plans";
 
@@ -35,6 +36,8 @@ export default function PublicInvite() {
   const [plansLoading, setPlansLoading] = useState(false);
   const [subscribing, setSubscribing] = useState(false);
   const [userId, setUserId] = useState<string | null>(null);
+  const [asaasOpen, setAsaasOpen] = useState(false);
+  const [asaasPlan, setAsaasPlan] = useState<any | null>(null);
 
   // Sign out any existing session so the invite page always shows signup
   useEffect(() => {
@@ -99,29 +102,15 @@ export default function PublicInvite() {
     setLoading(false);
   };
 
-  const handleSelectPlan = async (planId: string) => {
-    setSubscribing(true);
-    try {
-      const { data: sessionData } = await supabase.auth.getSession();
-      if (!sessionData.session) {
-        toast({ title: "Sessão expirada", description: "Faça login novamente.", variant: "destructive" });
-        setStep("signup");
-        setSubscribing(false);
-        return;
-      }
-      const { data, error } = await supabase.functions.invoke("create-checkout", {
-        body: { planId },
-      });
-      if (error) throw error;
-      if (data?.url) {
-        window.location.href = data.url;
-      } else {
-        toast({ title: "Erro", description: "Não foi possível iniciar o pagamento.", variant: "destructive" });
-      }
-    } catch (err: any) {
-      toast({ title: "Erro", description: err.message || "Erro ao processar.", variant: "destructive" });
+  const handleSelectPlan = async (plan: any) => {
+    const { data: sessionData } = await supabase.auth.getSession();
+    if (!sessionData.session) {
+      toast({ title: "Sessão expirada", description: "Faça login novamente.", variant: "destructive" });
+      setStep("signup");
+      return;
     }
-    setSubscribing(false);
+    setAsaasPlan(plan);
+    setAsaasOpen(true);
   };
 
   const handleSkip = () => {
@@ -255,7 +244,7 @@ export default function PublicInvite() {
                             <Button
                               size="sm"
                               className="mt-2 gap-1"
-                              onClick={() => handleSelectPlan(plan.id)}
+                              onClick={() => handleSelectPlan(plan)}
                               disabled={subscribing}
                             >
                               <Check className="h-3.5 w-3.5" />
@@ -276,6 +265,15 @@ export default function PublicInvite() {
           </div>
         )}
       </div>
+
+      <AsaasCheckoutModal
+        open={asaasOpen}
+        onClose={() => setAsaasOpen(false)}
+        planId={asaasPlan?.id || null}
+        planName={asaasPlan?.name}
+        planPrice={asaasPlan?.price}
+        onSuccess={() => navigate("/client")}
+      />
     </div>
   );
 }
