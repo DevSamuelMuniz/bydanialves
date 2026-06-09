@@ -134,18 +134,16 @@ export default function ClientPlans() {
             <p className="text-xl font-serif font-bold gradient-gold-text">{subscription.plans?.name}</p>
             <p className="text-sm text-muted-foreground">{subscription.plans?.includes}</p>
             <p className="text-sm text-muted-foreground">
-              {stripeSubscription?.subscription_end && (
-                <>Válido até {new Date(stripeSubscription.subscription_end).toLocaleDateString("pt-BR")}</>
+              {subscription.expires_at && (
+                <>Válido até {new Date(subscription.expires_at).toLocaleDateString("pt-BR")}</>
               )}
             </p>
             <div className="flex gap-2 mt-2">
-              <Button variant="outline" size="sm" onClick={handleManageSubscription} disabled={actionLoading}>
-                <Settings className="mr-1.5 h-4 w-4" /> Gerenciar assinatura
-              </Button>
-              <Button variant="ghost" size="sm" onClick={checkStripeSubscription} disabled={actionLoading}>
+              <Button variant="ghost" size="sm" onClick={loadSubscription} disabled={actionLoading}>
                 Atualizar status
               </Button>
             </div>
+
           </CardContent>
         </Card>
       )}
