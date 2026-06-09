@@ -20,7 +20,6 @@ export default function ClientPlans() {
   const { toast } = useToast();
   const [plans, setPlans] = useState<any[]>([]);
   const [subscription, setSubscription] = useState<any | null>(null);
-  const [stripeSubscription, setStripeSubscription] = useState<{ subscribed: boolean; plan_id: string | null; subscription_end: string | null } | null>(null);
   const [loading, setLoading] = useState(true);
   const [actionLoading, setActionLoading] = useState(false);
   const [searchParams] = useSearchParams();
@@ -38,87 +37,32 @@ export default function ClientPlans() {
     setPlans(data || []);
   };
 
-  const checkStripeSubscription = async (): Promise<{ subscribed: boolean; plan_id: string | null; subscription_end: string | null } | null> => {
-    try {
-      const { data, error } = await supabase.functions.invoke("check-subscription");
-      if (error) throw error;
-      setStripeSubscription(data);
-      if (data?.subscribed && data?.plan_id) {
-        const { data: subData } = await supabase
-          .from("subscriptions")
-          .select("*, plans(*)")
-          .eq("client_id", user!.id)
-          .eq("status", "active")
-          .maybeSingle();
-        setSubscription(subData);
-      } else {
-        setSubscription(null);
-      }
-      return data;
-    } catch (err) {
-      console.error("Error checking subscription:", err);
-      return null;
-    }
+  const loadSubscription = async () => {
+    if (!user) return;
+    const { data } = await supabase
+      .from("subscriptions")
+      .select("*, plans(*)")
+      .eq("client_id", user.id)
+      .eq("status", "active")
+      .maybeSingle();
+    setSubscription(data);
   };
 
   const fetchData = async () => {
     if (!user) return;
     setLoading(true);
-    await fetchPlans();
-    await checkStripeSubscription();
+    await Promise.all([fetchPlans(), loadSubscription()]);
     setLoading(false);
   };
 
   useEffect(() => { fetchData(); }, [user]);
 
-  // Handle success/cancel from Stripe checkout with polling
-  useEffect(() => {
-    if (searchParams.get("success") === "true") {
-      toast({ title: "Pagamento processado! 🎉", description: "Verificando sua assinatura..." });
-      let attempts = 0;
-      const poll = setInterval(async () => {
-        attempts++;
-        const result = await checkStripeSubscription();
-        if (result?.subscribed || attempts >= 8) {
-          clearInterval(poll);
-          if (result?.subscribed) {
-            toast({ title: "Assinatura ativada com sucesso! 🎉" });
-          } else if (attempts >= 8) {
-            toast({ title: "Assinatura pode levar alguns minutos", description: "Atualize a página em instantes.", variant: "destructive" });
-          }
-        }
-      }, 3000);
-      return () => clearInterval(poll);
-    }
-    if (searchParams.get("canceled") === "true") {
-      toast({ title: "Checkout cancelado", description: "Você pode tentar novamente quando quiser.", variant: "destructive" });
-    }
-  }, [searchParams]);
-
-  // Periodic check every 60s
+  // Periodic refresh
   useEffect(() => {
     if (!user) return;
-    const interval = setInterval(checkStripeSubscription, 60000);
+    const interval = setInterval(loadSubscription, 60000);
     return () => clearInterval(interval);
   }, [user]);
-
-  const handleCheckout = async (planId: string) => {
-    if (!user || actionLoading) return;
-    setActionLoading(true);
-    try {
-      const { data, error } = await supabase.functions.invoke("create-checkout", {
-        body: { planId },
-      });
-      if (error) throw error;
-      if (data?.url) {
-        window.open(data.url, "_blank");
-      }
-    } catch (err: any) {
-      toast({ title: "Erro ao iniciar checkout", description: err.message, variant: "destructive" });
-    } finally {
-      setActionLoading(false);
-    }
-  };
 
   // Called when user clicks "Assinar" — open terms modal first
   const initiateCheckout = async (planId: string) => {
@@ -157,21 +101,6 @@ export default function ClientPlans() {
     setPendingPlanId(null);
   };
 
-  const handleManageSubscription = async () => {
-    if (actionLoading) return;
-    setActionLoading(true);
-    try {
-      const { data, error } = await supabase.functions.invoke("customer-portal");
-      if (error) throw error;
-      if (data?.url) {
-        window.open(data.url, "_blank");
-      }
-    } catch (err: any) {
-      toast({ title: "Erro", description: err.message, variant: "destructive" });
-    } finally {
-      setActionLoading(false);
-    }
-  };
 
   if (loading) return (
     <div className="space-y-4 w-full">
@@ -205,18 +134,16 @@ export default function ClientPlans() {
             <p className="text-xl font-serif font-bold gradient-gold-text">{subscription.plans?.name}</p>
             <p className="text-sm text-muted-foreground">{subscription.plans?.includes}</p>
             <p className="text-sm text-muted-foreground">
-              {stripeSubscription?.subscription_end && (
-                <>Válido até {new Date(stripeSubscription.subscription_end).toLocaleDateString("pt-BR")}</>
+              {subscription.expires_at && (
+                <>Válido até {new Date(subscription.expires_at).toLocaleDateString("pt-BR")}</>
               )}
             </p>
             <div className="flex gap-2 mt-2">
-              <Button variant="outline" size="sm" onClick={handleManageSubscription} disabled={actionLoading}>
-                <Settings className="mr-1.5 h-4 w-4" /> Gerenciar assinatura
-              </Button>
-              <Button variant="ghost" size="sm" onClick={checkStripeSubscription} disabled={actionLoading}>
+              <Button variant="ghost" size="sm" onClick={loadSubscription} disabled={actionLoading}>
                 Atualizar status
               </Button>
             </div>
+
           </CardContent>
         </Card>
       )}
@@ -392,7 +319,7 @@ export default function ClientPlans() {
         planId={asaasPlan?.id || null}
         planName={asaasPlan?.name}
         planPrice={asaasPlan?.price}
-        onSuccess={() => { checkStripeSubscription(); }}
+        onSuccess={() => { loadSubscription(); }}
       />
     </div>
   );
