@@ -236,21 +236,11 @@ function SubscriptionModal({ open, onClose, selectedPlan, onProceedToPayment }: 
       if (!(profile as any)?.terms_accepted_at) {
         await supabase.from("profiles").update({ terms_accepted_at: new Date().toISOString() } as any).eq("user_id", user.id);
       }
-      try {
-        const { data, error } = await supabase.functions.invoke("create-checkout", { body: { planId: selectedPlan.id } });
-        if (error) throw error;
-        if (data?.url) {
-          window.location.href = data.url;
-        } else {
-          alert("Erro: não foi possível gerar o link de pagamento.");
-          setStep("terms");
-        }
-      } catch (err: any) {
-        alert("Erro ao iniciar pagamento: " + err.message);
-        setStep("terms");
-      }
+      onClose();
+      onProceedToPayment(selectedPlan);
     }
   };
+
 
   const includes = selectedPlan?.includes ? selectedPlan.includes.split(/[,;\n•]+/).map((s: string) => s.trim()).filter(Boolean) : [];
 
