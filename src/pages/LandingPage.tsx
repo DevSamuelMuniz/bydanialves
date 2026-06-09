@@ -437,7 +437,20 @@ export default function LandingPage() {
   return (
     <>
       <ParticlesBackground />
-      <SubscriptionModal open={subscribeModalOpen} onClose={() => setSubscribeModalOpen(false)} selectedPlan={selectedPlan} />
+      <SubscriptionModal
+        open={subscribeModalOpen}
+        onClose={() => setSubscribeModalOpen(false)}
+        selectedPlan={selectedPlan}
+        onProceedToPayment={(plan) => { setAsaasPlan(plan); setAsaasOpen(true); }}
+      />
+      <AsaasCheckoutModal
+        open={asaasOpen}
+        onClose={() => setAsaasOpen(false)}
+        planId={asaasPlan?.id || null}
+        planName={asaasPlan?.name}
+        planPrice={asaasPlan?.price}
+        onSuccess={() => navigate("/client")}
+      />
 
       <div className="min-h-screen bg-background text-foreground">
         <style>{`body { overflow-x: hidden; }`}</style>
