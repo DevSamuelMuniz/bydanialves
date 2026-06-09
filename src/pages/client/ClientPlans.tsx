@@ -20,7 +20,6 @@ export default function ClientPlans() {
   const { toast } = useToast();
   const [plans, setPlans] = useState<any[]>([]);
   const [subscription, setSubscription] = useState<any | null>(null);
-  const [stripeSubscription, setStripeSubscription] = useState<{ subscribed: boolean; plan_id: string | null; subscription_end: string | null } | null>(null);
   const [loading, setLoading] = useState(true);
   const [actionLoading, setActionLoading] = useState(false);
   const [searchParams] = useSearchParams();
@@ -38,69 +37,33 @@ export default function ClientPlans() {
     setPlans(data || []);
   };
 
-  const checkStripeSubscription = async (): Promise<{ subscribed: boolean; plan_id: string | null; subscription_end: string | null } | null> => {
-    try {
-      const { data, error } = await supabase.functions.invoke("check-subscription");
-      if (error) throw error;
-      setStripeSubscription(data);
-      if (data?.subscribed && data?.plan_id) {
-        const { data: subData } = await supabase
-          .from("subscriptions")
-          .select("*, plans(*)")
-          .eq("client_id", user!.id)
-          .eq("status", "active")
-          .maybeSingle();
-        setSubscription(subData);
-      } else {
-        setSubscription(null);
-      }
-      return data;
-    } catch (err) {
-      console.error("Error checking subscription:", err);
-      return null;
-    }
+  const loadSubscription = async () => {
+    if (!user) return;
+    const { data } = await supabase
+      .from("subscriptions")
+      .select("*, plans(*)")
+      .eq("client_id", user.id)
+      .eq("status", "active")
+      .maybeSingle();
+    setSubscription(data);
   };
 
   const fetchData = async () => {
     if (!user) return;
     setLoading(true);
-    await fetchPlans();
-    await checkStripeSubscription();
+    await Promise.all([fetchPlans(), loadSubscription()]);
     setLoading(false);
   };
 
   useEffect(() => { fetchData(); }, [user]);
 
-  // Handle success/cancel from Stripe checkout with polling
-  useEffect(() => {
-    if (searchParams.get("success") === "true") {
-      toast({ title: "Pagamento processado! 🎉", description: "Verificando sua assinatura..." });
-      let attempts = 0;
-      const poll = setInterval(async () => {
-        attempts++;
-        const result = await checkStripeSubscription();
-        if (result?.subscribed || attempts >= 8) {
-          clearInterval(poll);
-          if (result?.subscribed) {
-            toast({ title: "Assinatura ativada com sucesso! 🎉" });
-          } else if (attempts >= 8) {
-            toast({ title: "Assinatura pode levar alguns minutos", description: "Atualize a página em instantes.", variant: "destructive" });
-          }
-        }
-      }, 3000);
-      return () => clearInterval(poll);
-    }
-    if (searchParams.get("canceled") === "true") {
-      toast({ title: "Checkout cancelado", description: "Você pode tentar novamente quando quiser.", variant: "destructive" });
-    }
-  }, [searchParams]);
-
-  // Periodic check every 60s
+  // Periodic refresh
   useEffect(() => {
     if (!user) return;
-    const interval = setInterval(checkStripeSubscription, 60000);
+    const interval = setInterval(loadSubscription, 60000);
     return () => clearInterval(interval);
   }, [user]);
+
 
   const handleCheckout = async (planId: string) => {
     if (!user || actionLoading) return;
