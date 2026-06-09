@@ -51,12 +51,6 @@ export default function ClientDashboard() {
   useEffect(() => {
     if (!user) return;
     const fetchData = async () => {
-      // Sync Stripe subscription to DB first
-      try {
-        await supabase.functions.invoke("check-subscription");
-      } catch (e) {
-        console.error("Error syncing subscription:", e);
-      }
 
       const [profileRes, apptRes, subRes] = await Promise.all([
         supabase.from("profiles").select("*").eq("user_id", user.id).single(),
