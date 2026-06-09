@@ -383,6 +383,8 @@ export default function LandingPage() {
   const [scrolled, setScrolled] = useState(false);
   const [subscribeModalOpen, setSubscribeModalOpen] = useState(false);
   const [selectedPlan, setSelectedPlan] = useState<any | null>(null);
+  const [asaasOpen, setAsaasOpen] = useState(false);
+  const [asaasPlan, setAsaasPlan] = useState<any | null>(null);
 
   // Lightbox state
   const [lightboxIndex, setLightboxIndex] = useState<number | null>(null);
