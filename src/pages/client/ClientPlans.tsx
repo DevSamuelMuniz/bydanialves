@@ -319,7 +319,7 @@ export default function ClientPlans() {
         planId={asaasPlan?.id || null}
         planName={asaasPlan?.name}
         planPrice={asaasPlan?.price}
-        onSuccess={() => { checkStripeSubscription(); }}
+        onSuccess={() => { loadSubscription(); }}
       />
     </div>
   );
