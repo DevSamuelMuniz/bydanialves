@@ -64,25 +64,6 @@ export default function ClientPlans() {
     return () => clearInterval(interval);
   }, [user]);
 
-
-  const handleCheckout = async (planId: string) => {
-    if (!user || actionLoading) return;
-    setActionLoading(true);
-    try {
-      const { data, error } = await supabase.functions.invoke("create-checkout", {
-        body: { planId },
-      });
-      if (error) throw error;
-      if (data?.url) {
-        window.open(data.url, "_blank");
-      }
-    } catch (err: any) {
-      toast({ title: "Erro ao iniciar checkout", description: err.message, variant: "destructive" });
-    } finally {
-      setActionLoading(false);
-    }
-  };
-
   // Called when user clicks "Assinar" — open terms modal first
   const initiateCheckout = async (planId: string) => {
     if (!user || actionLoading) return;
