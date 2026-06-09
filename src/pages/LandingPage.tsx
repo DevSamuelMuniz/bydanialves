@@ -187,7 +187,7 @@ function SectionHeader({ badge, title, subtitle }: { badge: string; title: React
 type ModalStep = "auth" | "plan-details" | "terms" | "processing";
 type AuthMode = "login" | "signup";
 
-function SubscriptionModal({ open, onClose, selectedPlan }: { open: boolean; onClose: () => void; selectedPlan: any | null }) {
+function SubscriptionModal({ open, onClose, selectedPlan, onProceedToPayment }: { open: boolean; onClose: () => void; selectedPlan: any | null; onProceedToPayment: (plan: any) => void }) {
   const navigate = useNavigate();
   const [step, setStep] = useState<ModalStep>("auth");
   const [authMode, setAuthMode] = useState<AuthMode>("signup");
