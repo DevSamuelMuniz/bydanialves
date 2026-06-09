@@ -125,6 +125,7 @@ import { useTheme } from "next-themes";
 import logoBlack from "@/assets/logo-black.png";
 import logoGold from "@/assets/logo-gold.png";
 import { supabase } from "@/integrations/supabase/client";
+import { AsaasCheckoutModal } from "@/components/AsaasCheckoutModal";
 import gallery1 from "@/assets/gallery-1.jpeg";
 import gallery2 from "@/assets/gallery-2.png";
 import gallery3 from "@/assets/gallery-3.png";
