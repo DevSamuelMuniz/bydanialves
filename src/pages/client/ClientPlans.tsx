@@ -101,21 +101,6 @@ export default function ClientPlans() {
     setPendingPlanId(null);
   };
 
-  const handleManageSubscription = async () => {
-    if (actionLoading) return;
-    setActionLoading(true);
-    try {
-      const { data, error } = await supabase.functions.invoke("customer-portal");
-      if (error) throw error;
-      if (data?.url) {
-        window.open(data.url, "_blank");
-      }
-    } catch (err: any) {
-      toast({ title: "Erro", description: err.message, variant: "destructive" });
-    } finally {
-      setActionLoading(false);
-    }
-  };
 
   if (loading) return (
     <div className="space-y-4 w-full">
