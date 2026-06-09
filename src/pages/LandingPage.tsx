@@ -125,6 +125,7 @@ import { useTheme } from "next-themes";
 import logoBlack from "@/assets/logo-black.png";
 import logoGold from "@/assets/logo-gold.png";
 import { supabase } from "@/integrations/supabase/client";
+import { AsaasCheckoutModal } from "@/components/AsaasCheckoutModal";
 import gallery1 from "@/assets/gallery-1.jpeg";
 import gallery2 from "@/assets/gallery-2.png";
 import gallery3 from "@/assets/gallery-3.png";
@@ -187,7 +188,7 @@ function SectionHeader({ badge, title, subtitle }: { badge: string; title: React
 type ModalStep = "auth" | "plan-details" | "terms" | "processing";
 type AuthMode = "login" | "signup";
 
-function SubscriptionModal({ open, onClose, selectedPlan }: { open: boolean; onClose: () => void; selectedPlan: any | null }) {
+function SubscriptionModal({ open, onClose, selectedPlan, onProceedToPayment }: { open: boolean; onClose: () => void; selectedPlan: any | null; onProceedToPayment: (plan: any) => void }) {
   const navigate = useNavigate();
   const [step, setStep] = useState<ModalStep>("auth");
   const [authMode, setAuthMode] = useState<AuthMode>("signup");
@@ -236,21 +237,11 @@ function SubscriptionModal({ open, onClose, selectedPlan }: { open: boolean; onC
       if (!(profile as any)?.terms_accepted_at) {
         await supabase.from("profiles").update({ terms_accepted_at: new Date().toISOString() } as any).eq("user_id", user.id);
       }
-      try {
-        const { data, error } = await supabase.functions.invoke("create-checkout", { body: { planId: selectedPlan.id } });
-        if (error) throw error;
-        if (data?.url) {
-          window.location.href = data.url;
-        } else {
-          alert("Erro: não foi possível gerar o link de pagamento.");
-          setStep("terms");
-        }
-      } catch (err: any) {
-        alert("Erro ao iniciar pagamento: " + err.message);
-        setStep("terms");
-      }
+      onClose();
+      onProceedToPayment(selectedPlan);
     }
   };
+
 
   const includes = selectedPlan?.includes ? selectedPlan.includes.split(/[,;\n•]+/).map((s: string) => s.trim()).filter(Boolean) : [];
 
@@ -392,6 +383,8 @@ export default function LandingPage() {
   const [scrolled, setScrolled] = useState(false);
   const [subscribeModalOpen, setSubscribeModalOpen] = useState(false);
   const [selectedPlan, setSelectedPlan] = useState<any | null>(null);
+  const [asaasOpen, setAsaasOpen] = useState(false);
+  const [asaasPlan, setAsaasPlan] = useState<any | null>(null);
 
   // Lightbox state
   const [lightboxIndex, setLightboxIndex] = useState<number | null>(null);
@@ -444,7 +437,20 @@ export default function LandingPage() {
   return (
     <>
       <ParticlesBackground />
-      <SubscriptionModal open={subscribeModalOpen} onClose={() => setSubscribeModalOpen(false)} selectedPlan={selectedPlan} />
+      <SubscriptionModal
+        open={subscribeModalOpen}
+        onClose={() => setSubscribeModalOpen(false)}
+        selectedPlan={selectedPlan}
+        onProceedToPayment={(plan) => { setAsaasPlan(plan); setAsaasOpen(true); }}
+      />
+      <AsaasCheckoutModal
+        open={asaasOpen}
+        onClose={() => setAsaasOpen(false)}
+        planId={asaasPlan?.id || null}
+        planName={asaasPlan?.name}
+        planPrice={asaasPlan?.price}
+        onSuccess={() => navigate("/client")}
+      />
 
       <div className="min-h-screen bg-background text-foreground">
         <style>{`body { overflow-x: hidden; }`}</style>
